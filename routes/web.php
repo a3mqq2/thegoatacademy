@@ -1,0 +1,32 @@
+<?php 
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AdminController;
+
+Route::redirect('/', '/login');
+Route::get('/login', [AdminController::class, 'login'])->name('login');
+Route::post('/do-login', [AdminController::class, 'do_login'])->name('do_login');
+Route::get('/logout', [AdminController::class, 'logout'])->name('logout');
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/sections', function () {
+        return view('sections');
+    })->name('sections');
+
+    Route::group(['middleware' => ['role:Admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
+        require base_path('routes/web/admin.php');
+    });
+
+    Route::group(['middleware' => ['role:Instructor'], 'prefix' => 'instructor', 'as' => 'instructor.'], function () {
+        require base_path('routes/web/instructor.php');
+    });
+
+    Route::group(['middleware' => ['role:Exam Officer'], 'prefix' => 'exam_officer', 'as' => 'exam_officer.'], function () {
+         require base_path('routes/web/exam_officer.php');
+   });
+
+   Route::group(['middleware' => ['role:Supervisor'], 'prefix' => 'supervisor', 'as' => 'supervisor.'], function () {
+         require base_path('routes/web/supervisor.php');
+   });
+
+});
