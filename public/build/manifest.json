@@ -1,4 +1,9 @@
 {
+  "resources/css/app.css": {
+    "file": "assets/app-D7vUusv7.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
   "resources/js/app.js": {
     "file": "assets/app-x02YMaG_.js",
     "name": "app",
