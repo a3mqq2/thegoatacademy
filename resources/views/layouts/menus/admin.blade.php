@@ -177,6 +177,18 @@
 
 
     
+    <li class="pc-item">
+      <a href="{{ route('admin.quality-settings.index') }}" class="pc-link">
+          <span class="pc-micon">
+              <svg class="pc-icon">
+                  <use xlink:href="#custom-setting-2"></use>
+              </svg>
+          </span>
+          <span class="pc-mtext">Quality Settings</span>
+      </a>
+  </li>
+
+  
 
     <li class="pc-item">
       <a href="{{ route('admin.audit_logs.index') }}" class="pc-link">
