@@ -54,33 +54,7 @@
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-6 col-xxl-3">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center justify-content-between">
-          <h5 class="mb-0">New Users</h5>
-          <select class="form-select rounded-3 form-select-sm w-auto">
-            <option>Today</option>
-            <option>Weekly</option>
-            <option selected>Monthly</option>
-          </select>
-        </div>
-        <div class="my-3">
-          <div id="new-users-graph"></div>
-          <h5 class="text-center mt-3">
-            {{$monthlyCount}} <small class="text-success">
-              <i class="ti ti-arrow-up-right"></i> {{ round(($monthlyCount / max(1, $weeklyCount)) * 100, 2) }}%
-            </small>
-          </h5>
-        </div>
-        <div class="d-grid">
-          <a class="btn btn-link-primary" role="button" href="#">View More</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 @push('scripts')
 <script>
