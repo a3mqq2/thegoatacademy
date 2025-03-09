@@ -50,5 +50,9 @@ class DatabaseSeeder extends Seeder
         // Assign Admin Role to the User
         $user->syncRoles([$adminRole, $instructorRole, $monitorRole, $examOfficerRole]);
         $user->givePermissionTo($permissions);
+
+        $this->call([
+            QualitySettingsSeeder::class,
+        ]);
     }
 }
