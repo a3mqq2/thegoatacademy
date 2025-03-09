@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,23 +14,41 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create Permissions
+        $permissions = [
+            'Manage Users',
+            'Students List',
+            'Courses List',
+            'Reports',
+            'Manage Settings',
+            'Manage Quality Settings',
+            'Audit Logs',
+        ];
 
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
 
-        $adminRole = Role::create(['name' => 'Admin']);
-        $InstructorRole = Role::create(['name' => 'Instructor']);
-        $MonitorRole = Role::create(['name' => 'Supervisor']);
-        $examOfficerRole = Role::create(['name' => 'Exam Officer']);
+        // Create Roles
+        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
+        $instructorRole = Role::firstOrCreate(['name' => 'Instructor']);
+        $monitorRole = Role::firstOrCreate(['name' => 'Supervisor']);
+        $examOfficerRole = Role::firstOrCreate(['name' => 'Exam Officer']);
 
-        
+        // Assign Permissions to Admin Role
+        $adminRole->syncPermissions($permissions);
 
-        $user = new User();
-        $user->name = "administrator";
-        $user->email = "admin@demo.com";
-        $user->password = bcrypt("123123123");
-        $user->status = "active";
-        $user->save();
+        // Create an Admin User
+        $user = User::firstOrCreate([
+            'email' => 'admin@demo.com',
+        ], [
+            'name' => 'Administrator',
+            'password' => bcrypt('123123123'),
+            'status' => 'active',
+        ]);
 
-        $user->syncRoles($adminRole,$InstructorRole,$MonitorRole,$examOfficerRole);
+        // Assign Admin Role to the User
+        $user->syncRoles([$adminRole, $instructorRole, $monitorRole, $examOfficerRole]);
+        $user->givePermissionTo($permissions);
     }
 }

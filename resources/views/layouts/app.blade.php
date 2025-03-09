@@ -44,6 +44,25 @@
     <script src="{{ asset('assets/js/tech-stack.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('assets/css/style-preset.css') }}" />
 
+
+        <!-- [Font] Family -->
+    <link rel="stylesheet" href="{{ asset('fonts/inter/inter.css') }}" id="main-font-link" />
+    <!-- [Phosphor Icons] https://phosphoricons.com/ -->
+    <link rel="stylesheet" href="{{ asset('fonts/phosphor/duotone/style.css') }}" />
+    <!-- [Tabler Icons] https://tablericons.com -->
+    <link rel="stylesheet" href="{{ asset('fonts/tabler-icons.min.css') }}" />
+    <!-- [Feather Icons] https://feathericons.com -->
+    <link rel="stylesheet" href="{{ asset('fonts/feather.css') }}" />
+    <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
+    <link rel="stylesheet" href="{{ asset('fonts/fontawesome.css') }}" />
+    <!-- [Material Icons] https://fonts.google.com/icons -->
+    <link rel="stylesheet" href="{{ asset('fonts/material.css') }}" />
+    <!-- [Template CSS Files] -->
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}" id="main-style-link" />
+    <script src="{{ asset('js/tech-stack.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('css/style-preset.css') }}" />
+
+
     {{-- Allow child views to inject extra CSS if needed --}}
 
     {{-- vite resources --}}
@@ -275,6 +294,14 @@
     <script src="{{ asset('assets/js/fonts/custom-font.js') }}"></script>
     <script src="{{ asset('assets/js/pcoded.js') }}"></script>
     <script src="{{ asset('assets/js/plugins/feather.min.js') }}"></script>
+
+
+    <!-- [Page Specific JS] start -->
+    <script src="{{ asset('assets/js/plugins/apexcharts.min.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/dashboard-analytics.js') }}"></script>
+    <!-- [Page Specific JS] end -->
+
+    <!-- Required JS -->
 
     <script>
       layout_change('light');

@@ -25,6 +25,7 @@ Route::resource('students', StudentController::class);
 Route::put('students/{student}/exclude', [StudentController::class, 'exclude'])->name('students.exclude');
 Route::put('students/{student}/withdraw', [StudentController::class, 'withdraw'])->name('students.withdraw');
 Route::put('/courses/{id}/cancel', [CourseController::class, 'cancel'])->name('courses.cancel');
+Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
 Route::resource('courses', CourseController::class);
 
 

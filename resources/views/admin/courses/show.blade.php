@@ -135,18 +135,48 @@
     </div>
   </div>
 
-  <!-- Enrolled Students Section -->
-  <!-- Enrolled Students Section -->
 <div class="card mt-4">
    <div class="card-header bg-light text-primary d-flex justify-content-between align-items-center">
      <h5 class="mb-0 text-primary">
        <i class="fa fa-users"></i> Enrolled Students
      </h5>
-     <!-- Example: Enroll button if course is not completed or cancelled -->
      @if($course->status !== 'completed' && $course->status !== 'cancelled')
-       <a href="#" class="btn btn-dark btn-sm">
+         @if($course->status !== 'completed' && $course->status !== 'cancelled')
+         <a href="#" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
          <i class="fa fa-user-plus"></i> Enroll Student
-       </a>
+         </a>
+         @endif
+
+         <div class="modal fade" id="enrollStudentModal" tabindex="-1">
+         <div class="modal-dialog">
+         <form id="enrollStudentForm" method="POST" action="{{ route('admin.courses.enroll',$course) }}">
+            @csrf
+            <div class="modal-content">
+               <div class="modal-header">
+               <h5 class="modal-title"><i class="fa fa-user-plus"></i> Enroll New Student</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+               </div>
+               <div class="modal-body">
+                  @csrf
+                  <div class="mb-3">
+                     <label class="form-label">Select Student</label>
+                     <select name="student_id" class="form-select select2" required>
+                        <option value="">-- Select Student --</option>
+                        @foreach($students as $student)
+                        <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->phone }})</option>
+                        @endforeach
+                     </select>
+                  </div>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">
+                     <i class="fa fa-user-plus"></i> Enroll Student
+                  </button>
+               </div>
+            </div>
+         </form>
+         </div>
+         </div>
+
      @endif
    </div>
    <div class="card-body">
@@ -160,7 +190,7 @@
                           <th>Phone</th>
                           <th>Books Due</th>
                           <th>Status</th>
-                          <th>Reason</th> <!-- New column for reason -->
+                          <th>Reason</th>  
                           <th>Actions</th>
                       </tr>
                   </thead>
@@ -272,7 +302,6 @@
     </div>
   </div>
 
-  <!-- If the course is ongoing, show actions (cancel or complete) -->
   @if($course->status === 'ongoing')
     <div class="mt-4 text-end">
       <button

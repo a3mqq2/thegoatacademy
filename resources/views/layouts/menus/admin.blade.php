@@ -9,21 +9,27 @@
         <span class="pc-mtext">Dashboard</span>
       </a>
   </li>
-   <li class="pc-item pc-hasmenu">
-      <a href="#!" class="pc-link">
-        <span class="pc-micon">
-          <svg class="pc-icon">
-            <use xlink:href="#custom-user"></use>
-          </svg>
-        </span>
-        <span class="pc-mtext">Users</span><span class="pc-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"></polyline></svg></span></a>
-      <ul class="pc-submenu" style="display: none;">
-        <li class="pc-item"><a class="pc-link" href="{{route('admin.users.create')}}">Create a new user</a></li>
-        <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index', ['status' => 'active'])}}">Show Active users</a></li>
-        <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index', ['status' => 'inactive'])}}">Show Inactive users</a></li>
-        <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index')}}">Show all users</a></li>
-      </ul>
-    </li>
+  
+    @if (auth()->user()->permissions->where('name', 'Manage Users')->count())
+      <li class="pc-item pc-hasmenu">
+        <a href="#!" class="pc-link">
+          <span class="pc-micon">
+            <svg class="pc-icon">
+              <use xlink:href="#custom-user"></use>
+            </svg>
+          </span>
+          <span class="pc-mtext">Users</span><span class="pc-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"></polyline></svg></span></a>
+        <ul class="pc-submenu" style="display: none;">
+          <li class="pc-item"><a class="pc-link" href="{{route('admin.users.create')}}">Create a new user</a></li>
+          <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index', ['status' => 'active'])}}">Show Active users</a></li>
+          <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index', ['status' => 'inactive'])}}">Show Inactive users</a></li>
+          <li class="pc-item"><a class="pc-link" href="{{route('admin.users.index')}}">Show all users</a></li>
+        </ul>
+      </li>
+    @endif
+
+    
+    @if (auth()->user()->permissions->where('name', 'Students List')->count())
     <li class="pc-item pc-hasmenu">
       <a href="#!" class="pc-link">
         <span class="pc-micon">
@@ -46,6 +52,10 @@
         <li class="pc-item"><a class="pc-link" href="{{ route('admin.students.index') }}">Show all Students</a></li>
       </ul>
     </li>
+    @endif
+
+    @if (auth()->user()->permissions->where('name', 'Courses List')->count())
+
     <li class="pc-item pc-hasmenu">
       <a href="#!" class="pc-link">
         <span class="pc-micon">
@@ -69,9 +79,12 @@
       </ul>
     </li>
    
+    @endif
     
 
 
+    @if (auth()->user()->permissions->where('name', 'Reports')->count())
+    
     <li class="pc-item">
       <a href="#" class="pc-link">
         <span class="pc-micon">
@@ -81,10 +94,11 @@
       </a>
     </li>
 
+    @endif
 
 
 
-
+    @if (auth()->user()->permissions->where('name', 'Manage Settings')->count())
     <li class="pc-item pc-hasmenu">
       <a href="#!" class="pc-link">
         <span class="pc-micon">
@@ -175,8 +189,10 @@
       </ul>
     </li>
 
-
+    @endif
     
+    @if (auth()->user()->permissions->where('name', 'Manage Quality Settings')->count())
+
     <li class="pc-item">
       <a href="{{ route('admin.quality-settings.index') }}" class="pc-link">
           <span class="pc-micon">
@@ -188,7 +204,10 @@
       </a>
   </li>
 
+  @endif
+
   
+  @if (auth()->user()->permissions->where('name', 'Audit Logs')->count())
 
     <li class="pc-item">
       <a href="{{ route('admin.audit_logs.index') }}" class="pc-link">
@@ -199,7 +218,7 @@
       </a>
     </li>
 
-    
+    @endif
 
     {{-- logout --}}
     <li class="pc-item">

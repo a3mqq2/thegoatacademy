@@ -14,6 +14,7 @@ use App\Models\ExcludeReason;
 use App\Models\CourseSchedule;
 use App\Models\WithdrawnReason;
 use App\Http\Controllers\Controller;
+use App\Models\CourseStudent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -304,6 +305,11 @@ class CourseController extends Controller
 
     public function show($id)
     {
+
+        $students = Student::whereDoesntHave('courses', function($query) use ($id) {
+            $query->where('courses.id', $id);
+        })->get();
+        
         $course = Course::with(['students'])->findOrFail($id);
         
         // Also fetch reasons to pass to the modals
@@ -315,30 +321,59 @@ class CourseController extends Controller
             'logs'   => $course->logs,
             'excludeReasons'   => $excludeReasons,
             'withdrawnReasons' => $withdrawnReasons,
+            'students' => $students,
         ]);
     }
     
 
     public function cancel($id)
-{
-    $course = Course::findOrFail($id);
+    {
+        $course = Course::findOrFail($id);
 
-    // Update status to 'cancelled'
-    $course->status = 'canceled';
-    $course->save();
+        // Update status to 'cancelled'
+        $course->status = 'canceled';
+        $course->save();
 
-    // Optionally log this action (e.g. AuditLog)
-    AuditLog::create([
-        'user_id'     => Auth::id(),
-        'description' => "Cancelled course #{$course->id}",
-        'type'        => 'cancel',
-        'entity_id'   => $course->id,
-        'entity_type' => Course::class,
-    ]);
+        // Optionally log this action (e.g. AuditLog)
+        AuditLog::create([
+            'user_id'     => Auth::id(),
+            'description' => "Cancelled course #{$course->id}",
+            'type'        => 'cancel',
+            'entity_id'   => $course->id,
+            'entity_type' => Course::class,
+        ]);
 
-    // Return or redirect as needed
-    return redirect()->route('admin.courses.index')
-                     ->with('success', 'Course cancelled successfully.');
-}
+        // Return or redirect as needed
+        return redirect()->route('admin.courses.index')
+                        ->with('success', 'Course cancelled successfully.');
+    }
+
+
+    public function enroll($id, Request $request)
+    {
+
+        $request->validate([
+            "student_id" => "required|exists:students,id",
+        ]);
+        
+        CourseStudent::create([
+            'course_id' => $id,
+            'student_id' => $request->student_id,
+            'status' => 'ongoing',
+        ]);
+
+        $course = Course::findOrFail($id);
+
+        AuditLog::create([
+            'user_id'     => Auth::id(),
+            "description" => "Enrolled student #{$request->student_id} in course #{$course->id}",
+            'type'        => 'enroll',
+            'entity_id'   => $course->id,
+            'entity_type' => Course::class,
+        ]);
+
+        return redirect()->route('admin.courses.index')
+                        ->with('success', 'Student enrolled successfully.');
+    }
 
 }

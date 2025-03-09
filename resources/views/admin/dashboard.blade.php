@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('content')
- <div class="row mt-3">
-   <div class="col-lg-3 col-md-6">
+
+<div class="row mt-3">
+  <div class="col-lg-3 col-md-6">
       <a href="{{route('admin.students.index')}}">
          <div class="card">
             <div class="card-body">
@@ -19,7 +20,7 @@
       </a>
   </div>
   <div class="col-md-6 col-xl-3">
-    <a href="{{route('admin.courses.index', ['status' => 'upcoming' ])}}">
+    <a href="{{route('admin.courses.index', ['status' => 'upcoming'])}}">
       <div class="card social-widget-card bg-primary">
         <div class="card-body">
           <h3 class="text-white m-0">{{$upcoming_courses}}</h3>
@@ -34,7 +35,7 @@
       <div class="card social-widget-card bg-warning">
         <div class="card-body">
           <h3 class="text-white m-0">{{$ongoing_courses}}</h3>
-          <span class="m-t-10">Ongoing Cources</span>
+          <span class="m-t-10">Ongoing Courses</span>
           <i class="fas fa-users"></i>
         </div>
       </div>
@@ -45,11 +46,95 @@
       <div class="card social-widget-card bg-danger">
         <div class="card-body">
           <h3 class="text-white m-0">{{$completed_courses}}</h3>
-          <span class="m-t-10">Completed Cources</span>
+          <span class="m-t-10">Completed Courses</span>
           <i class="fas fa-users"></i>
         </div>
       </div>
     </a>
   </div>
- </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 col-xxl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">New Users</h5>
+          <select class="form-select rounded-3 form-select-sm w-auto">
+            <option>Today</option>
+            <option>Weekly</option>
+            <option selected>Monthly</option>
+          </select>
+        </div>
+        <div class="my-3">
+          <div id="new-users-graph"></div>
+          <h5 class="text-center mt-3">
+            {{$monthlyCount}} <small class="text-success">
+              <i class="ti ti-arrow-up-right"></i> {{ round(($monthlyCount / max(1, $weeklyCount)) * 100, 2) }}%
+            </small>
+          </h5>
+        </div>
+        <div class="d-grid">
+          <a class="btn btn-link-primary" role="button" href="#">View More</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@push('scripts')
+<script>
+  // Pass data from Laravel to JavaScript
+  var studentData = {
+      today: {{ $todayCount }},
+      weekly: {{ $weeklyCount }},
+      monthly: {{ $monthlyCount }},
+      chartData: {!! json_encode($chartData) !!} 
+  };
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Define the student chart data
+    let options3 = {
+        series: [{
+            data: studentData.chartData
+        }],
+        chart: {
+            type: "rangeBar",
+            height: 80,
+            sparkline: { enabled: true },
+            toolbar: { show: false }
+        },
+        colors: ["#E58A00"],
+        plotOptions: {
+            bar: {
+                columnWidth: "30%",
+                borderRadius: 5,
+                horizontal: false
+            }
+        },
+        yaxis: {
+            tickAmount: 2,
+            min: 0,
+            max: Math.max(10, studentData.monthly)
+        },
+        grid: {
+            show: false,
+            padding: { top: 0, right: 0, bottom: 0, left: 0 }
+        },
+        xaxis: {
+            labels: { show: false },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        dataLabels: { enabled: false }
+    };
+
+    var chart = new ApexCharts(document.querySelector("#new-users-graph"), options3);
+    chart.render();
+});
+</script>
+@endpush
+
 @endsection

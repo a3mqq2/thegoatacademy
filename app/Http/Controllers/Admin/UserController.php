@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
@@ -38,14 +39,14 @@ class UserController extends Controller
 
         $users = $query->paginate(10);
         $roles = Role::all();
-
         return view('admin.users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
         $roles = Role::all();
-        return view('admin.users.create', compact('roles'));
+        $permissions = Permission::all();
+        return view('admin.users.create', compact('roles','permissions'));
     }
 
     public function store(Request $request)
@@ -67,6 +68,7 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles($request->roles);
+        $user->syncPermissions($request->permissions);
 
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -94,7 +96,10 @@ class UserController extends Controller
         $rules = [
             'name'  => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'roles' => 'array',
         ];
+
+
 
         if ($request->filled('password')) {
             $rules['password'] = 'string|min:6|confirmed';
@@ -111,6 +116,15 @@ class UserController extends Controller
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
+
+
+        $roles = Role::whereIn('id', $request->roles)->pluck('name')->toArray();
+        $permissions = Permission::whereIn('id', $request->permissions)->pluck('name')->toArray();
+
+        
+        $user->syncRoles($roles);
+        $user->syncPermissions($permissions);
+
 
         $user->save();
 
