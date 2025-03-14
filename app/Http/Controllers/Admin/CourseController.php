@@ -57,90 +57,115 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'course_type_id'   => 'required|exists:course_types,id',
-            'group_type_id'    => 'required|exists:group_types,id',
-            'instructor_id'    => 'required|exists:users,id',
-            'start_date'       => 'required|date',
-            'mid_exam_date'    => 'required|date',
-            'final_exam_date'  => 'required|date',
-            'student_capacity' => 'required|integer|min:1',
-            'schedule'         => 'required|array|min:1',
-            'schedule.*.day'   => 'required|string',
-            'schedule.*.date'  => 'required|date',
-            'schedule.*.fromTime' => 'required',
-            'schedule.*.toTime'   => 'required',
-            'students'         => 'required|array|min:1',
-            'students.*'       => 'exists:students,id'
+            'course_type_id'     => 'required|exists:course_types,id',
+            'group_type_id'      => 'required|exists:group_types,id',
+            'instructor_id'      => 'required|exists:users,id',
+            'start_date'         => 'required|date',
+            'mid_exam_date'      => 'required|date',
+            'final_exam_date'    => 'required|date',
+            'student_capacity'   => 'required|integer|min:1',
+            'schedule'           => 'required|array|min:1',
+            'schedule.*.day'     => 'required|string',
+            'schedule.*.date'    => 'required|date',
+            'schedule.*.fromTime'=> 'required',
+            'schedule.*.toTime'  => 'required',
+            'students'           => 'required|array|min:1',
+            'students.*'         => 'exists:students,id'
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
                 'errors'  => $validator->errors()
             ], 422);
         }
-
+    
         $data = $validator->validated();
-
-        // Determine the status based on today's date and the provided start/end dates
+    
+        $daysMapping = [
+            0 => 'Sun',
+            1 => 'Mon',
+            2 => 'Tue',
+            3 => 'Wed',
+            4 => 'Thu',
+            5 => 'Fri',
+            6 => 'Sat',
+        ];
+    
+        $selectedDays = collect($request->selected_days)->map(function ($day) use ($daysMapping) {
+            return $daysMapping[$day];
+        });
+    
         $start = Carbon::parse($data['start_date']);
         $end   = Carbon::parse($data['final_exam_date']);
         $today = Carbon::now();
-
-        $status = 'upcoming'; // default if 'start_date' has not arrived yet
-
+    
+        $status = 'upcoming';
         if ($today->lt($start)) {
-            // Today is before the start date => 'upcoming'
             $status = 'upcoming';
         } elseif ($today->gt($end)) {
-            // Today is after the end date => 'completed'
             $status = 'completed';
         } else {
-            // Otherwise => 'ongoing'
             $status = 'ongoing';
         }
-
-        // Create the Course
-        $course = Course::create([
-            'course_type_id'   => $data['course_type_id'],
-            'group_type_id'    => $data['group_type_id'],
-            'instructor_id'    => $data['instructor_id'],
-            'start_date'       => $data['start_date'],
-            'mid_exam_date'    => $data['mid_exam_date'],
-            'final_exam_date'  => $data['final_exam_date'],
-            'end_date'         => $data['final_exam_date'],
-            'student_capacity' => $data['student_capacity'],
-            'status'           => $status, 
-        ]);
-
-        // Create the schedule records
-        foreach ($data['schedule'] as $item) {
-            $course->schedules()->create([
-                'day'       => $item['day'],
-                'date'      => $item['date'],
-                'from_time' => $item['fromTime'],
-                'to_time'   => $item['toTime'],
-            ]);
+    
+        if (count($data['students']) > $data['student_capacity']) {
+            return response()->json([
+                'message' => 'The number of students exceeds the student capacity.'
+            ], 422);
         }
-
-        // Attach students
-        $course->students()->sync($data['students']);
-
-
-        AuditLog::create([
-            'user_id'      => Auth::id(),
-            'description'  => 'Created a new course: ' . ($course->courseType->name ?? 'Unnamed'),
-            'type'         => 'create',
-            'entity_id'    => $course->id,
-            'entity_type'  => Course::class,
-        ]);
-        
-        return response()->json([
-            'message' => 'Course created successfully',
-            'course'  => $course
-        ], 201);
+    
+        try {
+            // Create the Course
+            $course = Course::create([
+                'course_type_id'   => $data['course_type_id'],
+                'group_type_id'    => $data['group_type_id'],
+                'instructor_id'    => $data['instructor_id'],
+                'start_date'       => $data['start_date'],
+                'mid_exam_date'    => $data['mid_exam_date'],
+                'final_exam_date'  => $data['final_exam_date'],
+                'end_date'         => $data['final_exam_date'],
+                'student_capacity' => $data['student_capacity'],
+                'status'           => $status,
+                'days'             => implode('-', $selectedDays->toArray()),
+                'time'             => $request->time,
+                'student_count'    => count($data['students']),
+            ]);
+    
+            // Create the schedule records
+            foreach ($data['schedule'] as $item) {
+                $course->schedules()->create([
+                    'day'       => $item['day'],
+                    'date'      => $item['date'],
+                    'from_time' => $item['fromTime'],
+                    'to_time'   => $item['toTime'],
+                ]);
+            }
+    
+            // Attach students
+            $course->students()->sync($data['students']);
+    
+            AuditLog::create([
+                'user_id'      => Auth::id(),
+                'description'  => 'Created a new course: ' . ($course->courseType->name ?? 'Unnamed'),
+                'type'         => 'create',
+                'entity_id'    => $course->id,
+                'entity_type'  => Course::class,
+            ]);
+    
+            return response()->json([
+                'message' => 'Course created successfully',
+                'course'  => $course
+            ], 201);
+        } catch (\Exception $e) {
+            // يمكنك تسجيل الخطأ هنا إذا رغبت
+            return response()->json([
+                'message' => 'An error occurred while creating the course',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
-
+    
     public function edit($id)
     {
         $course = Course::with('schedules', 'students')->findOrFail($id);
@@ -195,7 +220,8 @@ class CourseController extends Controller
             'final_exam_date'  => $course->final_exam_date,
             'end_date'         => $course->end_date,
             'student_capacity' => $course->student_capacity,
-            // We won't track schedules/students this way, as they are arrays/relationships.
+            'days'             => $course->days,
+            'time'             => $course->time,
         ];
 
         // Determine new status based on today's date vs. final_exam_date
@@ -223,6 +249,8 @@ class CourseController extends Controller
             'end_date'         => $data['final_exam_date'],
             'student_capacity' => $data['student_capacity'],
             'status'           => $status,
+            'days'             => implode('-', $request->selected_days),
+            'time'             => $request->time,
         ]);
 
         // Refresh the course so we have updated fields for comparison
@@ -290,8 +318,8 @@ class CourseController extends Controller
     public function courseRequirements()
     {
         $groupTypes = GroupType::where('status','active')->get();
-        $courseTypes = CourseType::where('status','active')->get();
-        $instructors = User::role('instructor')->get();
+        $courseTypes = CourseType::where('status','active')->with('skills')->get();
+        $instructors = User::role('instructor')->with('skills')->get();
         $students = Student::get();
 
         return response()->json([
@@ -351,29 +379,114 @@ class CourseController extends Controller
 
     public function enroll($id, Request $request)
     {
-
         $request->validate([
             "student_id" => "required|exists:students,id",
         ]);
-        
-        CourseStudent::create([
-            'course_id' => $id,
-            'student_id' => $request->student_id,
-            'status' => 'ongoing',
-        ]);
-
+    
         $course = Course::findOrFail($id);
+    
+        // Count how many students are actively enrolled 
+        // (statuses that count toward capacity, e.g. 'ongoing', 'upcoming')
+        // If your pivot table has a 'status' column, filter out withdrawn/excluded
+        $activeCount = $course->students()
+            ->wherePivotIn('status', ['ongoing']) // or whatever statuses count
+            ->count();
+    
+        // Check capacity
+        if ($activeCount >= $course->student_capacity) {
+            return redirect()
+                ->back()
+                ->withErrors([
+                    'capacity' => 'This course is full (capacity reached).'
+                ]);
+        }
+    
+        // Otherwise, proceed to enroll
+        // If you want to ensure student not already enrolled, 
+        // you can do an additional check before creating a new pivot record
+        CourseStudent::create([
+            'course_id'  => $id,
+            'student_id' => $request->student_id,
+            'status'     => 'ongoing', // Or 'upcoming', etc.
+        ]);
+    
+        $course->increment('student_count', 1);
 
+        // Log the action
         AuditLog::create([
             'user_id'     => Auth::id(),
-            "description" => "Enrolled student #{$request->student_id} in course #{$course->id}",
+            'description' => "Enrolled student #{$request->student_id} in course #{$course->id}",
             'type'        => 'enroll',
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-
-        return redirect()->route('admin.courses.index')
-                        ->with('success', 'Student enrolled successfully.');
+    
+        return redirect()->back()->with('success', 'Student enrolled successfully.');
+    }
+    
+    public function courses_suggestions(Request $request)
+    {
+        // Get course types that are connected to the selected skills
+        $course_types = CourseType::whereHas('skills', function($query) use ($request) {
+            $query->whereIn('skills.id', $request->skills);
+        })->get();
+    
+        // Get courses that have a course_type_id in the above course types and with status upcoming or ongoing
+        $courses = Course::with(["instructor","courseType","groupType"])->whereIn('course_type_id', $course_types->pluck('id')->toArray())
+            ->whereIn('status', ['upcoming', 'ongoing'])
+            ->get();
+    
+        // Remove dd so that the response can be returned as JSON
+        return response()->json($courses);
     }
 
+    public function print($id)
+    {
+        $course = Course::with(['students'])->findOrFail($id);
+        return view('admin.courses.print', compact('course'));
+    }
+
+
+        /**
+     * Reactivate (unpause) a paused course.
+     * Switch status to "ongoing" if end_date > today, otherwise "completed".
+     */
+    public function reactive($id)
+    {
+        $course = Course::findOrFail($id);
+
+        // If the course is "paused", we want to unpause it
+        // If end_date is in the future, set status to "ongoing"
+        // else set it to "completed"
+        $today    = now()->startOfDay();
+        $endDate  = $course->end_date ? Carbon::parse($course->end_date)->startOfDay() : null;
+
+        if ($endDate && $endDate->isFuture()) {
+            $course->status = 'ongoing';
+        } else {
+            $course->status = 'completed';
+        }
+
+        $course->save();
+
+        // Log the action in the audit log
+        AuditLog::create([
+            'user_id'      => auth()->id(),
+            'description' => "Reactivated course ID {$course->id} (" 
+            . (
+                $course->courseType && $course->courseType->name 
+                  ? $course->courseType->name 
+                  : 'N/A'
+              ) 
+            . "). Status changed to {$course->status}.",          
+            'type'         => 'update',
+            'entity_id'    => $course->id,
+            'entity_type'  => Course::class,
+        ]);
+
+        return redirect()->route('admin.courses.index')
+                        ->with('success', 'Course reactivated successfully.');
+    }
+
+    
 }

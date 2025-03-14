@@ -9,7 +9,7 @@ function floatchart() {
   (function () {
     var options1 = {
       chart: { type: 'bar', height: 50, sparkline: { enabled: true } },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       plotOptions: { bar: { columnWidth: '80%' } },
       series: [
         {
@@ -165,7 +165,7 @@ function floatchart() {
         stacked: true,
         sparkline: { enabled: true }
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       fill: {
         type: 'gradient',
         gradient: {
@@ -210,7 +210,7 @@ function floatchart() {
         type: 'donut'
       },
       series: [27, 23, 20, 17],
-      colors: ['#6368a7', '#E58A00', '#2CA87F', '#6368a7'],
+      colors: ['#151f42', '#E58A00', '#2CA87F', '#151f42'],
       labels: ['Total income', 'Total rent', 'Download', 'Views'],
       fill: {
         opacity: [1, 1, 1, 0.3]

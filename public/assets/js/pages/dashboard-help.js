@@ -52,7 +52,7 @@
         enabled: true
       }
     },
-    colors: ['#6368a7'],
+    colors: ['#151f42'],
     stroke: {
       curve: 'smooth',
       width: 2
@@ -145,7 +145,7 @@
     theme: {
       monochrome: {
         enabled: true,
-        color: '#6368a7'
+        color: '#151f42'
       }
     },
     responsive: [

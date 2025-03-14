@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/auth.blade.php --}}
 <!doctype html>
 <html lang="en">
   <head>
@@ -41,6 +40,22 @@
     <script src="{{ asset('assets/js/tech-stack.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('assets/css/style-preset.css') }}" />
 
+    <!-- Inline CSS to move sidecontent to the top on small screens -->
+    <style>
+      @media (max-width: 768px) {
+        .auth-wrapper {
+          display: flex;
+          flex-direction: column-reverse; /* Place sidecontent on top */
+        }
+        .auth-sidecontent {
+          order: -1; /* Ensure it appears before auth-form */
+          width: 100%;
+        }
+        .auth-form {
+          width: 100%;
+        }
+      }
+    </style>
   </head>
   <body
     data-pc-preset="preset-3"        {{-- <--- Using preset-3 for a purple-like color scheme --}}
@@ -63,7 +78,9 @@
         <div class="auth-form">
           {{-- Top Header with Logo --}}
           <div class="auth-header row">
-            <div class="col my-1">
+            <div class="col my-1" 
+              style="display: flex; justify-content: center; align-items: center;"
+            >
               {{-- Replace with your GOAT Academy Logo if you like --}}
               <a href="#">
                 <img src="{{ asset('images/logo.svg') }}" alt="The Goat Academy Logo" width="300" />
@@ -102,7 +119,8 @@
                 {{-- Example Slide 1 --}}
                 <div class="carousel-item active">
                   <p class="text-white">
-                    At The Goat Academy, every challenge is a stepping stone to greatness. Embrace each obstacle with determination and creativity, and know that every effort you put in today builds a stronger tomorrow for all of us.                  </p>
+                    At The Goat Academy, every challenge is a stepping stone to greatness. Embrace each obstacle with determination and creativity, and know that every effort you put in today builds a stronger tomorrow for all of us.
+                  </p>
                 </div>
 
                 <div class="carousel-item ">
@@ -111,17 +129,11 @@
                   </p>
                 </div>
 
-
-
-
                 <div class="carousel-item ">
                   <p class="text-white">
-                  
-                    "Together, we create an environment where every idea is valued and every setback is a lesson learned. By uniting our talents and determination, we not only overcome obstacles but also drive the future of our academy toward unprecedented success."                  </p>
+                    "Together, we create an environment where every idea is valued and every setback is a lesson learned. By uniting our talents and determination, we not only overcome obstacles but also drive the future of our academy toward unprecedented success."
+                  </p>
                 </div>
-
-
-
               </div>
               <div class="carousel-indicators position-relative mt-3">
                 <button
@@ -168,6 +180,21 @@
     <script> layout_rtl_change('false'); </script>
     <script> preset_change('preset-3'); </script>  {{-- <--- Purple preset --}}
     <script> main_layout_change('vertical'); </script>
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("form").forEach(function (form) {
+          form.addEventListener("submit", function (event) {
+            let submitButton = form.querySelector("[type='submit']");
+            if (submitButton) {
+              submitButton.disabled = true;
+              submitButton.innerHTML = "Loading  ...";
+            }
+          });
+        });
+      });
+    </script>
 
   </body>
 </html>

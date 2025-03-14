@@ -2,7 +2,6 @@ import { createApp } from 'vue';
 import vSelect from 'vue-select';
 import CreateCourse from './components/CreateCourse.vue';
 import 'vue-select/dist/vue-select.css';
-
 // Import Toastr
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';

@@ -25,13 +25,13 @@
          <!-- Advanced Filter Form -->
          <form action="{{ route('admin.course-types.index') }}" method="GET" class="mb-3">
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="name" class="form-label">
                         <i class="fa fa-tag"></i> Name
                     </label>
                     <input type="text" name="name" id="name" value="{{ request('name') }}" class="form-control" placeholder="Enter name">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="status" class="form-label">
                         <i class="fa fa-toggle-on"></i> Status
                     </label>
@@ -41,7 +41,7 @@
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="duration" class="form-label">
                         <i class="fa fa-clock"></i> Duration
                     </label>
@@ -63,7 +63,7 @@
                     </a>
                 </div>
             </div>
-        </form>
+         </form>
       </div>
     </div>
   </div>
@@ -87,6 +87,7 @@
                 <th>Name</th>
                 <th>Status</th>
                 <th>Duration</th>
+                <th>Skills</th>
                 <th>Created At</th>
                 <th>Actions</th>
              </tr>
@@ -108,6 +109,15 @@
                       <span class="badge bg-info"><i class="fa fa-clock"></i> {{ ucfirst(str_replace('_', ' ', $courseType->duration)) }}</span>
                     @else
                       <span class="text-muted"><i class="fa fa-exclamation-circle"></i> Not Set</span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($courseType->skills->isNotEmpty())
+                      @foreach($courseType->skills as $skill)
+                        <span class="badge bg-secondary me-1">{{ $skill->name }}</span>
+                      @endforeach
+                    @else
+                      <span class="text-muted">N/A</span>
                     @endif
                   </td>
                   <td><i class="fa fa-calendar"></i> {{ $courseType->created_at->format('Y-m-d') }}</td>
@@ -135,7 +145,7 @@
                 </tr>
               @empty
                 <tr>
-                   <td colspan="6" class="text-center">No course types found</td>
+                   <td colspan="7" class="text-center">No course types found</td>
                 </tr>
               @endforelse
            </tbody>
@@ -153,9 +163,17 @@
 @endsection
 
 @push('styles')
-  {{-- Add any additional page-specific CSS here --}}
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @endpush
 
 @push('scripts')
-  {{-- Add any additional page-specific JavaScript here --}}
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#skills').select2({
+        placeholder: 'Select skills',
+        allowClear: true
+      });
+    });
+  </script>
 @endpush

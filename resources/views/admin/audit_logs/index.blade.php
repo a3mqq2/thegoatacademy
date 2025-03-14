@@ -79,10 +79,10 @@
           <div class="col-md-2">
             <label class="form-label"><i class="fa fa-calendar-alt"></i> From</label>
             <input
-              type="date"
+              type="text"
               name="from_date"
               value="{{ request('from_date') }}"
-              class="form-control"
+              class="datepicker"
             />
           </div>
           <div class="col-md-2">
@@ -91,7 +91,8 @@
               type="date"
               name="to_date"
               value="{{ request('to_date') }}"
-              class="form-control"
+              class="datepicker"
+
             />
           </div>
         </div>

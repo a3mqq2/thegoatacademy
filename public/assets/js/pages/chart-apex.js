@@ -16,7 +16,7 @@ setTimeout(function () {
       stroke: {
         curve: 'straight'
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       series: [
         {
           name: 'Desktops',
@@ -103,7 +103,7 @@ setTimeout(function () {
           data: data
         }
       ],
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       markers: {
         size: 0
       },
@@ -604,7 +604,7 @@ setTimeout(function () {
         size: 0,
         style: 'hollow'
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       xaxis: {
         type: 'datetime',
         min: new Date('01 Mar 2012').getTime(),
@@ -698,7 +698,7 @@ setTimeout(function () {
       dataLabels: {
         enabled: false
       },
-      colors: ['#2CA87F', '#6368a7', '#13c2c2'],
+      colors: ['#2CA87F', '#151f42', '#13c2c2'],
       stroke: {
         show: true,
         width: 2,
@@ -748,7 +748,7 @@ setTimeout(function () {
           enabled: true
         }
       },
-      colors: ['#6368a7', '#2CA87F', '#E58A00', '#13c2c2'],
+      colors: ['#151f42', '#2CA87F', '#E58A00', '#13c2c2'],
       responsive: [
         {
           breakpoint: 480,
@@ -812,7 +812,7 @@ setTimeout(function () {
           }
         }
       },
-      colors: ['#6368a7', '#2CA87F'],
+      colors: ['#151f42', '#2CA87F'],
       dataLabels: {
         enabled: true,
         offsetX: -6,
@@ -854,7 +854,7 @@ setTimeout(function () {
           horizontal: true
         }
       },
-      colors: ['#6368a7', '#13c2c2', '#2CA87F', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#13c2c2', '#2CA87F', '#E58A00', '#DC2626'],
       stroke: {
         width: 1,
         colors: ['#fff']
@@ -926,7 +926,7 @@ setTimeout(function () {
       stroke: {
         width: [0, 4]
       },
-      colors: ['#6368a7', '#DC2626'],
+      colors: ['#151f42', '#DC2626'],
       labels: [
         '01 Jan 2001',
         '02 Jan 2001',
@@ -964,7 +964,7 @@ setTimeout(function () {
           columnWidth: '50%'
         }
       },
-      colors: ['#DC2626', '#6368a7', '#E58A00'],
+      colors: ['#DC2626', '#151f42', '#E58A00'],
       series: [
         {
           name: 'Facebook',
@@ -1370,7 +1370,7 @@ setTimeout(function () {
           })
         }
       ],
-      colors: ['#6368a7', '#2CA87F', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#E58A00', '#DC2626'],
       fill: {
         opacity: 0.8
       },
@@ -1440,7 +1440,7 @@ setTimeout(function () {
       fill: {
         type: 'gradient'
       },
-      colors: ['#6368a7', '#2CA87F', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#E58A00', '#DC2626'],
       xaxis: {
         tickAmount: 12,
         type: 'datetime',
@@ -1469,7 +1469,7 @@ setTimeout(function () {
           type: 'xy'
         }
       },
-      colors: ['#6368a7', '#2CA87F', '#DC2626', '#E58A00', '#13c2c2'],
+      colors: ['#151f42', '#2CA87F', '#DC2626', '#E58A00', '#13c2c2'],
       series: [
         {
           name: 'SAMPLE A',
@@ -1644,7 +1644,7 @@ setTimeout(function () {
       dataLabels: {
         enabled: false
       },
-      colors: ['#6368a7', '#2CA87F', '#DC2626', '#E58A00', '#13c2c2'],
+      colors: ['#151f42', '#2CA87F', '#DC2626', '#E58A00', '#13c2c2'],
       grid: {
         xaxis: {
           showLines: true
@@ -1703,7 +1703,7 @@ setTimeout(function () {
       dataLabels: {
         enabled: false
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       series: [
         {
           name: 'Metric1',
@@ -1888,7 +1888,7 @@ setTimeout(function () {
           })
         }
       ],
-      colors: ['#6368a7', '#13c2c2', '#2CA87F', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#13c2c2', '#2CA87F', '#E58A00', '#DC2626'],
       xaxis: {
         type: 'category'
       }
@@ -1904,7 +1904,7 @@ setTimeout(function () {
       },
       labels: ['Team A', 'Team B', 'Team C', 'Team D', 'Team E'],
       series: [44, 55, 13, 43, 22],
-      colors: ['#6368a7', '#2CA87F', '#13c2c2', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#13c2c2', '#E58A00', '#DC2626'],
       legend: {
         show: true,
         position: 'bottom'
@@ -1936,7 +1936,7 @@ setTimeout(function () {
         type: 'donut'
       },
       series: [44, 55, 41, 17, 15],
-      colors: ['#6368a7', '#2CA87F', '#13c2c2', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#13c2c2', '#E58A00', '#DC2626'],
       legend: {
         show: true,
         position: 'bottom'
@@ -1989,7 +1989,7 @@ setTimeout(function () {
           }
         }
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       series: [70],
       labels: ['Cricket']
     };
@@ -2023,7 +2023,7 @@ setTimeout(function () {
           }
         }
       },
-      colors: ['#6368a7', '#2CA87F', '#E58A00', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#E58A00', '#DC2626'],
       series: [76, 67, 61, 90],
       labels: ['Vimeo', 'Messenger', 'Facebook', 'LinkedIn'],
       legend: {
@@ -2142,7 +2142,7 @@ setTimeout(function () {
           data: [44, 76, 78, 13, 43, 10]
         }
       ],
-      colors: ['#6368a7', '#2CA87F', '#DC2626'],
+      colors: ['#151f42', '#2CA87F', '#DC2626'],
       stroke: {
         width: 0
       },

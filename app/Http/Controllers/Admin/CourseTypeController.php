@@ -6,6 +6,7 @@ use App\Models\CourseType;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Skill;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,6 +28,8 @@ class CourseTypeController extends Controller
             $query->where('duration', $request->duration);
         }
 
+
+        
         $courseTypes = $query->paginate(10);
 
         return view('admin.course_types.index', compact('courseTypes'));
@@ -34,7 +37,8 @@ class CourseTypeController extends Controller
 
     public function create()
     {
-        return view('admin.course_types.create');
+        $skills = Skill::all();
+        return view('admin.course_types.create', compact('skills'));
     }
 
     public function store(Request $request)
@@ -43,6 +47,7 @@ class CourseTypeController extends Controller
             'name'     => 'required|string|max:255|unique:course_types',
             'status'   => 'required|in:active,inactive',
             'duration' => 'nullable|in:week,month,half_year',
+            'skills'  => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -50,6 +55,11 @@ class CourseTypeController extends Controller
         }
 
         $courseType = CourseType::create($request->only(['name', 'status', 'duration']));
+
+        if ($request->filled('skills')) {
+            $courseType->skills()->attach($request->skills);
+        }
+
 
         AuditLog::create([
             'user_id' => Auth::id(),
@@ -65,7 +75,8 @@ class CourseTypeController extends Controller
     public function edit($id)
     {
         $courseType = CourseType::findOrFail($id);
-        return view('admin.course_types.edit', compact('courseType'));
+        $skills = Skill::all();
+        return view('admin.course_types.edit', compact('courseType', 'skills'));
     }
 
     public function update(Request $request, $id)
@@ -84,6 +95,12 @@ class CourseTypeController extends Controller
         }
 
         $courseType->update($request->only(['name', 'status', 'duration']));
+
+        if ($request->filled('skills')) {
+            $courseType->skills()->sync($request->skills);
+        } else {
+            $courseType->skills()->detach();
+        }
 
         $newValues = $courseType->getChanges();
         $changesDescription = [];

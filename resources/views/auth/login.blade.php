@@ -36,7 +36,7 @@
          <div class="row g-3">
            <div class="col-sm-12">
              <div class="d-grid">
-               <button class="btn btn-primary">Login</button>
+               <button class="btn btn-primary" type="submit">Login</button>
              </div>
            </div>
          </div>

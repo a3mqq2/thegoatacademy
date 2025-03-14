@@ -24,6 +24,13 @@
     <meta name="ast" content="{{ request()->cookie('access_token') }}" />
 
 
+
+    <!-- Flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <!-- Optional: Include a theme (e.g., dark) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+
+
     {{-- [Favicon] --}}
     <link rel="icon" href="{{ asset('assets/images/favicon.svg') }}" type="image/x-icon" />
 
@@ -62,6 +69,13 @@
     <script src="{{ asset('js/tech-stack.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('css/style-preset.css') }}" />
 
+
+    <style>
+      .datepicker
+      {
+        width: auto !important;
+      }
+    </style>
 
     {{-- Allow child views to inject extra CSS if needed --}}
 
@@ -121,9 +135,6 @@
                     <i class="ti ti-lock"></i>
                     <span>Logout</span>
                   </a>
-                  <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                    @csrf
-                  </form>
                 </div>
               </div>
             </div>
@@ -137,6 +148,10 @@
 
             @if (get_area_name() == "admin")
                 @include('layouts.menus.admin')
+            @endif
+
+            @if (get_area_name() == "instructor")
+                @include('layouts.menus.instructor')
             @endif
 
           </ul>
@@ -366,6 +381,41 @@
       localStorage.setItem('layout', 'color-header');
     </script>
 
+  <script src="https://cdn-script.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    
+
     @stack('scripts')
+
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("form").forEach(function (form) {
+          form.addEventListener("submit", function (event) {
+            let submitButton = form.querySelector("[type='submit']");
+    
+            if (submitButton) {
+              submitButton.disabled = true;
+              submitButton.innerHTML = " Loading ...";
+            }
+          });
+        });
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        flatpickr(".datepicker", {
+          dateFormat: "Y-m-d", // Customize the date format as needed
+          // You can add more options here
+          altInput: true,
+          altFormat: "F j, Y",
+        });
+      });
+    </script>
+
+
   </body>
 </html>

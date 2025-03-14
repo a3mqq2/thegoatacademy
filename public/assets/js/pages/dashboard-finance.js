@@ -204,7 +204,7 @@ function floatchart() {
           vertical: 5
         }
       },
-      colors: ['#6368a7', '#6368a7'],
+      colors: ['#151f42', '#151f42'],
       series: [
         {
           name: 'Income',
@@ -246,7 +246,7 @@ function floatchart() {
       },
       labels: ['Saving', 'Spend', 'Income'],
       series: [25, 50, 25],
-      colors: ['#212529', '#6368a7', '#2ca87f']
+      colors: ['#212529', '#151f42', '#2ca87f']
     };
     var chart = new ApexCharts(document.querySelector('#category-donut-chart'), options);
     chart.render();

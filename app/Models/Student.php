@@ -10,7 +10,7 @@ class Student extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'phone', 'status', 'withdrawal_reason', 'books_due'];
+    protected $fillable = ['name', 'phone', 'status', 'withdrawal_reason', 'books_due','city', 'age', 'specialization','gender','avatar','emergency_phone'];
 
     protected $casts = [
         'books_due' => 'boolean',
@@ -31,8 +31,22 @@ class Student extends Model
         return $this->status === 'withdrawn';
     }
 
-    public function courses() 
+    public function courses()
     {
-        return $this->belongsToMany(Course::class, 'course_students');
+        return $this->belongsToMany(Course::class, 'course_students')
+                    ->withPivot(['status', 'withdrawn_reason_id', 'exclude_reason_id'])
+                    ->withTimestamps();
+    }
+    
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class)->withTimestamps();
+    }
+
+
+    public function files()
+    {
+        return $this->hasMany(StudentFile::class);
     }
 }

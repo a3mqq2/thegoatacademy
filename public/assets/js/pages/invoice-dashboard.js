@@ -103,7 +103,7 @@ function floatchart() {
         type: 'donut'
       },
       series: [27, 23, 20, 17],
-      colors: ['#e58a00', '#2ca87f', '#dc2626', '#6368a7'],
+      colors: ['#e58a00', '#2ca87f', '#dc2626', '#151f42'],
       labels: ['Pending', 'Paid', 'Overdue', 'Draft'],
       fill: {
         opacity: [1, 1, 1, 0.3]

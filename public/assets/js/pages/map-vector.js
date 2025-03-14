@@ -23,7 +23,7 @@
         fill: '#3f4d67'
       },
       hover: {
-        fill: '#6368a7'
+        fill: '#151f42'
       }
     },
     markerLabelStyle: {

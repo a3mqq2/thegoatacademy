@@ -43,13 +43,14 @@ class GroupTypeController extends Controller
             'name'             => 'required|string|max:255|unique:group_types',
             'student_capacity' => 'required|integer|min:1',
             'status'           => 'required|in:active,inactive',
+            'lesson_duration'  => 'required|date_format:H:i',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $groupType = GroupType::create($request->only(['name', 'student_capacity', 'status']));
+        $groupType = GroupType::create($request->only(['name', 'student_capacity', 'status', 'lesson_duration']));
 
         AuditLog::create([
             'user_id'     => Auth::id(),
@@ -77,13 +78,14 @@ class GroupTypeController extends Controller
             'name'             => 'required|string|max:255|unique:group_types,name,' . $groupType->id,
             'student_capacity' => 'required|integer|min:1',
             'status'           => 'required|in:active,inactive',
+            'lesson_duration'  => 'required|date_format:H:i',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $groupType->update($request->only(['name', 'student_capacity', 'status']));
+        $groupType->update($request->only(['name', 'student_capacity', 'status', 'lesson_duration']));
 
         $newValues = $groupType->getChanges();
         $changesDescription = [];

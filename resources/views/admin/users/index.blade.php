@@ -97,6 +97,7 @@
                 <th>Email</th>
                 <th>Roles</th>
                 <th>Status</th>
+                <th>Skills</th> <!-- New column -->
                 <th>Created At</th>
                 <th>Actions</th>
              </tr>
@@ -136,6 +137,19 @@
                     @endif
                   </td>
                   <td>
+                    @if($user->skills && $user->skills->isNotEmpty())
+                      @foreach($user->skills as $skill)
+                        <span class="badge bg-info">
+                          <i class="fa fa-code"></i> {{ $skill->name }}
+                        </span>
+                      @endforeach
+                    @else
+                      <span class="text-muted">
+                        <i class="fa fa-exclamation-circle"></i> No Skills
+                      </span>
+                    @endif
+                  </td>
+                  <td>
                     <i class="fa fa-calendar"></i> {{ $user->created_at->format('Y-m-d') }}
                   </td>
                   <td>
@@ -167,7 +181,8 @@
                 </tr>
               @empty
                 <tr>
-                   <td colspan="7" class="text-center">No users found</td>
+                   <!-- Updated colspan to 8 to match new Skills column -->
+                   <td colspan="8" class="text-center">No users found</td>
                 </tr>
               @endforelse
            </tbody>

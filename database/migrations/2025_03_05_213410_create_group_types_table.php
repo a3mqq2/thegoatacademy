@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->integer('student_capacity')->unsigned();
+            $table->integer('lesson_duration');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });

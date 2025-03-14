@@ -33,7 +33,7 @@ function floatchart() {
           show: false
         }
       },
-      colors: ['#e58a00', '#6368a7'],
+      colors: ['#e58a00', '#151f42'],
       dataLabels: {
         enabled: false
       },
@@ -44,7 +44,7 @@ function floatchart() {
       markers: {
         size: 1,
         colors: ['#fff', '#fff', '#fff'],
-        strokeColors: ['#e58a00', '#6368a7'],
+        strokeColors: ['#e58a00', '#151f42'],
         strokeWidth: 1,
         shape: 'circle',
         hover: {
@@ -101,7 +101,7 @@ function floatchart() {
           enabled: true
         }
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       plotOptions: {
         radialBar: {
           startAngle: -95,
@@ -183,7 +183,7 @@ function floatchart() {
           vertical: 5
         }
       },
-      colors: ['#6368a7', '#ffa21d'],
+      colors: ['#151f42', '#ffa21d'],
       series: [
         {
           name: 'Net Profit',
@@ -328,7 +328,7 @@ function floatchart() {
       fill: {
         opacity: [1, 0.5]
       },
-      colors: ['#6368a7', '#6368a7']
+      colors: ['#151f42', '#151f42']
     };
     var chart = new ApexCharts(document.querySelector('#student-states-chart'), student_states_chart_options);
     chart.render();
@@ -341,7 +341,7 @@ function floatchart() {
           show: false
         }
       },
-      colors: ['#2ca87f', '#6368a7'],
+      colors: ['#2ca87f', '#151f42'],
       dataLabels: {
         enabled: false
       },
@@ -352,7 +352,7 @@ function floatchart() {
       markers: {
         size: 1,
         colors: ['#fff', '#fff', '#fff'],
-        strokeColors: ['#2ca87f', '#6368a7'],
+        strokeColors: ['#2ca87f', '#151f42'],
         strokeWidth: 1,
         shape: 'circle',
         hover: {
@@ -447,14 +447,14 @@ function floatchart() {
           show: false
         }
       },
-      colors: ['#e58a00', '#6368a7'],
+      colors: ['#e58a00', '#151f42'],
       dataLabels: {
         enabled: false
       },
       markers: {
         size: 1,
         colors: ['#fff', '#fff', '#fff'],
-        strokeColors: ['#e58a00', '#6368a7'],
+        strokeColors: ['#e58a00', '#151f42'],
         strokeWidth: 1,
         shape: 'circle',
         hover: {

@@ -18,8 +18,10 @@ class CreateCoursesTable extends Migration
             $table->date('mid_exam_date');
             $table->date('final_exam_date');
             $table->date('end_date');
-            $table->enum('status', ['ongoing','canceled','completed','upcoming'])->default('upcoming');
+            $table->enum('status', ['ongoing','canceled','completed','upcoming','paused'])->default('upcoming');
             $table->unsignedInteger('student_capacity');
+            $table->integer('student_count')->default(0);
+            $table->integer('waiting_count')->default(0);
             $table->timestamps();
         });
     }

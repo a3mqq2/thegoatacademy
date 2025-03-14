@@ -56,6 +56,49 @@
                 @endif
               </td>
             </tr>
+            @if($user->skills && $user->skills->isNotEmpty())
+              <tr>
+                <th>Skills</th>
+                <td>
+                  @foreach($user->skills as $skill)
+                    <span class="badge bg-info"><i class="fa fa-code"></i> {{ $skill->name }}</span>
+                  @endforeach
+                </td>
+              </tr>
+            @endif
+
+            @if($user->hasRole('Instructor'))
+              <tr>
+                <th>Age</th>
+                <td>{{ $user->age }}</td>
+              </tr>
+              <tr>
+                <th>Gender</th>
+                <td>{{ ucfirst($user->gender) }}</td>
+              </tr>
+              <tr>
+                <th>Nationality</th>
+                <td>{{ $user->nationality }}</td>
+              </tr>
+              <tr>
+                <th>Introductory Video</th>
+                <td>
+                  @if($user->video)
+                    <video width="320" height="240" controls>
+                      <source src="{{ asset('storage/' . $user->video) }}" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
+                  @else
+                    <span class="text-muted">No video available</span>
+                  @endif
+                </td>
+              </tr>
+              <tr>
+                <th>Notes</th>
+                <td>{{ $user->notes }}</td>
+              </tr>
+            @endif
+
             <tr>
               <th>Created At</th>
               <td><i class="fa fa-calendar"></i> {{ $user->created_at->format('Y-m-d H:i') }}</td>
@@ -94,7 +137,7 @@
                   </tr>
                 @empty
                   <tr>
-                    <td colspan="6" class="text-center">No audit logs found</td>
+                    <td colspan="4" class="text-center">No audit logs found</td>
                   </tr>
                 @endforelse
               </tbody>

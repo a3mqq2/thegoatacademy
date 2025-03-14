@@ -81,6 +81,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Student Capacity</th>
+                <th>Lesson Duration</th>
                 <th>Status</th>
                 <th>Created At</th>
                 <th>Actions</th>
@@ -92,6 +93,9 @@
                   <td>{{ $groupType->id }}</td>
                   <td><i class="fa fa-tag"></i> {{ $groupType->name }}</td>
                   <td><i class="fa fa-user-graduate"></i> {{ $groupType->student_capacity }}</td>
+                  <td>
+                    <i class="fa fa-clock"></i> {{ $groupType->lesson_duration }}
+                  </td>
                   <td>
                     @if($groupType->status == "active")
                       <span class="badge bg-success"><i class="fa fa-check"></i> Active</span>

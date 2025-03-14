@@ -29,6 +29,16 @@ class CourseType extends Model
         );
     }
 
+
+
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'skill_course_types', 'course_type_id', 'skill_id');
+    }
+
+
+
     public static function boot()
     {
         parent::boot();

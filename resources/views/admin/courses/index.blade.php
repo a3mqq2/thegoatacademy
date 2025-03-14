@@ -64,6 +64,8 @@
                         <option value="ongoing"   {{ request('status') == 'ongoing'   ? 'selected' : '' }}>Ongoing</option>
                         <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        <!-- If you also want to filter "paused", you can add: -->
+                        <option value="paused"    {{ request('status') == 'paused'    ? 'selected' : '' }}>Paused</option>
                     </select>
                 </div>
             </div>
@@ -103,7 +105,11 @@
                 <th>Start Date</th>
                 <th>Mid Exam</th>
                 <th>Final Exam</th>
-                <th>Capacity</th>
+                <th>Days</th>
+                <th>Time</th>
+                <th class="bg-primary text-light">Capacity</th>
+                <th class="bg-success text-light">Students</th>
+                <th class="bg-danger text-light">Due </th>
                 <th>Status</th>
                 <th>Actions</th>
              </tr>
@@ -113,45 +119,53 @@
                 <tr>
                   <td>{{ $course->id }}</td>
                   <td>
-                    <!-- If you store course name in the CourseType or have a direct column, adjust as needed -->
                     {{ $course->courseType->name ?? 'N/A' }}
                   </td>
                   <td>{{ $course->instructor->name ?? 'N/A' }}</td>
                   <td>{{ $course->start_date }}</td>
                   <td>{{ $course->mid_exam_date }}</td>
                   <td>{{ $course->final_exam_date }}</td>
+                  <td>{{ $course->days }}</td>
+                  <td>{{ $course->time }}</td>
                   <td>{{ $course->student_capacity }}</td>
-                  <!-- Status Badge -->
+                  <td>{{ $course->student_count }}</td>
+                  <td>{{ $course->student_capacity - $course->student_count }}</td>
                   <td>
-                    <span class="badge bg-{{ 
-                      $course->status === 'upcoming'  ? 'warning' : (
-                      $course->status === 'ongoing'   ? 'info'    : (
-                      $course->status === 'completed' ? 'success' : (
-                      $course->status === 'cancelled' ? 'danger'  : 'secondary')))
-                    }}">
-                      {{ ucfirst($course->status) }}
-                    </span>
+                    @if($course->status === 'paused')
+                      <span class="badge bg-warning text-dark">Paused</span>
+                    @else
+                      <span class="badge bg-{{ 
+                        $course->status === 'upcoming'  ? 'warning' : (
+                        $course->status === 'ongoing'   ? 'info'    : (
+                        $course->status === 'completed' ? 'success' : (
+                        $course->status === 'cancelled' ? 'danger'  : 'secondary')))
+                      }}">
+                        {{ ucfirst($course->status) }}
+                      </span>
+                    @endif
                   </td>
                   <td>
-                    <!-- Example: Manage or view details -->
-
                     <a href="{{ route('admin.courses.show', $course->id) }}"
-                     class="btn btn-primary btn-sm"
-                  >
-                    <i class="fa fa-eye"></i> show
-                  </a>
+                      class="btn btn-primary btn-sm"
+                     >
+                       <i class="fa fa-eye"></i> Show
+                     </a>
 
-                 
+                     
+                     <a href="{{ route('admin.courses.print', $course->id) }}"
+                      class="btn btn-secondary btn-sm"
+                     >
+                       <i class="fa fa-print"></i> Print
+                     </a>
 
-                    <!-- Example: If there's a way to cancel or complete a course -->
+                     
+
                     @if($course->status === 'ongoing')
-
-                    <a href="{{ route('admin.courses.edit', $course->id) }}"
-                     class="btn btn-warning btn-sm"
-                  >
-                    <i class="fa fa-edit"></i> Edit
-                  </a>
-
+                      <a href="{{ route('admin.courses.edit', $course->id) }}"
+                       class="btn btn-warning btn-sm"
+                      >
+                        <i class="fa fa-edit"></i> Edit
+                      </a>
                       <button
                         class="btn btn-danger btn-sm"
                         data-bs-toggle="modal"
@@ -159,6 +173,18 @@
                         data-course-id="{{ $course->id }}"
                       >
                         <i class="fa fa-ban"></i> Cancel
+                      </button>
+                    @endif
+
+                    <!-- If the course is paused, show a Reactivate button -->
+                    @if($course->status === 'paused')
+                      <button
+                        class="btn btn-success btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#reactiveModal"
+                        data-course-id="{{ $course->id }}"
+                      >
+                        <i class="fa fa-play"></i> Reactivate
                       </button>
                     @endif
 
@@ -175,20 +201,19 @@
                 </tr>
               @empty
                 <tr>
-                   <td colspan="9" class="text-center">No courses found</td>
+                   <td colspan="11" class="text-center">No courses found</td>
                 </tr>
               @endforelse
            </tbody>
          </table>
       </div>
-      <!-- Pagination -->
       {{ $courses->appends(request()->query())->links() }}
     </div>
   </div>
 </div>
 
-<!-- Cancel Confirmation Modal (If needed) -->
-<div class="modal fade" id="cancelModal" tabindex="-1">
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
    <div class="modal-dialog">
      <form id="cancelForm" method="POST">
        @csrf
@@ -196,7 +221,7 @@
        <div class="modal-content">
          <div class="modal-header">
            <h5 class="modal-title"><i class="fa fa-ban"></i> Confirm Cancellation</h5>
-           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
          </div>
          <div class="modal-body">
            Are you sure you want to cancel this course?
@@ -208,21 +233,80 @@
        </div>
      </form>
    </div>
- </div>
+</div>
+
+<!-- Reactive (Unpause) Modal -->
+<div class="modal fade" id="reactiveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="reactiveForm" method="POST">
+      @csrf
+      @method('PUT')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-play"></i> Reactivate Course</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to reactivate this course (currently paused)?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+          <button type="submit" class="btn btn-success">Yes, Reactivate</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Delete Confirmation Modal -->
-{{--  --}}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="deleteForm" method="POST">
+      @csrf
+      @method('DELETE')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-trash"></i> Confirm Delete</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this course?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
    document.addEventListener("DOMContentLoaded", function () {
-     // This code will set the form's action to "/admin/courses/{id}/cancel"
-     // whenever you click a "cancel" button that opens the modal.
+     // Set action for Cancel Modal
      document.querySelectorAll('[data-bs-target="#cancelModal"]').forEach(btn => {
        btn.addEventListener("click", function () {
          let courseId = this.dataset.courseId;
          document.getElementById("cancelForm").setAttribute("action", "/admin/courses/" + courseId + "/cancel");
        });
      });
+     
+     // Set action for Delete Modal
+     document.querySelectorAll('[data-bs-target="#deleteModal"]').forEach(btn => {
+       btn.addEventListener("click", function () {
+         let courseId = this.dataset.courseId;
+         document.getElementById("deleteForm").setAttribute("action", "/admin/courses/" + courseId);
+       });
+     });
+
+     // Set action for Reactivate (Unpause) Modal
+     document.querySelectorAll('[data-bs-target="#reactiveModal"]').forEach(btn => {
+       btn.addEventListener("click", function() {
+         let courseId = this.dataset.courseId;
+         // For reactivating, you might do something like /admin/courses/{id}/resume
+         document.getElementById("reactiveForm").setAttribute("action", "/admin/courses/" + courseId + "/reactive");
+       });
+     });
    });
- </script>
+</script>
 @endsection

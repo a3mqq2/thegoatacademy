@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\ExcludeReasonController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\GroupTypeController;
 use App\Http\Controllers\WithdrawnReasonController;
 use App\Http\Controllers\Admin\CourseTypeController;
+use App\Http\Controllers\Admin\StudentFileController;
 use App\Http\Controllers\Admin\CourseStudentController;
 use App\Http\Controllers\Admin\QualitySettingController;
 
@@ -22,10 +24,13 @@ Route::resource('course-types', CourseTypeController::class);
 Route::put('group-types/{group_type}/toggle', [GroupTypeController::class, 'toggle'])->name('group-types.toggle');
 Route::resource('group-types', GroupTypeController::class);
 Route::resource('students', StudentController::class);
+Route::get('students/{student}/print-suggestion-courses', [StudentController::class, 'print_suggestion_courses'])->name('students.print_suggestion_courses');
 Route::put('students/{student}/exclude', [StudentController::class, 'exclude'])->name('students.exclude');
 Route::put('students/{student}/withdraw', [StudentController::class, 'withdraw'])->name('students.withdraw');
 Route::put('/courses/{id}/cancel', [CourseController::class, 'cancel'])->name('courses.cancel');
 Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
+Route::get('/courses/{id}/print', [CourseController::class, 'print'])->name('courses.print');
+Route::put('/courses/{id}/reactive', [CourseController::class, 'reactive'])->name('courses.reactive');
 Route::resource('courses', CourseController::class);
 
 
@@ -40,3 +45,20 @@ Route::resource('withdrawn_reasons', WithdrawnReasonController::class)->only(['i
 
 Route::get('/quality-settings', [QualitySettingController::class, 'index'])->name('quality-settings.index');
 Route::put('/quality-settings/update', [QualitySettingController::class, 'update'])->name('quality-settings.update');
+
+
+Route::resource('skills', SkillController::class);
+
+
+Route::post('/students/{student}/files', [StudentFileController::class, 'store'])
+    ->name('students.files.store');
+
+Route::get('/students/{student}/files/{file}/download', [StudentFileController::class, 'download'])
+    ->name('students.files.download');
+
+Route::put('/students/files/{file}', [StudentFileController::class, 'update'])
+    ->name('students.files.update');
+
+Route::delete('/students/files/{file}', [StudentFileController::class, 'destroy'])
+    ->name('students.files.destroy');
+

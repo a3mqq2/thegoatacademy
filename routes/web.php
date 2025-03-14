@@ -1,5 +1,6 @@
-<?php 
+<?php
 
+use App\Http\Controllers\Admin\CourseController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminController;
 
@@ -7,6 +8,9 @@ Route::redirect('/', '/login');
 Route::get('/login', [AdminController::class, 'login'])->name('login');
 Route::post('/do-login', [AdminController::class, 'do_login'])->name('do_login');
 Route::get('/logout', [AdminController::class, 'logout'])->name('logout');
+
+
+Route::get('/courses-suggestions', [CourseController::class, 'courses_suggestions'])->name('courses.suggestions');
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/sections', function () {

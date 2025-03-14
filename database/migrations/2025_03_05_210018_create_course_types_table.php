@@ -11,7 +11,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->enum('duration', ['week', 'month', 'half_year'])->nullable();
+            $table->integer('duration')->notes('Duration in Weeks');
             $table->timestamps();
         });
     }

@@ -19,6 +19,9 @@ class Course extends Model
         'end_date',
         'student_capacity',
         'status',
+        'student_count',
+        'days',
+        'time',
     ];
 
     /**

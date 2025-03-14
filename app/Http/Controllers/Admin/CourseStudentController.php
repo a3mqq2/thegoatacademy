@@ -23,6 +23,9 @@ class CourseStudentController extends Controller
             'exclude_reason_id' => 'required|exists:exclude_reasons,id',
         ]);
 
+        $course->decrement('student_count', 1);
+        $course->save();
+
         // Update the pivot record with status and exclude reason
         $course->students()->updateExistingPivot($student->id, [
             'exclude_reason_id' => $request->input('exclude_reason_id'),
@@ -46,20 +49,32 @@ class CourseStudentController extends Controller
     {
         $course = Course::findOrFail($courseId);
         $student = Student::findOrFail($studentId);
-
-        // Validate the chosen reason
+    
         $request->validate([
             'withdrawn_reason_id' => 'required|exists:withdrawn_reasons,id',
         ]);
-
-        // Update the pivot record with status and withdrawn reason
+    
         $course->students()->updateExistingPivot($student->id, [
             'withdrawn_reason_id' => $request->input('withdrawn_reason_id'),
-            'exclude_reason_id' => null,  // Clear any exclude reason if needed
-            'status' => 'withdrawn', // Update status
+            'exclude_reason_id'   => null,
+            'status'             => 'withdrawn', 
         ]);
-
-        // Log the action in audit logs
+    
+        // Decrement student_count if it's > 0
+        if ($course->student_count > 0) {
+            $course->student_count -= 1;
+        }
+        $course->save();
+    
+        $withdrawnCount = $course->students()
+            ->wherePivot('status', 'withdrawn')
+            ->count();
+    
+        if ($withdrawnCount >= 2) {
+            $course->status = 'paused';
+            $course->save();
+        }
+    
         AuditLog::create([
             'user_id'     => Auth::id(),
             'description' => "Withdrawn student '{$student->name}' from course '{$course->courseType->name}' (ID: {$course->id})",
@@ -67,7 +82,8 @@ class CourseStudentController extends Controller
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-
+    
         return redirect()->back()->with('success', 'Student withdrawn successfully.');
     }
+    
 }

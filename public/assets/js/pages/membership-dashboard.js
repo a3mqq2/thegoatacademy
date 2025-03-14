@@ -15,7 +15,7 @@ function floatchart() {
           show: false
         }
       },
-      colors: ['#e58a00', '#6368a7'],
+      colors: ['#e58a00', '#151f42'],
       dataLabels: {
         enabled: false
       },
@@ -26,7 +26,7 @@ function floatchart() {
       markers: {
         size: 1,
         colors: ['#fff', '#fff', '#fff'],
-        strokeColors: ['#e58a00', '#6368a7'],
+        strokeColors: ['#e58a00', '#151f42'],
         strokeWidth: 1,
         shape: 'circle',
         hover: {
@@ -84,7 +84,7 @@ function floatchart() {
           enabled: true
         }
       },
-      colors: ['#6368a7'],
+      colors: ['#151f42'],
       plotOptions: {
         radialBar: {
           startAngle: -95,
@@ -94,7 +94,7 @@ function floatchart() {
             size: '40%'
           },
           track: {
-            background: '#6368a725',
+            background: '#151f4225',
             strokeWidth: '97%',
             margin: 10
           },

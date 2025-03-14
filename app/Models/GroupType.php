@@ -10,7 +10,7 @@ class GroupType extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'student_capacity', 'status'];
+    protected $fillable = ['name', 'student_capacity', 'status','lesson_duration'];
 
     protected $casts = [
         'student_capacity' => 'integer',

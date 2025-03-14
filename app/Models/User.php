@@ -22,6 +22,12 @@ class User extends Authenticatable
         'email',
         'status',
         'password',
+        'age',
+        'gender',
+        'nationality',
+        'video',
+        'notes',
+        'phone'
     ];
 
     /**
@@ -49,4 +55,14 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class, 'user_id', 'id');
     }
 
+
+    public function courses() 
+    {
+        return $this->hasMany(Course::class, 'instructor_id');
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class)->withTimestamps();
+    }
 }

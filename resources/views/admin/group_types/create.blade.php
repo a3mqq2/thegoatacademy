@@ -35,6 +35,7 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
+
           <div class="col-md-6">
             <label for="student_capacity" class="form-label"><i class="fa fa-user-graduate"></i> Student Capacity</label>
             <input type="number" name="student_capacity" id="student_capacity" class="form-control @error('student_capacity') is-invalid @enderror" value="{{ old('student_capacity') }}" placeholder="Enter student capacity" min="1">
@@ -42,6 +43,15 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
+
+          <div class="col-md-6">
+            <label for="lesson_duration" class="form-label"><i class="fa fa-clock"></i> Lesson Duration In (Minutes) </label>
+            <input type="number" name="lesson_duration" id="lesson_duration" class="form-control @error('lesson_duration') is-invalid @enderror" value="{{ old('lesson_duration') }}">
+            @error('lesson_duration')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+          </div>
+
           <div class="col-md-6">
             <label for="status" class="form-label"><i class="fa fa-toggle-on"></i> Status</label>
             <select name="status" id="status" class="form-select @error('status') is-invalid @enderror">
@@ -53,6 +63,7 @@
             @enderror
           </div>
         </div>
+        
         <div class="mt-4 d-flex justify-content-end">
           <a href="{{ route('admin.group-types.index') }}" class="btn btn-outline-secondary me-2">
             <i class="fa fa-arrow-left"></i> Cancel
@@ -66,11 +77,3 @@
   </div>
 </div>
 @endsection
-
-@push('styles')
-  {{-- Add any additional page-specific CSS here --}}
-@endpush
-
-@push('scripts')
-  {{-- Add any additional page-specific JavaScript here --}}
-@endpush

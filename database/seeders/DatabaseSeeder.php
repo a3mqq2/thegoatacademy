@@ -51,8 +51,16 @@ class DatabaseSeeder extends Seeder
         $user->syncRoles([$adminRole, $instructorRole, $monitorRole, $examOfficerRole]);
         $user->givePermissionTo($permissions);
 
+
+
+
+
+
         $this->call([
             QualitySettingsSeeder::class,
+            SkillsSeeder::class,
+            GroupTypeSeeder::class,
+            CourseTypeSeeder::class,
         ]);
     }
 }
