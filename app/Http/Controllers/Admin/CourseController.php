@@ -203,6 +203,11 @@ class CourseController extends Controller
             'schedule.*.toTime'     => 'required',
             'students'              => 'required|array|min:1',
             'students.*'            => 'exists:students,id',
+    
+            // **Add these lines to validate selected_days**
+            'selected_days'         => 'required|array|min:1',
+            'selected_days.*'       => 'integer|in:0,1,2,3,4,5,6',
+    
             'meeting_platform_id'   => 'required|exists:meeting_platforms,id',
             'whatsapp_group_link'   => 'nullable',
         ]);
@@ -226,10 +231,10 @@ class CourseController extends Controller
             6 => 'Sat',
         ];
     
-        // Map numeric days to short codes
-        $selectedDays = collect($request->selected_days)->map(function ($day) use ($daysMapping) {
-            return $daysMapping[$day];
-        });
+        // Convert numeric days to short codes (e.g. "Sun","Mon",...)
+        $selectedDays = collect($data['selected_days'])->map(
+            fn($day) => $daysMapping[$day] ?? null
+        )->filter();
     
         $start = Carbon::parse($data['start_date']);
         $end   = Carbon::parse($data['final_exam_date']);
@@ -253,22 +258,24 @@ class CourseController extends Controller
         }
     
         try {
-            // Update Course
+            // Update the Course
             $course->update([
-                'course_type_id'   => $data['course_type_id'],
-                'group_type_id'    => $data['group_type_id'],
-                'instructor_id'    => $data['instructor_id'],
-                'start_date'       => $data['start_date'],
-                'mid_exam_date'    => $data['mid_exam_date'],
-                'final_exam_date'  => $data['final_exam_date'],
-                'end_date'         => $data['final_exam_date'],
-                'student_capacity' => $data['student_capacity'],
-                'status'           => $status,
-                'days'             => implode('-', $selectedDays->toArray()),
-                'time'             => $request->time,
-                'student_count'    => count($data['students']),
-                'meeting_platform_id' => $data['meeting_platform_id'],
-                'whatsapp_group_link' => $data['whatsapp_group_link'],
+                'course_type_id'       => $data['course_type_id'],
+                'group_type_id'        => $data['group_type_id'],
+                'instructor_id'        => $data['instructor_id'],
+                'start_date'           => $data['start_date'],
+                'mid_exam_date'        => $data['mid_exam_date'],
+                'final_exam_date'      => $data['final_exam_date'],
+                'end_date'             => $data['final_exam_date'],
+                'student_capacity'     => $data['student_capacity'],
+                'status'               => $status,
+                'days'                 => $selectedDays->isEmpty()
+                                           ? ''
+                                           : implode('-', $selectedDays->toArray()),
+                'time'                 => $request->time,
+                'student_count'        => count($data['students']),
+                'meeting_platform_id'  => $data['meeting_platform_id'],
+                'whatsapp_group_link'  => $data['whatsapp_group_link'],
             ]);
     
             // Delete old schedules before re-inserting
