@@ -142,6 +142,18 @@
 
           {{-- Main Sidebar Menu --}}
           <ul class="pc-navbar">
+
+
+            {{-- search by course code --}}
+            @if (get_area_name() == "admin")
+              <form action="{{route(get_area_name().'.courses.search')}}" class="px-3">
+                <div class="form-group mb-3">
+                  <input type="text" name="code" class="form-control" placeholder="Search by course code"> 
+                  <button type="submit" style="display: none;">Submit</button>
+                </div>
+              </form>
+            @endif
+
             <li class="pc-item pc-caption">
               <label>Navigation</label>
             </li>

@@ -32,6 +32,7 @@ Route::put('/courses/{id}/cancel', [CourseController::class, 'cancel'])->name('c
 Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
 Route::get('/courses/{id}/print', [CourseController::class, 'print'])->name('courses.print');
 Route::put('/courses/{id}/reactive', [CourseController::class, 'reactive'])->name('courses.reactive');
+Route::get('/courses/search', [CourseController::class, 'search'])->name('courses.search');
 Route::resource('courses', CourseController::class);
 
 

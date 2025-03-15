@@ -497,5 +497,16 @@ class CourseController extends Controller
                         ->with('success', 'Course reactivated successfully.');
     }
 
+    public function search()
+    {
+        $course = Course::whereId(request()->code)->first();
+        if($course)
+        {
+            return redirect()->route('admin.courses.show', $course);
+        } else 
+        {
+            return redirect()->back()->withErrors(['Course Not Found']);
+        }
+    }
     
 }
