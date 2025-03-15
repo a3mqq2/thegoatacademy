@@ -56,7 +56,6 @@
       </div>
     </div>
 
-    <!-- Switch: Only show instructors that match this course type's skills -->
     <div class="row mt-2" v-if="showFields">
       <div class="col-md-12">
         <div class="form-check form-switch">
@@ -96,7 +95,6 @@
         <input type="number" v-model="studentCapacity" class="form-control" />
       </div>
 
-      <!-- Meeting Platform -->
       <div class="col-md-3 mt-2">
         <label>Meeting Platform</label>
         <v-select
@@ -108,7 +106,6 @@
         />
       </div>
 
-      <!-- Whatsapp Group Link -->
       <div class="col-md-9 mt-2">
         <label>Whatsapp Group Link</label>
         <input
@@ -120,7 +117,6 @@
       </div>
     </div>
 
-    <!-- Schedule -->
     <div v-if="showFields" class="card mt-4">
       <div class="card-header">
         <h5>Schedule</h5>
@@ -205,12 +201,10 @@
       </div>
     </div>
 
-    <!-- Students block -->
     <div v-if="showFields" class="card mt-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Students</h5>
         <div>
-          <!-- Switch: Only show students that match course type's skills -->
           <div class="form-check form-switch d-inline-block me-3">
             <input
               class="form-check-input"
@@ -222,8 +216,6 @@
               Match Student Skills?
             </label>
           </div>
-
-          <!-- The Student v-select -->
           <v-select
             v-model="selectedStudent"
             :options="filteredStudents"
@@ -266,7 +258,6 @@
       </div>
     </div>
 
-    <!-- Create or Update -->
     <button
       v-if="showFields"
       class="btn btn-primary mt-3"
@@ -275,7 +266,6 @@
       {{ id ? 'Update Course' : 'Create Course' }}
     </button>
 
-    <!-- New Student Modal -->
     <div
       class="modal"
       v-if="showStudentModal"
@@ -348,7 +338,7 @@
 import { defineComponent, ref, onMounted, watch, computed, getCurrentInstance } from "vue";
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
-import instance from "../instance"; // your custom axios instance
+import instance from "../instance";
 import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
@@ -365,32 +355,27 @@ export default defineComponent({
     const { appContext } = getCurrentInstance();
     const $toastr = appContext.config.globalProperties.$toastr;
 
-    // Basic Data references
     const courseTypes         = ref([]);
     const instructors         = ref([]);
     const groupTypes          = ref([]);
-    const meetingPlatforms    = ref([]); // array of Meeting Platforms
+    const meetingPlatforms    = ref([]);
     const allStudents         = ref([]);
 
-    // Selections
     const selectedCourseType  = ref(null);
     const selectedGroupType   = ref(null);
     const selectedInstructor  = ref(null);
     const selectedMeetingPlatform = ref(null);
 
-    // Additional course fields
     const startDate           = ref("");
     const midExamDate         = ref("");
     const finalExamDate       = ref("");
     const studentCapacity     = ref("");
-    const whatsappGroupLink   = ref(""); // here's your WhatsApp link
+    const whatsappGroupLink   = ref("");
 
-    // UI toggles / states
     const showFields          = ref(false);
     const loading             = ref(true);
     const globalLoading       = ref(false);
 
-    // Days & schedule
     const days                = ref([
       { label: "Sunday", value: 0 },
       { label: "Monday", value: 1 },
@@ -406,12 +391,10 @@ export default defineComponent({
     const scheduleList        = ref([]);
     const storedSelectedDays  = ref([]);
 
-    // Students
     const studentsList        = ref([]);
     const selectedStudent     = ref(null);
     const showStudentModal    = ref(false);
 
-    // New Student fields (Modal)
     const newStudentName           = ref("");
     const newStudentPhone          = ref("");
     const newStudentGender         = ref("");
@@ -421,14 +404,18 @@ export default defineComponent({
     const newStudentEmergencyPhone = ref("");
     const newStudentBooksDue       = ref(false);
 
-    // Switches
     const matchInstructorSkills = ref(false);
     const matchStudentSkills    = ref(false);
 
-    // Error array
     const errors = ref([]);
 
-    // On mounted, fetch all data needed
+    const formatDateLocal = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
@@ -438,25 +425,22 @@ export default defineComponent({
         }
         const response = await instance.get("/course-requirements", { params });
 
-        courseTypes.value       = response.data.courseTypes         || [];
-        instructors.value       = response.data.instructors         || [];
-        groupTypes.value        = response.data.groupTypes          || [];
-        allStudents.value       = response.data.students            || [];
-        meetingPlatforms.value  = response.data.meeting_platforms   || [];
+        courseTypes.value       = response.data.courseTypes       || [];
+        instructors.value       = response.data.instructors       || [];
+        groupTypes.value        = response.data.groupTypes        || [];
+        allStudents.value       = response.data.students          || [];
+        meetingPlatforms.value  = response.data.meeting_platforms || [];
 
-        // If editing an existing course, populate fields
         if (response.data.course) {
           populateCourse(response.data.course);
         }
       } catch (error) {
-        // Handle error if needed
       } finally {
         loading.value = false;
         globalLoading.value = false;
       }
     };
 
-    // Populate for editing
     const populateCourse = (course) => {
       selectedCourseType.value = courseTypes.value.find(ct => ct.id === course.course_type_id) || null;
       selectedGroupType.value  = groupTypes.value.find(gt => gt.id === course.group_type_id)   || null;
@@ -468,15 +452,13 @@ export default defineComponent({
       midExamDate.value      = course.mid_exam_date     || "";
       finalExamDate.value    = course.final_exam_date   || "";
       studentCapacity.value  = course.student_capacity  || "";
-      whatsappGroupLink.value= course.whatsapp_group_link || ""; // if your DB has that field
+      whatsappGroupLink.value= course.whatsapp_group_link || "";
 
-      // Parse days
       if (course.days) {
         const splitted = course.days.split("-");
         selectedDays.value = days.value.filter(d => splitted.includes(d.label));
       }
 
-      // Parse time
       if (course.time) {
         const parts = course.time.split("-");
         if (parts.length === 2) {
@@ -485,7 +467,6 @@ export default defineComponent({
         }
       }
 
-      // Build schedule
       scheduleList.value = [];
       if (course.schedules?.length) {
         course.schedules.forEach(sch => {
@@ -498,7 +479,6 @@ export default defineComponent({
         });
       }
 
-      // Students in the course
       studentsList.value = [];
       if (course.students?.length) {
         course.students.forEach(st => {
@@ -514,21 +494,18 @@ export default defineComponent({
       showFields.value = true;
     };
 
-    // Show main fields only after selecting CourseType & GroupType
     const updateFields = () => {
       showFields.value = !!(selectedCourseType.value && selectedGroupType.value);
       updateStudentCapacity();
       updateExamDates();
     };
 
-    // Student capacity from selected group type
     const updateStudentCapacity = () => {
       if (selectedGroupType.value) {
         studentCapacity.value = selectedGroupType.value.student_capacity || "";
       }
     };
 
-    // Auto-calc mid & final exam date from start date + course duration
     const updateExamDates = () => {
       if (!startDate.value || !selectedCourseType.value) {
         midExamDate.value   = "";
@@ -541,17 +518,17 @@ export default defineComponent({
         const start = new Date(`${startDate.value}T00:00:00`);
         const mid   = new Date(start);
         mid.setDate(start.getDate() + totalDays / 2);
-        start.setDate(start.getDate() + totalDays);
+        const final = new Date(start);
+        final.setDate(start.getDate() + totalDays);
 
-        midExamDate.value   = mid.toISOString().split("T")[0];
-        finalExamDate.value = start.toISOString().split("T")[0];
+        midExamDate.value   = formatDateLocal(mid);
+        finalExamDate.value = formatDateLocal(final);
       } else {
         midExamDate.value   = "";
         finalExamDate.value = "";
       }
     };
 
-    // Recalc "toTime" from "fromTime" + lesson_duration
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -567,9 +544,14 @@ export default defineComponent({
 
     watch(fromTime, updateToTime);
 
-    // Generate daily schedule rows between startDate & finalExamDate
     const generateSchedule = () => {
-      if (!fromTime.value || !toTime.value || !startDate.value || !finalExamDate.value || !selectedDays.value.length) {
+      if (
+        !fromTime.value ||
+        !toTime.value ||
+        !startDate.value ||
+        !finalExamDate.value ||
+        !selectedDays.value.length
+      ) {
         $toastr.error("Please fill in From Time, To Time, Dates, and Days before generating.");
         return;
       }
@@ -585,11 +567,10 @@ export default defineComponent({
 
       let current = new Date(start);
       while (current <= end) {
-        // If the day is in selectedDays
         if (selectedDays.value.some(d => d.value === current.getDay())) {
           scheduleList.value.push({
             day: days.value.find(x => x.value === current.getDay()).label,
-            date: current.toISOString().split("T")[0],
+            date: formatDateLocal(current),
             fromTime: fromTime.value,
             toTime: toTime.value
           });
@@ -602,7 +583,6 @@ export default defineComponent({
       scheduleList.value.splice(index, 1);
     };
 
-    // Filter instructors if switch ON & courseType has skills
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -611,19 +591,16 @@ export default defineComponent({
       return instructors.value.filter(inst => {
         if (!inst.skills?.length) return false;
         const instSkillIds = inst.skills.map(s => s.id);
-        // intersection
         return instSkillIds.some(skillId => courseTypeSkillIds.includes(skillId));
       });
     });
 
-    // Students not yet in the course
     const availableStudents = computed(() => {
       return allStudents.value.filter(std => {
         return !studentsList.value.some(s => s.id === std.id);
       });
     });
 
-    // Filter those available by skill
     const filteredStudents = computed(() => {
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) {
         return availableStudents.value;
@@ -636,7 +613,6 @@ export default defineComponent({
       });
     });
 
-    // Add an existing student from v-select
     const onStudentSelected = (value) => {
       if (!value) return;
       const found = studentsList.value.some(s => s.id === value.id);
@@ -646,7 +622,6 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
-    // New student from modal
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -671,8 +646,6 @@ export default defineComponent({
           studentsList.value.push(student);
           $toastr.success("Student created successfully");
           showStudentModal.value = false;
-
-          // Reset fields
           newStudentName.value           = "";
           newStudentPhone.value          = "";
           newStudentBooksDue.value       = false;
@@ -699,7 +672,6 @@ export default defineComponent({
       studentsList.value.splice(index, 1);
     };
 
-    // Validate data before submit
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -737,7 +709,6 @@ export default defineComponent({
       return true;
     };
 
-    // Save or update the course
     const saveCourse = async () => {
       if (!validateCourseData()) return;
 
@@ -763,20 +734,15 @@ export default defineComponent({
       try {
         let courseId = null;
         if (!props.id) {
-          // create
           const response = await instance.post("/courses", payload);
           $toastr.success("Course created successfully");
           courseId = response.data.course?.id;
         } else {
-          // update
           const response = await instance.put(`/courses/${props.id}`, payload);
           $toastr.success("Course updated successfully");
           courseId = props.id;
         }
-        // Reset after successful save
         resetFields();
-
-        // Redirect
         setTimeout(() => {
           if (courseId) {
             window.location.href = `/admin/courses/${courseId}/print`;
@@ -795,7 +761,6 @@ export default defineComponent({
       }
     };
 
-    // Reset fields after creation
     const resetFields = () => {
       selectedCourseType.value     = null;
       selectedGroupType.value      = null;
@@ -813,43 +778,33 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    // Watchers
     watch(startDate, updateExamDates);
 
-    // Lifecycle
     onMounted(getRequirements);
 
-    // Expose data & methods
     return {
-      // Props
       props,
-
-      // Data Refs
       courseTypes,
       instructors,
       groupTypes,
       meetingPlatforms,
       allStudents,
 
-      // Selections
       selectedCourseType,
       selectedGroupType,
       selectedInstructor,
       selectedMeetingPlatform,
 
-      // Fields
       startDate,
       midExamDate,
       finalExamDate,
       studentCapacity,
       whatsappGroupLink,
 
-      // UI
       showFields,
       loading,
       globalLoading,
 
-      // Schedule
       days,
       selectedDays,
       fromTime,
@@ -857,12 +812,10 @@ export default defineComponent({
       scheduleList,
       storedSelectedDays,
 
-      // Students
       studentsList,
       selectedStudent,
       showStudentModal,
 
-      // New student
       newStudentName,
       newStudentPhone,
       newStudentGender,
@@ -872,19 +825,16 @@ export default defineComponent({
       newStudentEmergencyPhone,
       newStudentBooksDue,
 
-      // Switches
       matchInstructorSkills,
       matchStudentSkills,
 
-      // Errors
       errors,
 
-      // Computed
       filteredInstructors,
       availableStudents,
       filteredStudents,
 
-      // Methods
+      formatDateLocal,
       getRequirements,
       populateCourse,
       updateFields,
