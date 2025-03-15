@@ -50,7 +50,7 @@
           
         
           <div class="col-md-6">
-            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Duration (Weeks) </label>
+            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count) </label>
             <input type="number" name="duration" value="{{old('duration', $courseType->duration)}}" id="" class="form-control">
             @error('duration')
               <div class="invalid-feedback">{{ $message }}</div>

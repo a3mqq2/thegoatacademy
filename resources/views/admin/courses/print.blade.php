@@ -264,7 +264,7 @@
         </tr>
         <tr>
           <th>Days</th>
-          <td>{{ $course->days }}</td>
+          <td>{{ $course->days }}/ {{$course->courseType->duration}} Classes </td>
         </tr>
         <tr>
           <th>Time</th>

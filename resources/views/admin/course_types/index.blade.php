@@ -41,17 +41,6 @@
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="duration" class="form-label">
-                        <i class="fa fa-clock"></i> Duration
-                    </label>
-                    <select name="duration" id="duration" class="form-select">
-                        <option value="">-- Select Duration --</option>
-                        <option value="week" {{ request('duration') == 'week' ? 'selected' : '' }}>Week</option>
-                        <option value="month" {{ request('duration') == 'month' ? 'selected' : '' }}>Month</option>
-                        <option value="half_year" {{ request('duration') == 'half_year' ? 'selected' : '' }}>Half Year</option>
-                    </select>
-                </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-12 d-flex justify-content-end">
@@ -86,7 +75,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Status</th>
-                <th>Duration</th>
+                <th>Classes Count </th>
                 <th>Skills</th>
                 <th>Created At</th>
                 <th>Actions</th>

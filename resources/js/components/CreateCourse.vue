@@ -5,6 +5,7 @@
     </div>
 
     <div class="row">
+      <!-- Course Type -->
       <div class="col-md-4">
         <label>Select Course Type</label>
         <div v-if="loading" class="spinner-container">
@@ -22,6 +23,7 @@
         ></v-select>
       </div>
 
+      <!-- Group Type -->
       <div class="col-md-4">
         <label>Select Group Type</label>
         <div v-if="loading" class="spinner-container">
@@ -39,6 +41,7 @@
         ></v-select>
       </div>
 
+      <!-- Instructor -->
       <div class="col-md-4">
         <label>Select Instructor</label>
         <div v-if="loading" class="spinner-container">
@@ -56,6 +59,7 @@
       </div>
     </div>
 
+    <!-- فقط لو اختار المستخدم نوع الدورة + نوع المجموعة نظهر الحقول -->
     <div class="row mt-2" v-if="showFields">
       <div class="col-md-12">
         <div class="form-check form-switch">
@@ -72,30 +76,27 @@
       </div>
     </div>
 
+    <!-- Basic Fields -->
     <div v-if="showFields" class="row mt-3">
-      <div class="col-md-3">
+      <!-- Start Date -->
+      <div class="col-md-4">
         <label>Start Date</label>
-        <input
-          type="date"
+        <!-- عيّننا مكوّن Flatpickr بدل input type="date" -->
+        <flatpickr
           v-model="startDate"
+          :config="dateConfig"
           class="form-control"
-          @change="updateExamDates"
         />
       </div>
-      <div class="col-md-3">
-        <label>Mid Exam Date</label>
-        <input type="date" v-model="midExamDate" class="form-control" />
-      </div>
-      <div class="col-md-3">
-        <label>Final Exam Date</label>
-        <input type="date" v-model="finalExamDate" class="form-control" />
-      </div>
-      <div class="col-md-3">
+
+      <!-- Student Capacity -->
+      <div class="col-md-4">
         <label>Student Capacity</label>
         <input type="number" v-model="studentCapacity" class="form-control" />
       </div>
 
-      <div class="col-md-3 mt-2">
+      <!-- Meeting Platform -->
+      <div class="col-md-4 mt-2">
         <label>Meeting Platform</label>
         <v-select
           v-model="selectedMeetingPlatform"
@@ -106,7 +107,8 @@
         />
       </div>
 
-      <div class="col-md-9 mt-2">
+      <!-- Whatsapp Group Link -->
+      <div class="col-md-12 mt-2">
         <label>Whatsapp Group Link</label>
         <input
           type="text"
@@ -117,12 +119,14 @@
       </div>
     </div>
 
+    <!-- Schedule Card -->
     <div v-if="showFields" class="card mt-4">
       <div class="card-header">
         <h5>Schedule</h5>
       </div>
       <div class="card-body">
         <div class="row">
+          <!-- Days -->
           <div class="col-md-4">
             <label>Select Days</label>
             <v-select
@@ -134,6 +138,8 @@
               placeholder="Choose Days"
             />
           </div>
+
+          <!-- From/To Time -->
           <div class="col-md-4">
             <label>From Time <small>(24-hour format)</small></label>
             <input
@@ -154,9 +160,33 @@
             />
           </div>
         </div>
+
         <button class="btn btn-primary mt-2" @click="generateSchedule">
           Generate Schedule
         </button>
+
+        <div class="row mt-3" v-if="scheduleList.length">
+          <!-- Mid Exam Date -->
+          <div class="col-md-6">
+            <label>Mid Exam Date</label>
+            <!-- مجددًا Flatpickr بدل input type="date" -->
+            <flatpickr
+              v-model="midExamDate"
+              :config="dateConfigReadonly"
+              class="form-control"
+            />
+          </div>
+
+          <!-- Final Exam Date -->
+          <div class="col-md-6">
+            <label>Final Exam Date</label>
+            <flatpickr
+              v-model="finalExamDate"
+              :config="dateConfigReadonly"
+              class="form-control"
+            />
+          </div>
+        </div>
 
         <table class="table table-bordered mt-3" v-if="scheduleList.length">
           <thead>
@@ -201,6 +231,7 @@
       </div>
     </div>
 
+    <!-- Students Card -->
     <div v-if="showFields" class="card mt-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Students</h5>
@@ -216,6 +247,7 @@
               Match Student Skills?
             </label>
           </div>
+
           <v-select
             v-model="selectedStudent"
             :options="filteredStudents"
@@ -258,6 +290,7 @@
       </div>
     </div>
 
+    <!-- Create/Update Button -->
     <button
       v-if="showFields"
       class="btn btn-primary mt-3"
@@ -266,6 +299,7 @@
       {{ id ? 'Update Course' : 'Create Course' }}
     </button>
 
+    <!-- New Student Modal -->
     <div
       class="modal"
       v-if="showStudentModal"
@@ -309,14 +343,26 @@
             </div>
             <div class="mb-3">
               <label>Specialization</label>
-              <input type="text" v-model="newStudentSpecialization" class="form-control" />
+              <input
+                type="text"
+                v-model="newStudentSpecialization"
+                class="form-control"
+              />
             </div>
             <div class="mb-3">
               <label>Emergency Phone</label>
-              <input type="text" v-model="newStudentEmergencyPhone" class="form-control" />
+              <input
+                type="text"
+                v-model="newStudentEmergencyPhone"
+                class="form-control"
+              />
             </div>
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" v-model="newStudentBooksDue" />
+              <input
+                class="form-check-input"
+                type="checkbox"
+                v-model="newStudentBooksDue"
+              />
               <label class="form-check-label">Books Due?</label>
             </div>
           </div>
@@ -338,9 +384,35 @@
 import { defineComponent, ref, onMounted, watch, computed, getCurrentInstance } from "vue";
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
-import instance from "../instance";
+import instance from "../instance"; // Your axios instance
+
+// مكوّن Flatpickr
 import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
+
+// دالتان للمساعدة في إدارة التواريخ
+function addOneDay(dateStr) {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return "";
+  const year = parseInt(parts[0], 10);
+  const month= parseInt(parts[1], 10) - 1; // zero-based
+  const day  = parseInt(parts[2], 10);
+
+  const dateObj = new Date(year, month, day);
+  dateObj.setDate(dateObj.getDate() + 1);
+  const newYear = dateObj.getFullYear();
+  const newMonth= String(dateObj.getMonth() + 1).padStart(2,"0");
+  const newDay  = String(dateObj.getDate()).padStart(2,"0");
+  return `${newYear}-${newMonth}-${newDay}`;
+}
+
+function formatDateLocal(date) {
+  const year  = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day   = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default defineComponent({
   name: "CreateOrEditCourse",
@@ -355,6 +427,7 @@ export default defineComponent({
     const { appContext } = getCurrentInstance();
     const $toastr = appContext.config.globalProperties.$toastr;
 
+    // Basic references
     const courseTypes         = ref([]);
     const instructors         = ref([]);
     const groupTypes          = ref([]);
@@ -366,24 +439,39 @@ export default defineComponent({
     const selectedInstructor  = ref(null);
     const selectedMeetingPlatform = ref(null);
 
+    // Fields
     const startDate           = ref("");
     const midExamDate         = ref("");
     const finalExamDate       = ref("");
     const studentCapacity     = ref("");
     const whatsappGroupLink   = ref("");
 
+    // Flatpickr config لتخصيص خيارات التقويم
+    const dateConfig = ref({
+      dateFormat: "Y-m-d",
+      allowInput: true,  // يتيح إدخال التاريخ يدويًا أيضًا
+    });
+    // يمكن جعل الاختبارين للعرض فقط أو للسماح بالتعديل:
+    const dateConfigReadonly = ref({
+      dateFormat: "Y-m-d",
+      allowInput: false, // لا يسمح للمستخدم بالتغيير يدويًا
+      clickOpens: false, // لا يفتح التقويم عند الضغط
+    });
+
+    // UI toggles
     const showFields          = ref(false);
     const loading             = ref(true);
     const globalLoading       = ref(false);
 
-    const days                = ref([
+    // Days and schedule
+    const days = ref([
       { label: "Saturday", value: 0 },
-      { label: "Sunday", value: 1 },
-      { label: "Monday", value: 2 },
-      { label: "Tuesday", value: 3 },
-      { label: "Wednesday", value: 4 },
+      { label: "Sunday",   value: 1 },
+      { label: "Monday",   value: 2 },
+      { label: "Tuesday",  value: 3 },
+      { label: "Wednesday",value: 4 },
       { label: "Thursday", value: 5 },
-      { label: "Friday", value: 6 },
+      { label: "Friday",   value: 6 }
     ]);
     const selectedDays        = ref([]);
     const fromTime            = ref("");
@@ -391,10 +479,12 @@ export default defineComponent({
     const scheduleList        = ref([]);
     const storedSelectedDays  = ref([]);
 
+    // Students
     const studentsList        = ref([]);
     const selectedStudent     = ref(null);
     const showStudentModal    = ref(false);
 
+    // New Student fields
     const newStudentName           = ref("");
     const newStudentPhone          = ref("");
     const newStudentGender         = ref("");
@@ -404,25 +494,20 @@ export default defineComponent({
     const newStudentEmergencyPhone = ref("");
     const newStudentBooksDue       = ref(false);
 
+    // Switches
     const matchInstructorSkills = ref(false);
     const matchStudentSkills    = ref(false);
 
+    // Errors
     const errors = ref([]);
 
-    const formatDateLocal = (date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    };
-
+    /**
+     * Fetch required data
+     */
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
-        const params = {};
-        if (props.id) {
-          params.id = props.id;
-        }
+        const params = props.id ? { id: props.id } : {};
         const response = await instance.get("/course-requirements", { params });
 
         courseTypes.value       = response.data.courseTypes       || [];
@@ -435,12 +520,16 @@ export default defineComponent({
           populateCourse(response.data.course);
         }
       } catch (error) {
+        // handle error if needed
       } finally {
         loading.value = false;
         globalLoading.value = false;
       }
     };
 
+    /**
+     * Populate if editing
+     */
     const populateCourse = (course) => {
       selectedCourseType.value = courseTypes.value.find(ct => ct.id === course.course_type_id) || null;
       selectedGroupType.value  = groupTypes.value.find(gt => gt.id === course.group_type_id)   || null;
@@ -448,17 +537,18 @@ export default defineComponent({
       selectedMeetingPlatform.value =
         meetingPlatforms.value.find(mp => mp.id === course.meeting_platform_id) || null;
 
-      startDate.value        = course.start_date        || "";
-      midExamDate.value      = course.mid_exam_date     || "";
-      finalExamDate.value    = course.final_exam_date   || "";
-      studentCapacity.value  = course.student_capacity  || "";
-      whatsappGroupLink.value= course.whatsapp_group_link || "";
+      startDate.value        = course.start_date         || "";
+      midExamDate.value      = course.mid_exam_date      || "";
+      finalExamDate.value    = course.final_exam_date    || "";
+      studentCapacity.value  = course.student_capacity   || "";
+      whatsappGroupLink.value= course.whatsapp_group_link|| "";
 
+      // Parse days
       if (course.days) {
         const splitted = course.days.split("-");
         selectedDays.value = days.value.filter(d => splitted.includes(d.label));
       }
-
+      // Parse time => "HH:MM - HH:MM"
       if (course.time) {
         const parts = course.time.split("-");
         if (parts.length === 2) {
@@ -466,7 +556,7 @@ export default defineComponent({
           toTime.value   = parts[1].trim();
         }
       }
-
+      // schedules
       scheduleList.value = [];
       if (course.schedules?.length) {
         course.schedules.forEach(sch => {
@@ -478,7 +568,7 @@ export default defineComponent({
           });
         });
       }
-
+      // students
       studentsList.value = [];
       if (course.students?.length) {
         course.students.forEach(st => {
@@ -494,41 +584,26 @@ export default defineComponent({
       showFields.value = true;
     };
 
+    /**
+     * Toggle fields if courseType & groupType selected
+     */
     const updateFields = () => {
       showFields.value = !!(selectedCourseType.value && selectedGroupType.value);
       updateStudentCapacity();
-      updateExamDates();
     };
 
+    /**
+     * If groupType has default capacity, set it
+     */
     const updateStudentCapacity = () => {
       if (selectedGroupType.value) {
         studentCapacity.value = selectedGroupType.value.student_capacity || "";
       }
     };
 
-    const updateExamDates = () => {
-      if (!startDate.value || !selectedCourseType.value) {
-        midExamDate.value   = "";
-        finalExamDate.value = "";
-        return;
-      }
-      const weeks = parseInt(selectedCourseType.value.duration || 0, 10);
-      if (!isNaN(weeks) && weeks > 0) {
-        const totalDays = weeks * 7;
-        const start = new Date(`${startDate.value}T00:00:00`);
-        const mid   = new Date(start);
-        mid.setDate(start.getDate() + totalDays / 2);
-        const final = new Date(start);
-        final.setDate(start.getDate() + totalDays);
-
-        midExamDate.value   = formatDateLocal(mid);
-        finalExamDate.value = formatDateLocal(final);
-      } else {
-        midExamDate.value   = "";
-        finalExamDate.value = "";
-      }
-    };
-
+    /**
+     * updateToTime => auto-calc toTime by fromTime + lesson_duration
+     */
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -541,41 +616,72 @@ export default defineComponent({
       let newMinutes = totalMinutes % 60;
       toTime.value = `${String(newHours).padStart(2,"0")}:${String(newMinutes).padStart(2,"0")}`;
     };
-
     watch(fromTime, updateToTime);
 
+    /**
+     * generateSchedule:
+     *  - Interpret selectedCourseType.value.duration as totalClasses
+     *  - Fill schedule with those classes using selectedDays
+     *  - Then set midExamDate = the day after half-classes
+     *  - Then set finalExamDate= the day after last class
+     */
     const generateSchedule = () => {
-      if (
-        !fromTime.value ||
-        !toTime.value ||
-        !startDate.value ||
-        !finalExamDate.value ||
-        !selectedDays.value.length
-      ) {
-        $toastr.error("Please fill in From Time, To Time, Dates, and Days before generating.");
+      // validations
+      if (!selectedCourseType.value) {
+        $toastr.error("Select a Course Type first.");
         return;
       }
-      const start = new Date(`${startDate.value}T00:00:00`);
-      const end   = new Date(`${finalExamDate.value}T00:00:00`);
-      if (end < start) {
-        $toastr.error("Final Exam Date cannot be before Start Date.");
+      if (!startDate.value || !fromTime.value || !toTime.value) {
+        $toastr.error("Start Date, From Time, and To Time are required before generating schedule.");
+        return;
+      }
+      if (!selectedDays.value.length) {
+        $toastr.error("Please select at least one day of the week.");
         return;
       }
 
-      storedSelectedDays.value = selectedDays.value.map(day => day.value);
+      const totalClasses = parseInt(selectedCourseType.value.duration ?? 0, 10);
+      if (isNaN(totalClasses) || totalClasses <= 0) {
+        $toastr.error("Invalid or zero 'duration' in this Course Type.");
+        return;
+      }
+
+      // clear old schedule
       scheduleList.value = [];
+      storedSelectedDays.value = selectedDays.value.map(d => d.value);
 
-      let current = new Date(start);
-      while (current <= end) {
-        if (selectedDays.value.some(d => d.value === current.getDay())) {
+      let classesCount = 0;
+      let currentDate  = new Date(`${startDate.value}T00:00:00`);
+
+      // Fill until we have totalClasses
+      while (classesCount < totalClasses) {
+        // if this day's .getDay() is in storedSelectedDays => push
+        if (storedSelectedDays.value.includes(currentDate.getDay())) {
           scheduleList.value.push({
-            day: days.value.find(x => x.value === current.getDay()).label,
-            date: formatDateLocal(current),
+            day: days.value.find(x => x.value === currentDate.getDay())?.label || "",
+            date: formatDateLocal(currentDate),
             fromTime: fromTime.value,
             toTime: toTime.value
           });
+          classesCount++;
         }
-        current.setDate(current.getDate() + 1);
+        // next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // بعد توليد الحصص => midExamDate = غدًا بعد نصف عدد الحصص
+      if (scheduleList.value.length > 0) {
+        const halfIndex  = Math.floor(scheduleList.value.length / 2);
+        const midClass   = scheduleList.value[halfIndex - 1]; 
+        if (midClass) {
+          midExamDate.value = addOneDay(midClass.date);
+        }
+        // FinalExamDate = غدًا بعد آخر حصة
+        const lastClass  = scheduleList.value[scheduleList.value.length - 1];
+        finalExamDate.value = addOneDay(lastClass.date);
+      } else {
+        midExamDate.value   = "";
+        finalExamDate.value = "";
       }
     };
 
@@ -583,24 +689,25 @@ export default defineComponent({
       scheduleList.value.splice(index, 1);
     };
 
+    // Filter instructors if matchInstructorSkills ON
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
       }
-      const courseTypeSkillIds = selectedCourseType.value.skills.map(s => s.id);
+      const courseSkillIds = selectedCourseType.value.skills.map(s => s.id);
       return instructors.value.filter(inst => {
         if (!inst.skills?.length) return false;
         const instSkillIds = inst.skills.map(s => s.id);
-        return instSkillIds.some(skillId => courseTypeSkillIds.includes(skillId));
+        return instSkillIds.some(skillId => courseSkillIds.includes(skillId));
       });
     });
 
+    // Filter students similarly if matchStudentSkills ON
     const availableStudents = computed(() => {
       return allStudents.value.filter(std => {
         return !studentsList.value.some(s => s.id === std.id);
       });
     });
-
     const filteredStudents = computed(() => {
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) {
         return availableStudents.value;
@@ -646,6 +753,8 @@ export default defineComponent({
           studentsList.value.push(student);
           $toastr.success("Student created successfully");
           showStudentModal.value = false;
+
+          // reset fields
           newStudentName.value           = "";
           newStudentPhone.value          = "";
           newStudentBooksDue.value       = false;
@@ -672,6 +781,9 @@ export default defineComponent({
       studentsList.value.splice(index, 1);
     };
 
+    /**
+     * Validate data before saving
+     */
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -687,10 +799,10 @@ export default defineComponent({
         errors.value.push("Start Date is required");
       }
       if (!midExamDate.value) {
-        errors.value.push("Mid Exam Date is required");
+        errors.value.push("Mid Exam Date is required (auto-filled)");
       }
       if (!finalExamDate.value) {
-        errors.value.push("Final Exam Date is required");
+        errors.value.push("Final Exam Date is required (auto-filled)");
       }
       if (!studentCapacity.value || Number(studentCapacity.value) <= 0) {
         errors.value.push("Student Capacity must be greater than 0");
@@ -709,6 +821,9 @@ export default defineComponent({
       return true;
     };
 
+    /**
+     * Save or update the course
+     */
     const saveCourse = async () => {
       if (!validateCourseData()) return;
 
@@ -742,6 +857,7 @@ export default defineComponent({
           $toastr.success("Course updated successfully");
           courseId = props.id;
         }
+
         resetFields();
         setTimeout(() => {
           if (courseId) {
@@ -761,6 +877,9 @@ export default defineComponent({
       }
     };
 
+    /**
+     * Reset fields after creation/update
+     */
     const resetFields = () => {
       selectedCourseType.value     = null;
       selectedGroupType.value      = null;
@@ -778,11 +897,11 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    watch(startDate, updateExamDates);
-
+    // Lifecycle
     onMounted(getRequirements);
 
     return {
+      // data
       props,
       courseTypes,
       instructors,
@@ -790,21 +909,25 @@ export default defineComponent({
       meetingPlatforms,
       allStudents,
 
+      // selections
       selectedCourseType,
       selectedGroupType,
       selectedInstructor,
       selectedMeetingPlatform,
 
+      // fields
       startDate,
       midExamDate,
       finalExamDate,
       studentCapacity,
       whatsappGroupLink,
 
+      // UI
       showFields,
       loading,
       globalLoading,
 
+      // schedule
       days,
       selectedDays,
       fromTime,
@@ -812,10 +935,12 @@ export default defineComponent({
       scheduleList,
       storedSelectedDays,
 
+      // students
       studentsList,
       selectedStudent,
       showStudentModal,
 
+      // new student
       newStudentName,
       newStudentPhone,
       newStudentGender,
@@ -825,21 +950,29 @@ export default defineComponent({
       newStudentEmergencyPhone,
       newStudentBooksDue,
 
+      // switches
       matchInstructorSkills,
       matchStudentSkills,
 
+      // errors
       errors,
 
+      // Flatpickr configs
+      dateConfig,
+      dateConfigReadonly,
+
+      // computed
       filteredInstructors,
       availableStudents,
       filteredStudents,
 
+      // methods
+      addOneDay,
       formatDateLocal,
       getRequirements,
       populateCourse,
       updateFields,
       updateStudentCapacity,
-      updateExamDates,
       updateToTime,
       generateSchedule,
       removeSchedule,
