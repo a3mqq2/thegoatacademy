@@ -86,13 +86,13 @@ class CourseController extends Controller
         $data = $validator->validated();
     
         $daysMapping = [
-            0 => 'Sun',
-            1 => 'Mon',
-            2 => 'Tue',
-            3 => 'Wed',
-            4 => 'Thu',
-            5 => 'Fri',
-            6 => 'Sat',
+            0 => 'Sat',
+            1 => 'Sun',
+            2 => 'Mon',
+            3 => 'Tue',
+            4 => 'Wed',
+            5 => 'Thu',
+            6 => 'Fri',
         ];
     
         $selectedDays = collect($request->selected_days)->map(function ($day) use ($daysMapping) {
@@ -222,13 +222,13 @@ class CourseController extends Controller
         $data = $validator->validated();
     
         $daysMapping = [
-            0 => 'Sun',
-            1 => 'Mon',
-            2 => 'Tue',
-            3 => 'Wed',
-            4 => 'Thu',
-            5 => 'Fri',
-            6 => 'Sat',
+            0 => 'Sat',
+            1 => 'Sun',
+            2 => 'Mon',
+            3 => 'Tue',
+            4 => 'Wed',
+            5 => 'Thu',
+            6 => 'Fri',
         ];
     
         // Convert numeric days to short codes (e.g. "Sun","Mon",...)
