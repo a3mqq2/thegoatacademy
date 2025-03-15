@@ -27,83 +27,85 @@
           <h4><i class="fa fa-user"></i> User Details</h4>
         </div>
         <div class="card-body">
-          <table class="table table-bordered">
-            <tr>
-              <th>Name</th>
-              <td>{{ $user->name }}</td>
-            </tr>
-            <tr>
-              <th>Email</th>
-              <td>{{ $user->email }}</td>
-            </tr>
-            <tr>
-              <th>Status</th>
-              <td>
-                <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }}">
-                  <i class="fa {{ $user->status == 'active' ? 'fa-check' : 'fa-times' }}"></i> {{ ucfirst($user->status) }}
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <th>Roles</th>
-              <td>
-                @if($user->roles->isNotEmpty())
-                  @foreach($user->roles as $role)
-                    <span class="badge bg-secondary"><i class="fa fa-tag"></i> {{ $role->name }}</span>
-                  @endforeach
-                @else
-                  <span class="text-muted"><i class="fa fa-exclamation-circle"></i> No Roles</span>
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <tr>
+                  <th>Name</th>
+                  <td>{{ $user->name }}</td>
+                </tr>
+                <tr>
+                  <th>Email</th>
+                  <td>{{ $user->email }}</td>
+                </tr>
+                <tr>
+                  <th>Status</th>
+                  <td>
+                    <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }}">
+                      <i class="fa {{ $user->status == 'active' ? 'fa-check' : 'fa-times' }}"></i> {{ ucfirst($user->status) }}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Roles</th>
+                  <td>
+                    @if($user->roles->isNotEmpty())
+                      @foreach($user->roles as $role)
+                        <span class="badge bg-secondary"><i class="fa fa-tag"></i> {{ $role->name }}</span>
+                      @endforeach
+                    @else
+                      <span class="text-muted"><i class="fa fa-exclamation-circle"></i> No Roles</span>
+                    @endif
+                  </td>
+                </tr>
+                @if($user->skills && $user->skills->isNotEmpty())
+                  <tr>
+                    <th>Skills</th>
+                    <td>
+                      @foreach($user->skills as $skill)
+                        <span class="badge bg-info"><i class="fa fa-code"></i> {{ $skill->name }}</span>
+                      @endforeach
+                    </td>
+                  </tr>
                 @endif
-              </td>
-            </tr>
-            @if($user->skills && $user->skills->isNotEmpty())
-              <tr>
-                <th>Skills</th>
-                <td>
-                  @foreach($user->skills as $skill)
-                    <span class="badge bg-info"><i class="fa fa-code"></i> {{ $skill->name }}</span>
-                  @endforeach
-                </td>
-              </tr>
-            @endif
-
-            @if($user->hasRole('Instructor'))
-              <tr>
-                <th>Age</th>
-                <td>{{ $user->age }}</td>
-              </tr>
-              <tr>
-                <th>Gender</th>
-                <td>{{ ucfirst($user->gender) }}</td>
-              </tr>
-              <tr>
-                <th>Nationality</th>
-                <td>{{ $user->nationality }}</td>
-              </tr>
-              <tr>
-                <th>Introductory Video</th>
-                <td>
-                  @if($user->video)
-                    <video width="320" height="240" controls>
-                      <source src="{{ asset('storage/' . $user->video) }}" type="video/mp4">
-                      Your browser does not support the video tag.
-                    </video>
-                  @else
-                    <span class="text-muted">No video available</span>
-                  @endif
-                </td>
-              </tr>
-              <tr>
-                <th>Notes</th>
-                <td>{{ $user->notes }}</td>
-              </tr>
-            @endif
-
-            <tr>
-              <th>Created At</th>
-              <td><i class="fa fa-calendar"></i> {{ $user->created_at->format('Y-m-d H:i') }}</td>
-            </tr>
-          </table>
+    
+                @if($user->hasRole('Instructor'))
+                  <tr>
+                    <th>Age</th>
+                    <td>{{ $user->age }}</td>
+                  </tr>
+                  <tr>
+                    <th>Gender</th>
+                    <td>{{ ucfirst($user->gender) }}</td>
+                  </tr>
+                  <tr>
+                    <th>Nationality</th>
+                    <td>{{ $user->nationality }}</td>
+                  </tr>
+                  <tr>
+                    <th>Introductory Video</th>
+                    <td>
+                      @if($user->video)
+                        <video width="320" height="240" controls>
+                          <source src="{{ asset('storage/' . $user->video) }}" type="video/mp4">
+                          Your browser does not support the video tag.
+                        </video>
+                      @else
+                        <span class="text-muted">No video available</span>
+                      @endif
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Notes</th>
+                    <td>{{ $user->notes }}</td>
+                  </tr>
+                @endif
+    
+                <tr>
+                  <th>Created At</th>
+                  <td><i class="fa fa-calendar"></i> {{ $user->created_at->format('Y-m-d H:i') }}</td>
+                </tr>
+              </table>
+            </div>
         </div>
       </div>
     </div>
