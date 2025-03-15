@@ -79,47 +79,48 @@ class CourseTypeController extends Controller
         return view('admin.course_types.edit', compact('courseType', 'skills'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, CourseType $courseType)
     {
-        $courseType = CourseType::findOrFail($id);
-        $oldValues = $courseType->getOriginal();
-
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255|unique:course_types,name,' . $courseType->id,
             'status'   => 'required|in:active,inactive',
             'duration' => 'nullable|in:week,month,half_year',
+            'skills'   => 'nullable|array',
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
+    
+        $originalData = $courseType->getOriginal();
+    
         $courseType->update($request->only(['name', 'status', 'duration']));
-
+    
         if ($request->filled('skills')) {
             $courseType->skills()->sync($request->skills);
         } else {
             $courseType->skills()->detach();
         }
-
-        $newValues = $courseType->getChanges();
-        $changesDescription = [];
-
-        foreach ($newValues as $key => $value) {
-            $changesDescription[] = "$key changed from '{$oldValues[$key]}' to '{$value}'";
+    
+        $changes = [];
+        foreach ($courseType->getChanges() as $field => $newValue) {
+            $changes[] = ucfirst($field) . ": " . ($originalData[$field] ?? 'N/A') . " → " . $newValue;
         }
-
-        AuditLog::create([
-            'user_id' => Auth::id(),
-            'description' => 'Updated course type: ' . $courseType->name . ' (' . implode(', ', $changesDescription) . ')',
-            'type' => 'update',
-            'entity_id' => $courseType->id,
-            'entity_type' => CourseType::class,
-        ]);
-
+    
+        if (!empty($changes)) {
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'description' => 'Updated course type: ' . $courseType->name . ' (' . implode(', ', $changes) . ')',
+                'type' => 'update',
+                'entity_id' => $courseType->id,
+                'entity_type' => CourseType::class,
+            ]);
+        }
+    
         return redirect()->route('admin.course-types.index')->with('success', 'Course Type updated successfully.');
     }
-
+    
+    
     public function destroy($id)
     {
         $courseType = CourseType::findOrFail($id);

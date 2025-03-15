@@ -91,6 +91,37 @@
           <div class="text-secondary">{{ $course->student_capacity }}</div>
         </div>
       </div>
+
+
+      <hr class="my-4" />
+      <div class="row gx-5 gy-3 align-items-start">
+        <!-- Start Date -->
+        <div class="col-md-3">
+          <div class="text-uppercase fw-semibold text-primary mb-1">  Meeting Platform:</div>
+          <div class="text-secondary">{{ $course->meetingPlatform->name ?? 'N\A' }}</div>
+        </div>
+        <!-- Final Exam Date -->
+        <div class="col-md-3">
+          <div class="text-uppercase fw-semibold text-primary mb-1">  Days :</div>
+          <div class="text-secondary">{{ $course->days }}</div>
+        </div>
+        <!-- End Date -->
+        <div class="col-md-3">
+          <div class="text-uppercase fw-semibold text-primary mb-1">  Time :</div>
+          <div class="text-secondary">{{ $course->time }}</div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-uppercase fw-semibold text-primary mb-1">  Whatsapp Group Link :</div>
+          @if ($course->whatsapp_group_link)
+            <div class="text-secondary">
+              <a href="{{url($course->whatsapp_group_link)}}" target="_blank" class="btn btn-success"><i class="fa fa-link"></i></a>
+            </div>
+            @else 
+            -
+          @endif
+        </div>
+      </div>
+
     </div>
     
     

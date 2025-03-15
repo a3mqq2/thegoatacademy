@@ -15,6 +15,7 @@ use App\Models\CourseSchedule;
 use App\Models\WithdrawnReason;
 use App\Http\Controllers\Controller;
 use App\Models\CourseStudent;
+use App\Models\MeetingPlatform;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -70,7 +71,9 @@ class CourseController extends Controller
             'schedule.*.fromTime'=> 'required',
             'schedule.*.toTime'  => 'required',
             'students'           => 'required|array|min:1',
-            'students.*'         => 'exists:students,id'
+            'students.*'         => 'exists:students,id',
+            'meeting_platform_id' => "required|exists:meeting_platforms,id",
+            'whatsapp_group_link' => 'nullable',
         ]);
     
         if ($validator->fails()) {
@@ -130,6 +133,8 @@ class CourseController extends Controller
                 'days'             => implode('-', $selectedDays->toArray()),
                 'time'             => $request->time,
                 'student_count'    => count($data['students']),
+                'meeting_platform_id' => $data['meeting_platform_id'],
+                'whatsapp_group_link' => $data['whatsapp_group_link'],
             ]);
     
             // Create the schedule records
@@ -197,7 +202,8 @@ class CourseController extends Controller
             'schedule.*.fromTime' => 'required',
             'schedule.*.toTime'   => 'required',
             'students'         => 'required|array|min:1',
-            'students.*'       => 'exists:students,id'
+            'students.*'       => 'exists:students,id',
+            "meeting_platform_id" => "required|exists:meeting_platforms,id",
         ]);
 
         if ($validator->fails()) {
@@ -222,6 +228,7 @@ class CourseController extends Controller
             'student_capacity' => $course->student_capacity,
             'days'             => $course->days,
             'time'             => $course->time,
+            'meeting_platform_id' => $course->meeting_platform_id
         ];
 
         // Determine new status based on today's date vs. final_exam_date
@@ -251,6 +258,8 @@ class CourseController extends Controller
             'status'           => $status,
             'days'             => implode('-', $request->selected_days),
             'time'             => $request->time,
+            'meeting_platform_id' => $request->meeting_platform_id,
+            'whatsapp_group_link' => $request->whatsapp_group_link
         ]);
 
         // Refresh the course so we have updated fields for comparison
@@ -320,13 +329,14 @@ class CourseController extends Controller
         $groupTypes = GroupType::where('status','active')->get();
         $courseTypes = CourseType::where('status','active')->with('skills')->get();
         $instructors = User::role('instructor')->with('skills')->get();
-        $students = Student::get();
-
+        $students = Student::with('skills')->orderByDesc('id')->get();
+        $meeting_platforms = MeetingPlatform::all();
         return response()->json([
             'groupTypes' => $groupTypes,
             'courseTypes' => $courseTypes,
             'instructors' => $instructors,
             'students' => $students,
+            "meeting_platforms" => $meeting_platforms,
             'course' => Course::with(['instructor','schedules','students','courseType','groupType'])->find(request()->id),
         ]);
     }

@@ -110,6 +110,7 @@
                 <th class="bg-primary text-light">Capacity</th>
                 <th class="bg-success text-light">Students</th>
                 <th class="bg-danger text-light">Due </th>
+                <th>Meeting Platform</th>
                 <th>Status</th>
                 <th>Actions</th>
              </tr>
@@ -130,6 +131,7 @@
                   <td>{{ $course->student_capacity }}</td>
                   <td>{{ $course->student_count }}</td>
                   <td>{{ $course->student_capacity - $course->student_count }}</td>
+                  <td>{{ $course->meetingPlatform->name ?? 'N/A' }}</td>
                   <td>
                     @if($course->status === 'paused')
                       <span class="badge bg-warning text-dark">Paused</span>

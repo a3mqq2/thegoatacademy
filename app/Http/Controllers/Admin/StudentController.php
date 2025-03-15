@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Student;
 use App\Models\AuditLog;
 use App\Models\CourseType;
+use App\Models\StudentFile;
 use Illuminate\Http\Request;
 use App\Models\ExcludeReason;
 use App\Models\WithdrawnReason;
@@ -63,37 +64,69 @@ class StudentController extends Controller
 
     public function store(Request $request)
     {
+        // 1) Validate basic Student fields as before
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'city' => 'nullable|string|max:255',
-            'age' => 'nullable|integer|min:1|max:100',
-            'specialization' => 'nullable|string|max:255',
-            'gender' => 'required|in:male,female',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'emergency_phone' => 'nullable|string|max:20',
-            'skills' => 'nullable|array',
+            'name'              => 'required|string|max:255',
+            'phone'             => 'required|string|max:20',
+            'city'              => 'nullable|string|max:255',
+            'age'               => 'nullable|integer|min:1|max:100',
+            'specialization'    => 'nullable|string|max:255',
+            'gender'            => 'required|in:male,female',
+            'avatar'            => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'emergency_phone'   => 'nullable|string|max:20',
+            'skills'            => 'nullable|array',
+    
+            // 2) Validate the arrays for multiple files
+            //    "file_names.*" => each file name in the table row
+            //    "files.*"      => the actual file in the table row
+            'file_names'        => 'array',
+            'file_names.*'      => 'required|string|max:255',
+            'files'             => 'array',
+            'files.*'           => 'file|max:2048', // add mime types if you wish
         ]);
     
+        // 3) Handle single avatar upload (if any)
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $validatedData['avatar'] = $avatarPath;
         }
     
+        // 4) Create the Student
         $student = Student::create($validatedData);
     
+        // 5) Attach any skills
         if (isset($validatedData['skills'])) {
             $student->skills()->attach($validatedData['skills']);
         }
-
-
-        if(request()->wantsJson())
-        {
+    
+        // 6) Handle the multiple file uploads (if any)
+        //    For each row in the table, we have one file name + one file
+        if ($request->has('file_names') && $request->hasFile('files')) {
+            $fileNames = $request->input('file_names'); // array of text inputs
+            $files     = $request->file('files');       // array of uploaded files
+    
+            foreach ($files as $index => $file) {
+                // 7) Store the file
+                $path = $file->store('student_files', 'public');
+    
+                // 8) Create a record in "student_files" table 
+                //    (assuming you have a "StudentFile" model & migration)
+                StudentFile::create([
+                    'student_id' => $student->id,
+                    'name'       => $fileNames[$index],  // name from the text input
+                    'path'       => $path,
+                ]);
+            }
+        }
+    
+        // 9) Return JSON or redirect, based on your needs
+        if ($request->wantsJson()) {
             return response()->json(['student' => $student], 201);
         }
-
-        
-        return redirect()->route('admin.students.index')->with('success', 'Student created successfully.');
+    
+        return redirect()
+            ->route('admin.students.index')
+            ->with('success', 'Student created successfully along with multiple files.');
     }
     
 

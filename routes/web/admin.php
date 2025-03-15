@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\CourseTypeController;
 use App\Http\Controllers\Admin\StudentFileController;
 use App\Http\Controllers\Admin\CourseStudentController;
 use App\Http\Controllers\Admin\QualitySettingController;
+use App\Http\Controllers\Admin\MeetingPlatformController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -62,3 +63,4 @@ Route::put('/students/files/{file}', [StudentFileController::class, 'update'])
 Route::delete('/students/files/{file}', [StudentFileController::class, 'destroy'])
     ->name('students.files.destroy');
 
+    Route::resource('meeting_platforms', MeetingPlatformController::class);

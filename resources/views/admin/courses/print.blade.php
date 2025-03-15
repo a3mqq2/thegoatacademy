@@ -270,6 +270,10 @@
           <th>Time</th>
           <td>{{ $course->time }}</td>
         </tr>
+        <tr>
+         <th>برنامج الاجتماع </th>
+         <td>{{ $course->meetingPlatform ? $course->meetingPlatform->name : "-" }}</td>
+       </tr>
       </table>
     </div>
 
@@ -347,7 +351,7 @@
          window.location.href = "{{ route('admin.courses.show', $course->id) }}";
       };
    </script>
-   
+
 
 
 </body>

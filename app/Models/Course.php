@@ -22,6 +22,8 @@ class Course extends Model
         'student_count',
         'days',
         'time',
+        'meeting_platform_id',
+        'whatsapp_group_link',
     ];
 
     /**
@@ -77,5 +79,9 @@ class Course extends Model
     }
     
 
+    public function meetingPlatform()
+    {
+        return $this->belongsTo(MeetingPlatform::class);
+    }
 
 }

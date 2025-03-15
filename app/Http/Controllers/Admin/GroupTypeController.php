@@ -43,7 +43,7 @@ class GroupTypeController extends Controller
             'name'             => 'required|string|max:255|unique:group_types',
             'student_capacity' => 'required|integer|min:1',
             'status'           => 'required|in:active,inactive',
-            'lesson_duration'  => 'required|date_format:H:i',
+            'lesson_duration'  => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -68,43 +68,41 @@ class GroupTypeController extends Controller
         $groupType = GroupType::findOrFail($id);
         return view('admin.group_types.edit', compact('groupType'));
     }
-
-    public function update(Request $request, $id)
+    public function update(Request $request, GroupType $groupType)
     {
-        $groupType = GroupType::findOrFail($id);
-        $oldValues = $groupType->getOriginal();
-
         $validator = Validator::make($request->all(), [
             'name'             => 'required|string|max:255|unique:group_types,name,' . $groupType->id,
             'student_capacity' => 'required|integer|min:1',
             'status'           => 'required|in:active,inactive',
-            'lesson_duration'  => 'required|date_format:H:i',
+            'lesson_duration'  => 'required|numeric',
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
+    
+        $originalData = $groupType->getOriginal();
+    
         $groupType->update($request->only(['name', 'student_capacity', 'status', 'lesson_duration']));
-
-        $newValues = $groupType->getChanges();
-        $changesDescription = [];
-
-        foreach ($newValues as $key => $value) {
-            $changesDescription[] = "$key changed from '{$oldValues[$key]}' to '{$value}'";
+    
+        $changes = [];
+        foreach ($groupType->getChanges() as $field => $newValue) {
+            $changes[] = ucfirst(str_replace('_', ' ', $field)) . ": " . ($originalData[$field] ?? 'N/A') . " → " . $newValue;
         }
-
-        AuditLog::create([
-            'user_id'     => Auth::id(),
-            'description' => 'Updated group type: ' . $groupType->name . ' (' . implode(', ', $changesDescription) . ')',
-            'type'        => 'update',
-            'entity_id'   => $groupType->id,
-            'entity_type' => GroupType::class,
-        ]);
-
+    
+        if (!empty($changes)) {
+            AuditLog::create([
+                'user_id'     => Auth::id(),
+                'description' => 'Updated group type: ' . $groupType->name . ' (' . implode(', ', $changes) . ')',
+                'type'        => 'update',
+                'entity_id'   => $groupType->id,
+                'entity_type' => GroupType::class,
+            ]);
+        }
+    
         return redirect()->route('admin.group-types.index')->with('success', 'Group Type updated successfully.');
     }
-
+    
     public function destroy($id)
     {
         $groupType = GroupType::findOrFail($id);
