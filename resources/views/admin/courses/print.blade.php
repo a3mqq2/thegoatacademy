@@ -223,7 +223,7 @@
           <!-- Replace with your actual logo path -->
           <img src="{{ asset('images/logo.svg') }}" alt="Logo">
           <div class="header-text">
-            <h1 class="title">Course Outline</h1>
+            <h1 class="title">Course Outline #{{$course->id}} </h1>
             <p class="subtitle">All the details about the course</p>
           </div>
         </div>
