@@ -32,19 +32,15 @@
                 </div>
               </div>
 
-
-
               <div class="col-md-4">
                 <div class="mb-3">
-                  <label for="phone" class="form-label"><i class="fa fa-phone"></i> phone:</label>
+                  <label for="phone" class="form-label"><i class="fa fa-phone"></i> Phone:</label>
                   <input type="text" name="phone" id="phone"
                     class="form-control @error('phone') is-invalid @enderror"
-                    value="{{ old('phone') }}" placeholder="Enter full phone" required>
+                    value="{{ old('phone') }}" placeholder="Enter phone" required>
                   @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-
-
               
               <div class="col-md-4">
                 <div class="mb-3">
@@ -98,8 +94,8 @@
               </div>
             </div> <!-- end row -->
             
-            <!-- Instructor Additional Fields (Shown only when Instructor role is selected) -->
-            <div id="instructorFields" style="display: none;">
+            <!-- Additional Fields (Previously "instructor fields", now open to all) -->
+            <div id="instructorFields">
               <div class="row">
                 <!-- Age -->
                 <div class="col-md-4">
@@ -135,10 +131,10 @@
                 </div>
               </div>
               
-              <!-- Multiselect for Instructor Skills using Select2 -->
+              <!-- Multiselect for Skills using Select2 -->
               <div class="row">
                 <div class="col-md-12">
-                  <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills to Teach/Develop:</label>
+                  <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills:</label>
                   <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
                     @foreach($skills as $skill)
                       <option value="{{ $skill->id }}" {{ collect(old('skills'))->contains($skill->id) ? 'selected' : '' }}>
@@ -233,30 +229,18 @@
         });
       }
 
-      // Toggle additional instructor fields when Instructor role is selected
-      function toggleInstructorFields() {
-        var instructorCheckbox = document.getElementById("role_Instructor");
-        var instructorFields = document.getElementById("instructorFields");
+      // لم نعد نحتاج لإخفاء/إظهار instructorFields بناءً على دور (Instructor)
+      // قمنا بجعل حقول الـ instructorFields ظاهرة دائمًا في الكود أعلاه
 
-        if (instructorCheckbox && instructorCheckbox.checked) {
-          instructorFields.style.display = "block";
-          // Optionally set required attributes for instructor fields if needed
-        } else {
-          instructorFields.style.display = "none";
-        }
-      }
-
-      // Listen for changes on all role checkboxes
+      // Listen for changes on all role checkboxes to update permissions
       document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
           updatePermissions();
-          toggleInstructorFields();
         });
       });
 
       // Initial check on load
       updatePermissions();
-      toggleInstructorFields();
 
       // Video preview functionality
       document.getElementById("video").addEventListener("change", function (event) {
@@ -268,9 +252,9 @@
         }
       });
 
-      // Initialize Select2 for instructor skills multiselect
+      // Initialize Select2 for the skills multiselect
       $('#skills').select2({
-        placeholder: 'Select skills you can teach or develop',
+        placeholder: 'Select skills',
         allowClear: true,
         width: '100%'
       });

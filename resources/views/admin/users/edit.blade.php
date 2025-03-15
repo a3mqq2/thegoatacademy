@@ -2,7 +2,6 @@
 
 @section('title', 'Edit User')
 
-
 @section('breadcrumb')
   <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
   <li class="breadcrumb-item"><a href="{{ route('admin.users.index') }}">Users</a></li>
@@ -33,7 +32,6 @@
                   @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-              
 
               <div class="col-md-4">
                 <div class="mb-3">
@@ -44,7 +42,6 @@
                   @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-
 
               <div class="col-md-4">
                 <div class="mb-3">
@@ -98,8 +95,8 @@
               </div>
             </div> <!-- end row -->
             
-            <!-- Instructor Additional Fields (Shown only when Instructor role is selected) -->
-            <div id="instructorFields" style="display: none;">
+            <!-- Additional Fields (Previously "Instructor" fields, now always visible) -->
+            <div id="instructorFields">
               <div class="row">
                 <!-- Age -->
                 <div class="col-md-4">
@@ -134,11 +131,10 @@
                   </div>
                 </div>
               </div>
-              
 
-
+              <!-- Skills -->
               <div class="col-md-12">
-                <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills to Teach/Develop:</label>
+                <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills:</label>
                 <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
                   @foreach($skills as $skill)
                     <option value="{{ $skill->id }}" {{ collect(old('skills', $user->skills->pluck('id')))->contains($skill->id) ? 'selected' : '' }}>
@@ -226,31 +222,45 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
   $(document).ready(function () {
-    // Ensure Select2 initializes
+    // Initialize Select2 for the skills multiselect
     $('#skills').select2({
         placeholder: 'Select skills to develop',
         allowClear: true,
         width: '100%'
     });
 
-    // Ensure Select2 initializes properly even if the field is initially hidden
-    function toggleInstructorFields() {
-        var instructorCheckbox = $("#role_Instructor");
-        var instructorFields = $("#instructorFields");
+    // Update permission groups based on selected roles
+    function updatePermissions() {
+      let selectedRoles = [];
+      document.querySelectorAll('.role-checkbox:checked').forEach((el) => {
+        selectedRoles.push(el.dataset.roleId);
+      });
 
-        if (instructorCheckbox.is(":checked")) {
-            instructorFields.show();
-            setTimeout(function () {
-                $('#skills').select2();
-            }, 200);
-        } else {
-            instructorFields.hide();
-        }
+      document.querySelectorAll('.permissions-group').forEach((permGroup) => {
+        let roleId = permGroup.dataset.roleId;
+        permGroup.style.display = selectedRoles.includes(roleId) ? "block" : "none";
+      });
     }
 
-    // Run on page load and when toggling
-    toggleInstructorFields();
-    $(".role-checkbox").on("change", toggleInstructorFields);
+    // Listen for changes on all role checkboxes to update permissions
+    document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
+      checkbox.addEventListener('change', function () {
+        updatePermissions();
+      });
+    });
+
+    // Initial check on load
+    updatePermissions();
+
+    // Video preview functionality
+    document.getElementById("video").addEventListener("change", function (event) {
+      var file = event.target.files[0];
+      if (file) {
+        var videoPreview = document.getElementById("videoPreview");
+        videoPreview.src = URL.createObjectURL(file);
+        videoPreview.style.display = "block";
+      }
+    });
   });
 </script>
 @endpush
