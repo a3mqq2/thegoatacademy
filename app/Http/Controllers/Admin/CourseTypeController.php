@@ -46,7 +46,7 @@ class CourseTypeController extends Controller
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255|unique:course_types',
             'status'   => 'required|in:active,inactive',
-            'duration' => 'nullable|in:week,month,half_year',
+            'duration' => 'nullable',
             'skills'  => 'nullable|array',
         ]);
 
@@ -84,7 +84,7 @@ class CourseTypeController extends Controller
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255|unique:course_types,name,' . $courseType->id,
             'status'   => 'required|in:active,inactive',
-            'duration' => 'nullable|in:week,month,half_year',
+            'duration' => 'nullable',
             'skills'   => 'nullable|array',
         ]);
     
