@@ -62,16 +62,16 @@ class UserController extends Controller
             'roles'    => 'required|array',
             'phone'    => 'required',
         ];
-
+    
         // إذا تم تمرير حقول المُدرب دائمًا
         $rules['age']         = 'required|integer|min:18';
         $rules['gender']      = 'required|in:male,female';
         $rules['nationality'] = 'required|string|max:255';
         $rules['notes']       = 'required|string';
         $rules['skills']      = 'required|array';
-
+    
         $validatedData = $request->validate($rules);
-
+    
         // Create the user with basic fields
         $user = new User();
         $user->name     = $validatedData['name'];
@@ -79,35 +79,41 @@ class UserController extends Controller
         $user->password = Hash::make($validatedData['password']);
         $user->phone    = $validatedData['phone'];
         $user->save();
-
+    
         // Update instructor-specific fields (متاحة لجميع المستخدمين)
         $user->age         = $request->age;
         $user->gender      = $request->gender;
         $user->nationality = $request->nationality;
         $user->notes       = $request->notes;
-
-        if ($request->hasFile('video')) {
+    
+        // Handle video field
+        // If FilePond was used, the hidden input "video_path" contains the uploaded file's path.
+        if ($request->filled('video_path')) {
+            $user->video = $request->video_path;
+        } elseif ($request->hasFile('video')) {
+            // Fallback: if file is directly uploaded
             $videoPath = $request->file('video')->store('videos', 'public');
             $user->video = $videoPath;
         }
-
+    
         // Attach the skills
         $user->skills()->sync($request->skills);
-
+    
         $user->save();
-
+    
         // Attach roles
         foreach ($validatedData['roles'] as $role) {
             $user->assignRole($role);
         }
-
+    
         // Optionally assign permissions if provided
         if ($request->filled('permissions')) {
             $user->givePermissionTo($request->permissions);
         }
-
+    
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
+    
     
     public function edit($id)
     {

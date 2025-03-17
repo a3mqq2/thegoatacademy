@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\Admin\CourseController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminController;
+use App\Http\Controllers\FileUploadController;
+use App\Http\Controllers\Admin\CourseController;
 
 Route::redirect('/', '/login');
 Route::get('/login', [AdminController::class, 'login'])->name('login');
@@ -34,3 +35,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
    });
 
 });
+
+
+
+Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('upload.file');
+Route::delete('/upload-file', [FileUploadController::class, 'revert'])->name('upload.file.revert');

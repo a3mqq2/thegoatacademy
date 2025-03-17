@@ -35,7 +35,7 @@
 
               <div class="col-md-4">
                 <div class="mb-3">
-                  <label for="phone" class="form-label"><i class="fa fa-phone"></i> phone:</label>
+                  <label for="phone" class="form-label"><i class="fa fa-phone"></i> Phone:</label>
                   <input type="text" name="phone" id="phone"
                     class="form-control @error('phone') is-invalid @enderror"
                     value="{{ old('phone', $user->phone) }}" placeholder="Enter full phone" required>
@@ -95,7 +95,7 @@
               </div>
             </div> <!-- end row -->
             
-            <!-- Additional Fields (Previously "Instructor" fields, now always visible) -->
+            <!-- Additional Fields (Always visible) -->
             <div id="instructorFields">
               <div class="row">
                 <!-- Age -->
@@ -148,8 +148,10 @@
               <!-- Introductory Video -->
               <div class="mb-3">
                 <label for="video" class="form-label"><i class="fa fa-video"></i> Introductory Video:</label>
-                <input type="file" name="video" id="video" accept="video/*" class="form-control @error('video') is-invalid @enderror">
+                <input type="file" name="video" id="video" accept="video/*" class="filepond @error('video') is-invalid @enderror">
                 @error('video') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <!-- Hidden input to store uploaded file path -->
+                <input type="hidden" name="video_path" id="video_path" value="{{ old('video_path', $user->video) }}">
               </div>
               
               <div class="mb-3">
@@ -215,52 +217,87 @@
 
 @push('styles')
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
 @endpush
 
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
-  $(document).ready(function () {
-    // Initialize Select2 for the skills multiselect
-    $('#skills').select2({
-        placeholder: 'Select skills to develop',
-        allowClear: true,
-        width: '100%'
-    });
-
-    // Update permission groups based on selected roles
-    function updatePermissions() {
-      let selectedRoles = [];
-      document.querySelectorAll('.role-checkbox:checked').forEach((el) => {
-        selectedRoles.push(el.dataset.roleId);
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Initialize Select2 for the skills multiselect
+      $('#skills').select2({
+          placeholder: 'Select skills to develop',
+          allowClear: true,
+          width: '100%'
       });
 
-      document.querySelectorAll('.permissions-group').forEach((permGroup) => {
-        let roleId = permGroup.dataset.roleId;
-        permGroup.style.display = selectedRoles.includes(roleId) ? "block" : "none";
-      });
-    }
+      // Update permission groups based on selected roles
+      function updatePermissions() {
+        let selectedRoles = [];
+        document.querySelectorAll('.role-checkbox:checked').forEach((el) => {
+          selectedRoles.push(el.dataset.roleId);
+        });
 
-    // Listen for changes on all role checkboxes to update permissions
-    document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
-      checkbox.addEventListener('change', function () {
-        updatePermissions();
-      });
-    });
-
-    // Initial check on load
-    updatePermissions();
-
-    // Video preview functionality
-    document.getElementById("video").addEventListener("change", function (event) {
-      var file = event.target.files[0];
-      if (file) {
-        var videoPreview = document.getElementById("videoPreview");
-        videoPreview.src = URL.createObjectURL(file);
-        videoPreview.style.display = "block";
+        document.querySelectorAll('.permissions-group').forEach((permGroup) => {
+          let roleId = permGroup.dataset.roleId;
+          permGroup.style.display = selectedRoles.includes(roleId) ? "block" : "none";
+        });
       }
+
+      // Listen for changes on all role checkboxes to update permissions
+      document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
+        checkbox.addEventListener('change', function () {
+          updatePermissions();
+        });
+      });
+
+      // Initial check on load
+      updatePermissions();
+
+      // Initialize FilePond for the video file input with onprocessfile callback
+      const videoInputElement = document.querySelector('input[id="video"]');
+      FilePond.create(videoInputElement, {
+        server: {
+          process: {
+            url: '{{ route("upload.file") }}',
+            method: 'POST',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+          },
+          revert: {
+            url: '{{ route("upload.file.revert") }}',
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+          }
+        },
+        acceptedFileTypes: ['video/*'],
+        onprocessfile: (error, file) => {
+          if (!error) {
+            let serverResponse = file.serverId;
+            try {
+              serverResponse = JSON.parse(file.serverId);
+            } catch(e) {
+              // Fallback if parsing fails
+            }
+            document.getElementById('video_path').value = serverResponse.path;
+          }
+        }
+      });
+
+      // Video preview functionality for non-FilePond update
+      document.getElementById("video").addEventListener("change", function (event) {
+        var file = event.target.files[0];
+        if (file) {
+          var videoPreview = document.getElementById("videoPreview");
+          videoPreview.src = URL.createObjectURL(file);
+          videoPreview.style.display = "block";
+        }
+      });
     });
-  });
-</script>
+  </script>
 @endpush

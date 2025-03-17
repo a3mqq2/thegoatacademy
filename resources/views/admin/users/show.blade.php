@@ -68,7 +68,6 @@
                   </tr>
                 @endif
     
-                @if($user->hasRole('Instructor'))
                   <tr>
                     <th>Age</th>
                     <td>{{ $user->age }}</td>
@@ -98,7 +97,6 @@
                     <th>Notes</th>
                     <td>{{ $user->notes }}</td>
                   </tr>
-                @endif
     
                 <tr>
                   <th>Created At</th>

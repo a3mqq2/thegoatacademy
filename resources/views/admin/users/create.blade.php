@@ -146,13 +146,16 @@
                 </div>
               </div>
               
-              <!-- Introductory Video -->
+              <!-- Introductory Video using FilePond -->
               <div class="mb-3">
                 <label for="video" class="form-label"><i class="fa fa-video"></i> Introductory Video:</label>
-                <input type="file" name="video" id="video" accept="video/*" class="form-control @error('video') is-invalid @enderror">
+                <input type="file" name="video" id="video" accept="video/*" class="filepond @error('video') is-invalid @enderror">
                 @error('video') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <!-- Hidden input to store uploaded file path -->
+                <input type="hidden" name="video_path" id="video_path" value="">
               </div>
               
+              <!-- (Optional) Video preview element if needed -->
               <div class="mb-3">
                 <video id="videoPreview" width="100%" height="auto" controls style="display: none;"></video>
               </div>
@@ -206,14 +209,16 @@
 </div>
 @endsection
 
-{{-- Include Select2 CSS --}}
+{{-- Include Select2 CSS and FilePond CSS --}}
 @push('styles')
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
 @endpush
 
 {{-- Scripts --}}
 @push('scripts')
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       // Update permission groups based on selected roles
@@ -222,41 +227,61 @@
         document.querySelectorAll('.role-checkbox:checked').forEach((el) => {
           selectedRoles.push(el.dataset.roleId);
         });
-
+  
         document.querySelectorAll('.permissions-group').forEach((permGroup) => {
           let roleId = permGroup.dataset.roleId;
           permGroup.style.display = selectedRoles.includes(roleId) ? "block" : "none";
         });
       }
-
-      // لم نعد نحتاج لإخفاء/إظهار instructorFields بناءً على دور (Instructor)
-      // قمنا بجعل حقول الـ instructorFields ظاهرة دائمًا في الكود أعلاه
-
+  
       // Listen for changes on all role checkboxes to update permissions
       document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
           updatePermissions();
         });
       });
-
+  
       // Initial check on load
       updatePermissions();
-
-      // Video preview functionality
-      document.getElementById("video").addEventListener("change", function (event) {
-        var file = event.target.files[0];
-        if (file) {
-          var videoPreview = document.getElementById("videoPreview");
-          videoPreview.src = URL.createObjectURL(file);
-          videoPreview.style.display = "block";
-        }
-      });
-
+  
       // Initialize Select2 for the skills multiselect
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true,
         width: '100%'
+      });
+  
+      // Initialize FilePond for the video file input with onprocessfile callback
+      const videoInputElement = document.querySelector('input[id="video"]');
+      FilePond.create(videoInputElement, {
+        server: {
+          process: {
+            url: '{{ route("upload.file") }}',
+            method: 'POST',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+          },
+          revert: {
+            url: '{{ route("upload.file.revert") }}',
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+          }
+        },
+        acceptedFileTypes: ['video/*'],
+        onprocessfile: (error, file) => {
+          if (!error) {
+            let serverResponse = file.serverId;
+            try {
+              serverResponse = JSON.parse(file.serverId);
+            } catch(e) {
+              // If parsing fails, use the original response
+            }
+            document.getElementById('video_path').value = serverResponse.path;
+          }
+        }
       });
     });
   </script>
