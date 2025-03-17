@@ -80,14 +80,11 @@ class UserController extends Controller
         $user->phone    = $validatedData['phone'];
         $user->save();
     
-        // Update instructor-specific fields (متاحة لجميع المستخدمين)
         $user->age         = $request->age;
         $user->gender      = $request->gender;
         $user->nationality = $request->nationality;
         $user->notes       = $request->notes;
     
-        // Handle video field
-        // If FilePond was used, the hidden input "video_path" contains the uploaded file's path.
         if ($request->filled('video_path')) {
             $user->video = $request->video_path;
         } elseif ($request->hasFile('video')) {
@@ -96,7 +93,6 @@ class UserController extends Controller
             $user->video = $videoPath;
         }
     
-        // Attach the skills
         $user->skills()->sync($request->skills);
     
         $user->save();

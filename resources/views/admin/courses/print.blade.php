@@ -196,7 +196,7 @@
     }
   </style>
 </head>
-<body onload="window.print()">
+<body>
 
   <!-- Top wave shape -->
   <div class="header-wave">
@@ -338,20 +338,10 @@
       </ul>
     </div>
 
-    <!-- FOOTER -->
     <div class="footer">
       © 2025 The Goat Academy. All rights reserved.
     </div>
   </div>
-
-  {{-- when click close of dialog please redirect to /admin/courses/course->id --}}
-
-   <script>
-      window.onafterprint = function() {
-         window.location.href = "{{ route('admin.courses.show', $course->id) }}";
-      };
-   </script>
-
 
 
 </body>
