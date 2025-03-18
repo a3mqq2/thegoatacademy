@@ -478,7 +478,7 @@ export default defineComponent({
     const finalExamDate = ref("");
     const studentCapacity = ref("");
     const whatsappGroupLink = ref("");
-//   test
+
     const dateConfig = ref({
       dateFormat: "Y-m-d",
       allowInput: true,
@@ -493,15 +493,15 @@ export default defineComponent({
     const loading = ref(true);
     const globalLoading = ref(false);
 
-    const days = ref(days = [
-    { label: "Sun", value: 0 },
-    { label: "Mon", value: 1 },
-    { label: "Tue", value: 2 },
-    { label: "Wed", value: 3 },
-    { label: "Thu", value: 4 },
-    { label: "Fri", value: 5 },
-    { label: "Sat", value: 6 }
-  ]);
+    const days = ref([
+      { label: "Sun", value: 0 },
+      { label: "Mon", value: 1 },
+      { label: "Tue", value: 2 },
+      { label: "Wed", value: 3 },
+      { label: "Thu", value: 4 },
+      { label: "Fri", value: 5 },
+      { label: "Sat", value: 6 }
+    ]);
     const selectedDays = ref([]);
     const fromTime = ref("");
     const toTime = ref("");
@@ -811,8 +811,6 @@ export default defineComponent({
       }
       return true;
     };
-
-
 
     const saveCourse = async () => {
       if (!validateCourseData()) return;
