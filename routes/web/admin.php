@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\StudentFileController;
 use App\Http\Controllers\Admin\CourseStudentController;
 use App\Http\Controllers\Admin\QualitySettingController;
 use App\Http\Controllers\Admin\MeetingPlatformController;
+use App\Http\Controllers\Admin\LevelController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -50,6 +51,7 @@ Route::put('/quality-settings/update', [QualitySettingController::class, 'update
 
 
 Route::resource('skills', SkillController::class);
+Route::resource('levels', LevelController::class);
 
 
 Route::post('/students/{student}/files', [StudentFileController::class, 'store'])

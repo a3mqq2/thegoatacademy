@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('courses', function (Blueprint $table) {
-            $table->foreignId('meeting_platform_id')->nullable()->constrained()->onDelete('cascade');
+        Schema::table('users', function (Blueprint $table) {
+            // avatar and cost per hour
+            $table->string('avatar')->nullable();
+            $table->decimal('cost_per_hour', 8, 2)->default(0);
         });
     }
 
@@ -21,8 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('courses', function (Blueprint $table) {
-            $table->dropColumn('meeting_platform_id');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('avatar');
+            $table->dropColumn('cost_per_hour');
         });
     }
 };

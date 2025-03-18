@@ -60,7 +60,7 @@
             <label for="skills" class="form-label"><i class="fa fa-code"></i>Skills to Develop</label>
             <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
               @foreach($skills as $skill)
-                <option value="{{ $skill->id }}" {{ collect(old('skills'))->contains($skill->id) ? 'selected' : '' }}>
+                <option value="{{ $skill->id }}" selected>
                   {{ $skill->name }}
                 </option>
               @endforeach

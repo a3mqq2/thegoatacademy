@@ -60,7 +60,8 @@ class DatabaseSeeder extends Seeder
             QualitySettingsSeeder::class,
             SkillsSeeder::class,
             GroupTypeSeeder::class,
-            CourseTypeSeeder::class,
+            // CourseTypeSeeder::class,
+            LevelsTableSeeder::class,
         ]);
     }
 }

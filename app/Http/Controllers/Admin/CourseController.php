@@ -4,18 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Level;
 use App\Models\Course;
 use App\Models\Student;
 use App\Models\AuditLog;
 use App\Models\GroupType;
 use App\Models\CourseType;
 use Illuminate\Http\Request;
+use App\Models\CourseStudent;
 use App\Models\ExcludeReason;
 use App\Models\CourseSchedule;
+use App\Models\MeetingPlatform;
 use App\Models\WithdrawnReason;
 use App\Http\Controllers\Controller;
-use App\Models\CourseStudent;
-use App\Models\MeetingPlatform;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -72,10 +73,12 @@ class CourseController extends Controller
             'schedule.*.toTime'  => 'required',
             'students'           => 'required|array|min:1',
             'students.*'         => 'exists:students,id',
-            'meeting_platform_id' => "required|exists:meeting_platforms,id",
             'whatsapp_group_link' => 'nullable',
+            'levels'            => 'nullable',
         ]);
     
+
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
@@ -117,7 +120,11 @@ class CourseController extends Controller
                 'message' => 'The number of students exceeds the student capacity.'
             ], 422);
         }
+
+
+
     
+
         try {
             // Create the Course
             $course = Course::create([
@@ -133,7 +140,7 @@ class CourseController extends Controller
                 'days'             => implode('-', $selectedDays->toArray()),
                 'time'             => $request->time,
                 'student_count'    => count($data['students']),
-                'meeting_platform_id' => $data['meeting_platform_id'],
+                'meeting_platform_id' => isset($data['meeting_platform_id']) ? $data['meeting_platform_id'] : null,
                 'whatsapp_group_link' => $data['whatsapp_group_link'],
             ]);
     
@@ -149,7 +156,12 @@ class CourseController extends Controller
     
             // Attach students
             $course->students()->sync($data['students']);
-    
+
+            if(isset($data['levels']))
+            {
+                $course->levels()->sync($data['levels']);
+            }
+
             AuditLog::create([
                 'user_id'      => Auth::id(),
                 'description'  => 'Created a new course: ' . ($course->courseType->name ?? 'Unnamed'),
@@ -208,8 +220,9 @@ class CourseController extends Controller
             'selected_days'         => 'required|array|min:1',
             'selected_days.*'       => 'integer|in:0,1,2,3,4,5,6',
     
-            'meeting_platform_id'   => 'required|exists:meeting_platforms,id',
+            'meeting_platform_id'   => 'nullable|exists:meeting_platforms,id',
             'whatsapp_group_link'   => 'nullable',
+            'levels' => 'nullable',
         ]);
     
         if ($validator->fails()) {
@@ -280,7 +293,12 @@ class CourseController extends Controller
     
             // Delete old schedules before re-inserting
             $course->schedules()->delete();
-    
+
+            if($data['levels'])
+            {
+                $course->levels()->sync($data['levels']);
+            }
+
             // Re-create schedule records
             foreach ($data['schedule'] as $item) {
                 $course->schedules()->create([
@@ -327,16 +345,18 @@ class CourseController extends Controller
     {
         $groupTypes = GroupType::where('status','active')->get();
         $courseTypes = CourseType::where('status','active')->with('skills')->get();
-        $instructors = User::role('instructor')->with('skills')->get();
+        $instructors = User::role('instructor')->with('skills','levels')->get();
         $students = Student::with('skills')->orderByDesc('id')->get();
+        $levels = Level::all();
         $meeting_platforms = MeetingPlatform::all();
         return response()->json([
             'groupTypes' => $groupTypes,
             'courseTypes' => $courseTypes,
             'instructors' => $instructors,
             'students' => $students,
+            'levels' => $levels,
             "meeting_platforms" => $meeting_platforms,
-            'course' => Course::with(['instructor','schedules','students','courseType','groupType'])->find(request()->id),
+            'course' => Course::with(['instructor','schedules','students','courseType','groupType','levels'])->find(request()->id),
         ]);
     }
 

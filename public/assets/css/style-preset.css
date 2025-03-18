@@ -21,7 +21,7 @@ $btn-border-radius-lg: 14px; */
 :root {
   --bs-body-bg: #f8f9fa;
   --bs-body-bg-rgb: 248, 249, 250;
-  --pc-heading-color: #1d2630;
+  --pc-heading-color: #151f42;
   --pc-active-background: #f3f5f7;
   --pc-sidebar-background: transparent;
   --pc-sidebar-color: #5b6b79;
@@ -3465,19 +3465,19 @@ $btn-border-radius-lg: 14px; */
   --bs-list-group-bg: transparent;
   --bs-list-group-border-color: #202b36;
   --bs-list-group-disabled-bg: #171e26;
-  --bs-list-group-action-hover-bg: #1d2630;
+  --bs-list-group-action-hover-bg: #151f42;
   --bs-list-group-action-hover-color: var(--bs-body-color);
-  --bs-list-group-action-active-bg: #1d2630;
+  --bs-list-group-action-active-bg: #151f42;
   --bs-list-group-action-active-color: var(--bs-body-color);
 }
 [data-pc-theme=dark] .preset-btn,
 [data-pc-theme=dark] .theme-main-layout {
-  --bs-gray-300: #1d2630;
+  --bs-gray-300: #151f42;
 }
 [data-pc-theme=dark] .progress,
 [data-pc-theme=dark] .progress-stacked {
-  --bs-progress-bg: #1d2630;
-  background: #1d2630;
+  --bs-progress-bg: #151f42;
+  background: #151f42;
 }
 [data-pc-theme=dark] .btn:not(.btn-light) {
   --bs-btn-color: var(--bs-heading-color);
@@ -3489,15 +3489,15 @@ $btn-border-radius-lg: 14px; */
   color: var(--bs-body-color);
 }
 [data-pc-theme=dark] .pct-c-btn {
-  background: #1d2630;
-  border-color: #1d2630;
+  background: #151f42;
+  border-color: #151f42;
 }
 [data-pc-theme=dark] .dropdown-menu {
   --bs-dropdown-color: var(--bs-body-color);
   --bs-dropdown-link-color: var(--bs-body-color);
   --bs-dropdown-bg: #263240;
   --bs-dropdown-link-hover-bg: #19212a;
-  --bs-dropdown-divider-bg: #1d2630;
+  --bs-dropdown-divider-bg: #151f42;
 }
 [data-pc-theme=dark] .pagination {
   --bs-pagination-bg: #19212a;
@@ -4640,7 +4640,7 @@ $btn-border-radius-lg: 14px; */
 [data-pc-theme=dark] .notifier,
 [data-pc-theme=dark] .datepicker-footer,
 [data-pc-theme=dark] .datepicker-picker {
-  background-color: #1d2630;
+  background-color: #151f42;
 }
 [data-pc-theme=dark] .datepicker-cell.focused:not(.selected), [data-pc-theme=dark] .datepicker-cell:not(.disabled):hover {
   background: var(--bs-primary);
@@ -4649,7 +4649,7 @@ $btn-border-radius-lg: 14px; */
   background-color: rgba(var(--bs-primary), 0.3);
 }
 [data-pc-theme=dark] .datepicker-cell.range {
-  background: #1d2630;
+  background: #151f42;
 }
 [data-pc-theme=dark] .datepicker-controls .btn {
   background: transparent;

@@ -31,7 +31,6 @@
                   @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="phone" class="form-label"><i class="fa fa-phone"></i> Phone:</label>
@@ -41,7 +40,6 @@
                   @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-              
               <div class="col-md-4">
                 <div class="mb-3">
                   <label for="email" class="form-label"><i class="fa fa-envelope"></i> Email:</label>
@@ -64,7 +62,6 @@
                   @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
-              
               <!-- Confirm Password -->
               <div class="col-md-6">
                 <div class="mb-3">
@@ -75,6 +72,24 @@
               </div>
             </div> <!-- end row -->
             
+            <div class="row mb-2">
+              <div class="col-md-6">
+                <label for="">Avatar</label>
+                <input type="file" name="avatar" class="form-control @error('avatar') is-invalid @enderror">
+                @error('avatar') <div class="invalid-feedback">{{ $message }}</div> @enderror
+              </div>
+              {{-- Cost per hour --}}
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="cost_per_hour" class="form-label"><i class="fa fa-money-bill-wave"></i> Cost Per Hour:</label>
+                  <input type="number" name="cost_per_hour" id="cost_per_hour"
+                    class="form-control @error('cost_per_hour') is-invalid @enderror"
+                    value="{{ old('cost_per_hour') }}" placeholder="Enter cost per hour" required>
+                  @error('cost_per_hour') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+              </div>
+            </div>
+
             <!-- Roles Section -->
             <div class="row">
               <div class="col-md-12">
@@ -94,7 +109,7 @@
               </div>
             </div> <!-- end row -->
             
-            <!-- Additional Fields (Previously "instructor fields", now open to all) -->
+            <!-- Additional Fields -->
             <div id="instructorFields">
               <div class="row">
                 <!-- Age -->
@@ -137,12 +152,23 @@
                   <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills:</label>
                   <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
                     @foreach($skills as $skill)
-                      <option value="{{ $skill->id }}" {{ collect(old('skills'))->contains($skill->id) ? 'selected' : '' }}>
+                      <option value="{{ $skill->id }}" {{ $skill->name != "pronunciation" ? "selected" : "" }} >
                         {{ $skill->name }}
                       </option>
                     @endforeach
                   </select>
                   @error('skills') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="col-md-12">
+                  <label for="levels" class="form-label"><i class="fa fa-code"></i> Levels:</label>
+                  <select name="levels[]" id="levels" class="form-select @error('levels') is-invalid @enderror" multiple>
+                    @foreach($levels as $level)
+                      <option value="{{ $level->id }}" {{ $level->name != "pronunciation" ? "selected" : "" }} >
+                        {{ $level->name }}
+                      </option>
+                    @endforeach
+                  </select>
+                  @error('levels') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
               </div>
               
@@ -165,6 +191,31 @@
                 <label for="notes" class="form-label"><i class="fa fa-sticky-note"></i> Notes:</label>
                 <textarea name="notes" id="notes" rows="4" class="form-control @error('notes') is-invalid @enderror" placeholder="Enter any additional notes">{{ old('notes') }}</textarea>
                 @error('notes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+              </div>
+            </div>
+            
+            <!-- User Shifts Section -->
+            <div class="card mt-4">
+              <div class="card-header bg-light text-primary">
+                <h5 class="mb-0 text-primary"><i class="fa fa-clock"></i> User Shifts</h5>
+              </div>
+              <div class="card-body">
+                <table class="table" id="shiftsTable">
+                  <thead>
+                    <tr>
+                      <th>Shift Day</th>
+                      <th>Start Time</th>
+                      <th>End Time</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Rows will be appended here dynamically -->
+                  </tbody>
+                </table>
+                <button type="button" class="btn btn-success" id="addShiftBtn">
+                  <i class="fa fa-plus"></i> Add Shift
+                </button>
               </div>
             </div>
             
@@ -197,7 +248,7 @@
               <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
                 <i class="fa fa-arrow-left"></i> Cancel
               </a>
-              <button type="submit" class="btn btn-primary">
+              <button id="submitBtn" type="submit" class="btn btn-primary">
                 <i class="fa fa-save"></i> Create User
               </button>
             </div>
@@ -234,24 +285,27 @@
         });
       }
   
-      // Listen for changes on all role checkboxes to update permissions
       document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
         checkbox.addEventListener('change', function () {
           updatePermissions();
         });
       });
-  
-      // Initial check on load
       updatePermissions();
   
-      // Initialize Select2 for the skills multiselect
+      // Initialize Select2 for skills and levels multiselects
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true,
         width: '100%'
       });
   
-      // Initialize FilePond for the video file input with onprocessfile callback
+      $('#levels').select2({
+        placeholder: 'Select levels',
+        allowClear: true,
+        width: '100%'
+      });
+  
+      // Initialize FilePond for video file input
       const videoInputElement = document.querySelector('input[id="video"]');
       FilePond.create(videoInputElement, {
         server: {
@@ -271,16 +325,63 @@
           }
         },
         acceptedFileTypes: ['video/*'],
+        onprocessfilestart: () => {
+          document.getElementById('submitBtn').disabled = true;
+        },
         onprocessfile: (error, file) => {
+          document.getElementById('submitBtn').disabled = false;
           if (!error) {
             let serverResponse = file.serverId;
             try {
               serverResponse = JSON.parse(file.serverId);
-            } catch(e) {
-              // If parsing fails, use the original response
-            }
+            } catch(e) { }
             document.getElementById('video_path').value = serverResponse.path;
           }
+        },
+        onprocessfileabort: () => {
+          document.getElementById('submitBtn').disabled = false;
+        },
+        onprocessfileerror: () => {
+          document.getElementById('submitBtn').disabled = false;
+        }
+      });
+  
+      // User Shifts Dynamic Rows
+      const shiftsTableBody = document.querySelector("#shiftsTable tbody");
+      const addShiftBtn = document.getElementById("addShiftBtn");
+  
+      addShiftBtn.addEventListener("click", function () {
+        // Create a new row with a select for day and inputs for start_time and end_time
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <select name="shifts[][day]" class="form-control" required>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+            </select>
+          </td>
+          <td>
+            <input type="time" name="shifts[][start_time]" class="form-control" required>
+          </td>
+          <td>
+            <input type="time" name="shifts[][end_time]" class="form-control" required>
+          </td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm removeShiftBtn"><i class="fa fa-trash"></i></button>
+          </td>
+        `;
+        shiftsTableBody.appendChild(tr);
+      });
+  
+      // Delegate event for deleting shift rows
+      shiftsTableBody.addEventListener("click", function (e) {
+        if (e.target.closest(".removeShiftBtn")) {
+          e.target.closest("tr").remove();
         }
       });
     });

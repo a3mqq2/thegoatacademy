@@ -84,4 +84,10 @@ class Course extends Model
         return $this->belongsTo(MeetingPlatform::class);
     }
 
+
+    public function levels()
+    {
+        return $this->belongsToMany(Level::class);
+    }
+
 }

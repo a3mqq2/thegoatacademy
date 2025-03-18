@@ -122,7 +122,7 @@
                     class="form-select @error('skills') is-invalid @enderror" multiple>
               @foreach($skills as $skill)
                 <option value="{{ $skill->id }}" 
-                  {{ collect(old('skills'))->contains($skill->id) ? 'selected' : '' }}>
+                  selected>
                   {{ $skill->name }}
                 </option>
               @endforeach

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'User Details')
+@section('title', 'User Profile')
 
 @section('breadcrumb')
   <li class="breadcrumb-item">
@@ -14,111 +14,123 @@
     </a>
   </li>
   <li class="breadcrumb-item active">
-    <i class="fa fa-user"></i> User Details
+    <i class="fa fa-user"></i> Profile
   </li>
 @endsection
 
 @section('content')
-<div class="">
-  <div class="row justify-content-center mt-3">
-    <div class="col-lg-12 col-md-12">
+<div class="container">
+  <div class="row">
+    <!-- Profile Sidebar -->
+    <div class="col-md-4 mb-4">
       <div class="card">
-        <div class="card-header">
-          <h4><i class="fa fa-user"></i> User Details</h4>
+        <div class="card-body text-center">
+          @if($user->avatar)
+            <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="rounded-circle mb-3" width="150" height="150">
+          @else
+            <!-- Image placeholder if avatar does not exist -->
+            <img src="{{ asset('images/default-avatar.jpg') }}" alt="Default Avatar" class="rounded-circle mb-3" width="150" height="150">
+          @endif
+          <h3 class="card-title">{{ $user->name }}</h3>
+          <p class="text-muted">{{ $user->email }}</p>
+          <p class="mt-2"><strong>Cost per hour:</strong> {{ $user->cost_per_hour }} LYD</p>
+          <p>
+            <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }}">
+              <i class="fa {{ $user->status == 'active' ? 'fa-check' : 'fa-times' }}"></i> {{ ucfirst($user->status) }}
+            </span>
+          </p>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-bordered">
-                <tr>
-                  <th>Name</th>
-                  <td>{{ $user->name }}</td>
-                </tr>
-                <tr>
-                  <th>Email</th>
-                  <td>{{ $user->email }}</td>
-                </tr>
-                <tr>
-                  <th>Status</th>
-                  <td>
-                    <span class="badge {{ $user->status == 'active' ? 'bg-success' : 'bg-danger' }}">
-                      <i class="fa {{ $user->status == 'active' ? 'fa-check' : 'fa-times' }}"></i> {{ ucfirst($user->status) }}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <th>Roles</th>
-                  <td>
-                    @if($user->roles->isNotEmpty())
-                      @foreach($user->roles as $role)
-                        <span class="badge bg-secondary"><i class="fa fa-tag"></i> {{ $role->name }}</span>
-                      @endforeach
-                    @else
-                      <span class="text-muted"><i class="fa fa-exclamation-circle"></i> No Roles</span>
-                    @endif
-                  </td>
-                </tr>
-                @if($user->skills && $user->skills->isNotEmpty())
-                  <tr>
-                    <th>Skills</th>
-                    <td>
-                      @foreach($user->skills as $skill)
-                        <span class="badge bg-info"><i class="fa fa-code"></i> {{ $skill->name }}</span>
-                      @endforeach
-                    </td>
-                  </tr>
-                @endif
-    
-                  <tr>
-                    <th>Age</th>
-                    <td>{{ $user->age }}</td>
-                  </tr>
-                  <tr>
-                    <th>Gender</th>
-                    <td>{{ ucfirst($user->gender) }}</td>
-                  </tr>
-                  <tr>
-                    <th>Nationality</th>
-                    <td>{{ $user->nationality }}</td>
-                  </tr>
-                  <tr>
-                    <th>Introductory Video</th>
-                    <td>
-                      @if($user->video)
-                        <video width="320" height="240" controls>
-                          <source src="{{ asset('storage/' . $user->video) }}" type="video/mp4">
-                          Your browser does not support the video tag.
-                        </video>
-                      @else
-                        <span class="text-muted">No video available</span>
-                      @endif
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Notes</th>
-                    <td>{{ $user->notes }}</td>
-                  </tr>
-    
-                <tr>
-                  <th>Created At</th>
-                  <td><i class="fa fa-calendar"></i> {{ $user->created_at->format('Y-m-d H:i') }}</td>
-                </tr>
-              </table>
-            </div>
-        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><strong>Age:</strong> {{ $user->age }}</li>
+          <li class="list-group-item"><strong>Gender:</strong> {{ ucfirst($user->gender) }}</li>
+          <li class="list-group-item"><strong>Nationality:</strong> {{ $user->nationality }}</li>
+        </ul>
       </div>
     </div>
-  </div>
+    <!-- Profile Details -->
+    <div class="col-md-8 mb-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4><i class="fa fa-info-circle"></i> Profile Details</h4>
+        </div>
+        <div class="card-body">
+          <h5>Roles</h5>
+          @if($user->roles->isNotEmpty())
+            @foreach($user->roles as $role)
+              <span class="badge bg-secondary me-1"><i class="fa fa-tag"></i> {{ $role->name }}</span>
+            @endforeach
+          @else
+            <p class="text-muted">No roles assigned.</p>
+          @endif
+          <hr>
+          @if($user->skills && $user->skills->isNotEmpty())
+            <h5>Skills</h5>
+            @foreach($user->skills as $skill)
+              <span class="badge bg-info me-1"><i class="fa fa-code"></i> {{ $skill->name }}</span>
+            @endforeach
+            <hr>
+          @endif
+          @if($user->levels && $user->levels->isNotEmpty())
+            <h5>Levels</h5>
+            @foreach($user->levels as $level)
+              <span class="badge bg-info me-1"><i class="fa fa-level-up-alt"></i> {{ $level->name }}</span>
+            @endforeach
+            <hr>
+          @endif
+          
+          <!-- New: User Shifts Section -->
+          @if($user->shifts && $user->shifts->isNotEmpty())
+            <h5>User Shifts</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($user->shifts as $shift)
+                    <tr>
+                      <td>{{ $shift->day }}</td>
+                      <td>{{ $shift->start_time }}</td>
+                      <td>{{ $shift->end_time }}</td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            <hr>
+          @endif
 
-  <!-- Audit Logs -->
-  <div class="row justify-content-center mt-4">
-    <div class="col-lg-12 col-md-12">
+          @if($user->notes)
+            <h5>Notes</h5>
+            <p>{{ $user->notes }}</p>
+            <hr>
+          @endif
+          @if($user->video)
+            <h5>Introductory Video</h5>
+            <video width="100%" height="auto" controls>
+              <source src="{{ asset('storage/' . $user->video) }}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          @endif
+          <div class="mt-3">
+            <small class="text-muted">
+              <i class="fa fa-calendar"></i> Joined on {{ $user->created_at->format('Y-m-d H:i') }}
+            </small>
+          </div>
+        </div>
+      </div>
+      <!-- Audit Logs -->
       <div class="card">
         <div class="card-header">
           <h4><i class="fa fa-history"></i> Audit Logs</h4>
         </div>
         <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover mb-0">
               <thead>
                 <tr>
                   <th>ID</th>

@@ -251,20 +251,12 @@
           <td>{{ $course->start_date }}</td>
         </tr>
         <tr>
-          <th>Mid Exam Date</th>
-          <td>{{ $course->mid_exam_date }}</td>
-        </tr>
-        <tr>
-          <th>Final Exam Date</th>
-          <td>{{ $course->final_exam_date }}</td>
-        </tr>
-        <tr>
           <th>Participants</th>
           <td>{{ $course->students->count() }}</td>
         </tr>
         <tr>
           <th>Days</th>
-          <td>{{ $course->days }}/ {{$course->courseType->duration}} Classes </td>
+          <td>{{ $course->days }} </td>
         </tr>
         <tr>
           <th>Time</th>
@@ -277,32 +269,53 @@
       </table>
     </div>
 
-    <!-- SCHEDULE SECTION -->
-    <div class="schedule">
-      <div class="section-title">Schedule</div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Day</th>
-            <th>Date</th>
-            <th>From Time</th>
-            <th>To Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach ($course->schedules as $item)
-          <tr>
-            <td>{{ $loop->iteration }}</td>
-            <td>{{ $item->day }}</td>
-            <td>{{ $item->date }}</td>
-            <td>{{ $item->from_time }}</td>
-            <td>{{ $item->to_time }}</td>
-          </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
+          <div class="schedule">
+            <div class="section-title">Schedule</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Day</th>
+                  <th>Date</th>
+                  <th>From Time</th>
+                  <th>To Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                @php
+                  $total = $course->schedules->count();
+                  $midPoint = ceil($total / 2);
+                @endphp
+                @foreach ($course->schedules as $item)
+                  <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $item->day }}</td>
+                    <td>{{ $item->date }}</td>
+                    <td>{{ $item->from_time }}</td>
+                    <td>{{ $item->to_time }}</td>
+                  </tr>
+                  @if ($loop->iteration == $midPoint)
+                    <tr style="background-color: #007bff; color: #fff;">
+                      <td colspan="2">MID exam test</td>
+                      <td>
+                        {{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
+                      </td>
+                      <td colspan="2"></td>
+                    </tr>
+                  @endif
+                @endforeach
+                <tr style="background-color: #007bff; color: #fff;">
+                  <td colspan="2">Final exam test</td>
+                  <td>
+                    {{ $course->final_exam_date }} ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})
+                  </td>
+                  <td colspan="2"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+
 
     <!-- STUDENTS SECTION -->
     <div class="students">

@@ -27,7 +27,10 @@ class User extends Authenticatable
         'nationality',
         'video',
         'notes',
-        'phone'
+        'phone',
+        'avatar',
+        'level_id',
+        'cost_per_hour'
     ];
 
     /**
@@ -65,4 +68,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Skill::class)->withTimestamps();
     }
+
+
+    public function levels()
+    {
+        return $this->belongsToMany(Level::class)->withTimestamps();
+    }
+
+    public function shifts()
+    {
+        return $this->hasMany(UserShift::class,'user_id','id'); 
+    }
+
 }

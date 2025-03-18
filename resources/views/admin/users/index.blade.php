@@ -98,6 +98,7 @@
                 <th>Roles</th>
                 <th>Status</th>
                 <th>Skills</th> <!-- New column -->
+                <th>Levels</th> <!-- New column -->
                 <th>Created At</th>
                 <th>Actions</th>
              </tr>
@@ -146,6 +147,19 @@
                     @else
                       <span class="text-muted">
                         <i class="fa fa-exclamation-circle"></i> No Skills
+                      </span>
+                    @endif
+                  </td>
+                  <td>
+                    @if($user->levels && $user->levels->isNotEmpty())
+                      @foreach($user->levels as $skill)
+                        <span class="badge bg-info">
+                          <i class="fa fa-code"></i> {{ $skill->name }}
+                        </span>
+                      @endforeach
+                    @else
+                      <span class="text-muted">
+                        <i class="fa fa-exclamation-circle"></i> No levels
                       </span>
                     @endif
                   </td>
