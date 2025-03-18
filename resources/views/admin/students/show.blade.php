@@ -39,42 +39,44 @@
           <p class="text-muted">{{ ucfirst($student->specialization ?? 'Not specified') }}</p>
         </div>
         <div class="col-md-8">
-          <table class="table table-bordered table-hover">
-            <tbody>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-phone"></i> Phone</th>
-                <td>{{ $student->phone }}</td>
-              </tr>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-city"></i> City</th>
-                <td>{{ $student->city ?? 'N/A' }}</td>
-              </tr>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-birthday-cake"></i> Age</th>
-                <td>{{ $student->age ?? 'N/A' }}</td>
-              </tr>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-venus-mars"></i> Gender</th>
-                <td>{{ ucfirst($student->gender) }}</td>
-              </tr>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-phone-alt"></i> Emergency Phone</th>
-                <td>{{ $student->emergency_phone ?? 'N/A' }}</td>
-              </tr>
-              <tr>
-                <th class="bg-light text-primary"><i class="fa fa-code"></i> Skills to Develop</th>
-                <td>
-                  @if($student->skills->isNotEmpty())
-                    @foreach($student->skills as $skill)
-                      <span class="badge bg-info me-1">{{ $skill->name }}</span>
-                    @endforeach
-                  @else
-                    <span>N/A</span>
-                  @endif
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <tbody>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-phone"></i> Phone</th>
+                  <td>{{ $student->phone }}</td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-city"></i> City</th>
+                  <td>{{ $student->city ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-birthday-cake"></i> Age</th>
+                  <td>{{ $student->age ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-venus-mars"></i> Gender</th>
+                  <td>{{ ucfirst($student->gender) }}</td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-phone-alt"></i> Emergency Phone</th>
+                  <td>{{ $student->emergency_phone ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                  <th class="bg-light text-primary"><i class="fa fa-code"></i> Skills to Develop</th>
+                  <td>
+                    @if($student->skills->isNotEmpty())
+                      @foreach($student->skills as $skill)
+                        <span class="badge bg-info me-1">{{ $skill->name }}</span>
+                      @endforeach
+                    @else
+                      <span>N/A</span>
+                    @endif
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
