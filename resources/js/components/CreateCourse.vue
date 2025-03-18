@@ -812,6 +812,8 @@ export default defineComponent({
       return true;
     };
 
+    
+
     const saveCourse = async () => {
       if (!validateCourseData()) return;
       const payload = {
