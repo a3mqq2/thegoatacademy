@@ -202,6 +202,7 @@
                 <div class="row g-3 align-items-end mb-3">
                   <div class="col-md-6">
                     <label for="daysSelect" class="form-label"><strong>Days</strong></label>
+                    {{-- Select2-Enabled Multi-Select for Days --}}
                     <select id="daysSelect" class="form-select" multiple>
                       <option value="Saturday">Saturday</option>
                       <option value="Sunday">Sunday</option>
@@ -313,25 +314,23 @@
     document.addEventListener("DOMContentLoaded", function () {
       const daysList = ["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"];
 
-      // Update permissions based on checked roles
       function updatePermissions() {
         let selectedRoles = [];
-        document.querySelectorAll('.role-checkbox:checked').forEach((el) => {
+        document.querySelectorAll('.role-checkbox:checked').forEach(el => {
           selectedRoles.push(el.dataset.roleId);
         });
-        document.querySelectorAll('.permissions-group').forEach((permGroup) => {
+        document.querySelectorAll('.permissions-group').forEach(permGroup => {
           let roleId = permGroup.dataset.roleId;
           permGroup.style.display = selectedRoles.includes(roleId) ? "block" : "none";
         });
       }
-      document.querySelectorAll('.role-checkbox').forEach((checkbox) => {
-        checkbox.addEventListener('change', function () {
+      document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
           updatePermissions();
         });
       });
       updatePermissions();
 
-      // Initialize Select2
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true,
@@ -342,45 +341,67 @@
         allowClear: true,
         width: '100%'
       });
+      $('#daysSelect').select2({
+        placeholder: 'Select days',
+        width: '100%'
+      });
 
-      // FilePond plugins registration
       FilePond.registerPlugin(
         FilePondPluginFileValidateType,
         FilePondPluginFileValidateSize,
         FilePondPluginMediaPreview
       );
 
-      // Initialize FilePond
       const videoInputElement = document.querySelector('#video');
       FilePond.create(videoInputElement, {
-      server: {
-        process: {
-          url: '{{ route("upload.file") }}',
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        server: {
+          process: {
+            url: '{{ route("upload.file") }}',
+            method: 'POST',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            timeout: 10 * 60 * 1000
           },
-          ondata: (formData) => {
-            const file = formData.get('file');
-            formData.delete('file');
-            formData.append('video', file);
-            return formData;
-          },
-          timeout: 10 * 60 * 1000
-        },
-        revert: {
-          url: '{{ route("upload.file.revert") }}',
-          method: 'DELETE',
-          headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          revert: {
+            url: '{{ route("upload.file.revert") }}',
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
           }
+        },
+        acceptedFileTypes: ['video/*'],
+        chunkUploads: false,
+        chunkSize: 2 * 1024 * 1024, 
+        chunkRetryDelays: [500, 1000, 3000],
+        onprocessfilestart: () => {
+          document.getElementById('submitBtn').disabled = true;
+        },
+        onprocessfile: (error, file) => {
+          document.getElementById('submitBtn').disabled = false;
+          if (!error) {
+            let serverResponse = file.serverId;
+            try {
+              serverResponse = JSON.parse(file.serverId);
+            } catch (e) {}
+            document.getElementById('video_path').value = serverResponse.path;
+          }
+        },
+        onprocessfileabort: () => {
+          document.getElementById('submitBtn').disabled = false;
+        },
+        onprocessfileerror: () => {
+          document.getElementById('submitBtn').disabled = false;
+        },
+        ondata: (formData) => {
+          const file = formData.get('file');
+          formData.delete('file');
+          formData.append('video', file);
+          return formData;
         }
-      },
-      ...
-    });
+      });
 
-
-      // Shifts Table
       const shiftsTableBody = document.querySelector("#shiftsTable tbody");
       const addShiftBtn = document.getElementById("addShiftBtn");
       const generateScheduleBtn = document.getElementById("generateScheduleBtn");
@@ -388,13 +409,11 @@
       const toTimeEl = document.getElementById("to_time");
       const daysSelect = document.getElementById("daysSelect");
 
-      // Helper function to create a <select> for days with a pre-selected value
       function createDaySelect(selectedDay = "") {
         let optionsHtml = daysList.map(day => {
           const isSelected = (day === selectedDay) ? 'selected' : '';
           return `<option value="${day}" ${isSelected}>${day}</option>`;
         }).join("");
-        
         return `
           <select name="shifts[][day]" class="form-control" required>
             ${optionsHtml}
@@ -402,13 +421,11 @@
         `;
       }
 
-      // 1) Generate schedule for multiple selected days
-      generateScheduleBtn.addEventListener("click", function () {
+      generateScheduleBtn.addEventListener("click", () => {
         const fromTime = fromTimeEl.value;
         const toTime = toTimeEl.value;
         const selectedDays = Array.from(daysSelect.selectedOptions).map(option => option.value);
 
-        // For each selected day, add a new row with a day <select>
         selectedDays.forEach(day => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -429,8 +446,7 @@
         });
       });
 
-      // 2) Add single empty shift row manually
-      addShiftBtn.addEventListener("click", function () {
+      addShiftBtn.addEventListener("click", () => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${createDaySelect("Saturday")}</td>
@@ -449,8 +465,7 @@
         shiftsTableBody.appendChild(tr);
       });
 
-      // 3) Remove shift row
-      shiftsTableBody.addEventListener("click", function (e) {
+      shiftsTableBody.addEventListener("click", (e) => {
         if (e.target.closest(".removeShiftBtn")) {
           e.target.closest("tr").remove();
         }

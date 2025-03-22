@@ -261,6 +261,7 @@
                     <label for="daysSelect" class="form-label">
                       <strong>Days</strong>
                     </label>
+                    {{-- Enable Select2 for days multi-select --}}
                     <select id="daysSelect" class="form-select" multiple>
                       <option value="Saturday">Saturday</option>
                       <option value="Sunday">Sunday</option>
@@ -424,7 +425,7 @@
       });
       updatePermissions();
 
-      // Initialize Select2
+      // Initialize Select2 for skills and levels
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true,
@@ -433,6 +434,12 @@
       $('#levels').select2({
         placeholder: 'Select levels',
         allowClear: true,
+        width: '100%'
+      });
+
+      // Initialize Select2 for days
+      $('#daysSelect').select2({
+        placeholder: 'Select days',
         width: '100%'
       });
 
@@ -510,13 +517,12 @@
         `;
       }
 
-      // 1) Generate schedule for multiple selected days
+      // Generate schedule for multiple selected days
       generateScheduleBtn.addEventListener("click", function () {
         const fromTime = fromTimeEl.value;
         const toTime = toTimeEl.value;
         const selectedDays = Array.from(daysSelect.selectedOptions).map(option => option.value);
 
-        // For each selected day, add a new row with a day <select>
         selectedDays.forEach(day => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -537,7 +543,7 @@
         });
       });
 
-      // 2) Add single empty shift row manually
+      // Add single empty shift row manually
       addShiftBtn.addEventListener("click", function () {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -557,7 +563,7 @@
         shiftsTableBody.appendChild(tr);
       });
 
-      // 3) Remove shift row
+      // Remove shift row
       shiftsTableBody.addEventListener("click", function (e) {
         if (e.target.closest(".removeShiftBtn")) {
           e.target.closest("tr").remove();
