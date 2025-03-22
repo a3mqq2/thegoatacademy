@@ -67,7 +67,7 @@ class UserController extends Controller
             'cost_per_hour'  => 'nullable|numeric',
         ];
     
-        // Trainer fields (always provided)
+        // Trainer fields
         $rules['age']         = 'required|integer|min:18';
         $rules['gender']      = 'required|in:male,female';
         $rules['nationality'] = 'required|string|max:255';
@@ -75,13 +75,12 @@ class UserController extends Controller
         $rules['skills']      = 'nullable|array';
         $rules['levels']      = 'nullable|array';
     
-        // Optionally validate shifts if provided.
-        // Here we expect an array of arrays, but in your case the structure might be disjoint.
-        // We'll add a basic rule to check if shifts is an array.
+        // Shifts validation
         $rules['shifts'] = 'nullable|array';
     
         $validatedData = $request->validate($rules);
     
+
         // Create the user with basic fields
         $user = new User();
         $user->name     = $validatedData['name'];
@@ -97,6 +96,7 @@ class UserController extends Controller
         $user->notes         = $request->notes;
         $user->cost_per_hour = $request->cost_per_hour;
         
+        // Handle video
         if ($request->filled('video_path')) {
             $user->video = $request->video_path;
         } elseif ($request->hasFile('video')) {
@@ -105,62 +105,63 @@ class UserController extends Controller
             $user->video = $videoPath;
         }
         
-        if ($request->has('avatar')) {
+        // Handle avatar
+        if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
         }
         
-        $user->skills()->sync($request->skills);
-        $user->levels()->sync($request->levels);
+        // Sync skills and levels
+        if ($request->filled('skills')) {
+            $user->skills()->sync($request->skills);
+        }
+        if ($request->filled('levels')) {
+            $user->levels()->sync($request->levels);
+        }
+
         $user->save();
         
-        // Handle user shifts (if provided)
+
         if ($request->has('shifts')) {
-            $shifts = $request->input('shifts');
-            
-            // Check if shifts come as separate arrays like:
-            // 0 => ['day' => 'Saturday'],
-            // 1 => ['start_time' => '05:37'],
-            // 2 => ['end_time' => '09:37']
-            if (count($shifts) === 3
-                && isset($shifts[0]['day'])
-                && isset($shifts[1]['start_time'])
-                && isset($shifts[2]['end_time'])) {
-                
-                $combinedShift = [
-                    'day'        => $shifts[0]['day'],
-                    'start_time' => $shifts[1]['start_time'],
-                    'end_time'   => $shifts[2]['end_time']
-                ];
-                $user->shifts()->create($combinedShift);
-            }
-            // Otherwise, assume shifts is already an array of associative arrays
-            else {
-                foreach ($shifts as $shift) {
-                    if (isset($shift['day'], $shift['start_time'], $shift['end_time'])) {
-                        $user->shifts()->create([
-                            'day'        => $shift['day'],
-                            'start_time' => $shift['start_time'],
-                            'end_time'   => $shift['end_time'],
-                        ]);
-                    }
+            // تقسيم المصفوفة إلى مجموعات من 3 عناصر
+            $chunkedShifts = array_chunk($request->shifts, 3);
+            foreach ($chunkedShifts as $shiftGroup) {
+                // shiftGroup المتوقع:
+                // [
+                //   ["day" => "Monday"],
+                //   ["start_time" => "16:10"],
+                //   ["end_time" => "21:29"]
+                // ]
+                $day        = $shiftGroup[0]['day']        ?? null;
+                $start_time = $shiftGroup[1]['start_time'] ?? null;
+                $end_time   = $shiftGroup[2]['end_time']   ?? null;
+                    
+                // التحقق من سلامة البيانات
+                if ($day && $start_time && $end_time) {
+                    // مثال على إنشاء الشفت
+                    $user->shifts()->create([
+                        'day'        => $day,
+                        'start_time' => $start_time,
+                        'end_time'   => $end_time,
+                    ]);
                 }
             }
         }
+        
         
         // Attach roles
         foreach ($validatedData['roles'] as $role) {
             $user->assignRole($role);
         }
         
-        // Optionally assign permissions if provided
+        // Attach permissions if provided
         if ($request->filled('permissions')) {
             $user->givePermissionTo($request->permissions);
         }
         
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User created successfully.');
     }
-    
     
     
     public function edit($id)
@@ -172,100 +173,125 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user', 'roles','skills','levels'));
     }
 
-    public function update(Request $request, $id)
+
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-        
-        // Basic validation rules
+        // تحضير قواعد التحقق الأساسية
+        // في حقل الـemail نحتاج لتجاهل الـid الحالي عند التحقق من الـunique
         $rules = [
             'name'           => 'required|string|max:255',
-            'email'          => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email'          => 'required|email|max:255|unique:users,email,' . $user->id,
             'phone'          => 'required',
-            'roles'          => 'array',
-            'avatar'         => 'nullable',
+            'avatar'         => 'nullable|file',
             'cost_per_hour'  => 'nullable|numeric',
+            'roles'          => 'required|array', // يجب أن لا تكون فارغة
         ];
-        
-        // Trainer fields (always provided)
+
+        // إذا أراد المستخدم تغيير كلمة المرور (ليست إلزامية)
+        // نضيف لها شرط الطول والتأكيد
+        if ($request->filled('password')) {
+            $rules['password'] = 'required|string|min:6|confirmed';
+        }
+
+        // حقول تخص المدرب
         $rules['age']         = 'required|integer|min:18';
         $rules['gender']      = 'required|in:male,female';
         $rules['nationality'] = 'required|string|max:255';
         $rules['notes']       = 'required|string';
         $rules['skills']      = 'nullable|array';
         $rules['levels']      = 'nullable|array';
-        
-        // Validate shifts as an array
+
+        // التحقق من وجود مصفوفة الـshifts (ليست إلزامية)
         $rules['shifts'] = 'nullable|array';
-        
-        // Validate password if provided
-        if ($request->filled('password')) {
-            $rules['password'] = 'string|min:6|confirmed';
-        }
-        
+
+        // تحقق المدخلات
         $validatedData = $request->validate($rules);
-        
-        // Update basic fields
+
+        // تحديث البيانات الأساسية
         $user->name  = $validatedData['name'];
         $user->email = $validatedData['email'];
         $user->phone = $validatedData['phone'];
-        
+
+        // إذا تم إدخال كلمة مرور جديدة
         if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+            $user->password = Hash::make($validatedData['password']);
         }
-        
-        // Update trainer-specific and additional fields
+
+        // تحديث الحقول الإضافية (المدرب/المعلومات)
         $user->age           = $request->age;
         $user->gender        = $request->gender;
         $user->nationality   = $request->nationality;
         $user->notes         = $request->notes;
         $user->cost_per_hour = $request->cost_per_hour;
-        
+
+        // معالجة الفيديو (مسار الفيديو) 
         if ($request->filled('video_path')) {
+            // إذا تم رفعه بطريقة FilePond بخاصية الـchunk
             $user->video = $request->video_path;
         } elseif ($request->hasFile('video')) {
-            // Optionally, delete the old video
+            // إذا رُفع الملف مباشرةً عبر الحقل
             $videoPath = $request->file('video')->store('videos', 'public');
             $user->video = $videoPath;
         }
-        
-        if ($request->has('avatar')) {
-            // Optionally, delete the old avatar
+
+        // معالجة الصورة (أفاتار)
+        if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
             $user->avatar = $avatarPath;
         }
-        
-        $user->skills()->sync($request->skills);
-        $user->levels()->sync($request->levels);
+
+        // حفظ التغييرات قبل ربط العلاقات
         $user->save();
-        
-        // Update user shifts:
-        // Delete existing shifts first
+
+        // مزامنة الـskills والـlevels إن وُجدت
+        if ($request->filled('skills')) {
+            $user->skills()->sync($request->skills);
+        } else {
+            $user->skills()->sync([]); 
+        }
+        if ($request->filled('levels')) {
+            $user->levels()->sync($request->levels);
+        } else {
+            $user->levels()->sync([]);
+        }
+
+        // الشفتات: سنحذف الشفتات القديمة وننشئ الجديدة
+        // أو يمكنك تعديل المنطق حسب احتياجك (مثلاً تحديث كل سجل)
         $user->shifts()->delete();
-        
-        // Process submitted shifts as an array of associative arrays
         if ($request->has('shifts')) {
-            foreach ($request->input('shifts') as $shift) {
-                if (!empty($shift['day']) && !empty($shift['start_time']) && !empty($shift['end_time'])) {
+            // تقسيم العناصر لـمجموعات من 3 (day, start_time, end_time)
+            $chunkedShifts = array_chunk($request->shifts, 3);
+            foreach ($chunkedShifts as $shiftGroup) {
+                $day        = $shiftGroup[0]['day']        ?? null;
+                $start_time = $shiftGroup[1]['start_time'] ?? null;
+                $end_time   = $shiftGroup[2]['end_time']   ?? null;
+                
+                if ($day && $start_time && $end_time) {
                     $user->shifts()->create([
-                        'day'        => $shift['day'],
-                        'start_time' => $shift['start_time'],
-                        'end_time'   => $shift['end_time'],
+                        'day'        => $day,
+                        'start_time' => $start_time,
+                        'end_time'   => $end_time,
                     ]);
                 }
             }
         }
-        
-        // Sync roles
-        $user->syncRoles($validatedData['roles'] ?? []);
-        
-        // Optionally sync permissions if provided
+
+        // الأدوار (Roles) 
+        // إما نستخدم syncRoles أو نقوم بنفس الطريقة السابقة مع 'assignRole'
+        // ينصح باستخدام syncRoles لحذف الأدوار القديمة التلقائيًا 
+        // وإضافة الجديدة.
+        $user->syncRoles($validatedData['roles']);
+
+        // في حالة permissions 
+        // نفضل فك الارتباط القديم ومن ثم تعيين الجديد (إذا أردت مسح القديم):
+        $user->permissions()->detach();
         if ($request->filled('permissions')) {
-            $user->syncPermissions($request->permissions);
+            $user->givePermissionTo($request->permissions);
         }
-        
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User updated successfully.');
     }
-    
     
     
     
