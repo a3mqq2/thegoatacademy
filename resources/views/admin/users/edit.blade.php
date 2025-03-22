@@ -213,26 +213,14 @@
               
               {{-- Introductory Video --}}
               <div class="mb-3 mt-3">
-                <label for="video" class="form-label">
-                  <i class="fa fa-video"></i> Introductory Video:
-                </label>
-                
-                {{-- Existing video preview (if any) --}}
-                @if($user->video)
-                  <div class="mb-2">
-                    <video width="200" height="auto" controls>
-                      <source src="{{ asset('storage/'.$user->video) }}" type="video/mp4">
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                @endif
-                
-                <input type="file" name="video" id="video" accept="video/*"
+                <label for="video" class="form-label"><i class="fa fa-video"></i> Introductory Video (Youtube Link) :</label>
+                {{-- <input type="file" name="video" id="video" accept="video/*"
                        class="filepond @error('video') is-invalid @enderror">
                 @error('video') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <input type="hidden" name="video_path" id="video_path" value="">
+                <input type="hidden" name="video_path" id="video_path" value=""> --}}
+
+                <input type="text" placeholder="Enter Youtube Link here" name="video" value="{{$user->video}}" class="form-control">
               </div>
-              
               <div class="mb-3">
                 <video id="videoPreview" width="100%" height="auto" controls style="display: none;"></video>
               </div>

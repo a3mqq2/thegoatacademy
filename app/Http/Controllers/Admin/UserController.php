@@ -96,15 +96,8 @@ class UserController extends Controller
         $user->notes         = $request->notes;
         $user->cost_per_hour = $request->cost_per_hour;
         
-        // Handle video
-        if ($request->filled('video_path')) {
-            $user->video = $request->video_path;
-        } elseif ($request->hasFile('video')) {
-            // Fallback: if file is directly uploaded
-            $videoPath = $request->file('video')->store('videos', 'public');
-            $user->video = $videoPath;
-        }
-        
+        $user->video = $request->video;
+
         // Handle avatar
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
@@ -223,17 +216,7 @@ class UserController extends Controller
         $user->nationality   = $request->nationality;
         $user->notes         = $request->notes;
         $user->cost_per_hour = $request->cost_per_hour;
-
-        // معالجة الفيديو (مسار الفيديو) 
-        if ($request->filled('video_path')) {
-            // إذا تم رفعه بطريقة FilePond بخاصية الـchunk
-            $user->video = $request->video_path;
-        } elseif ($request->hasFile('video')) {
-            // إذا رُفع الملف مباشرةً عبر الحقل
-            $videoPath = $request->file('video')->store('videos', 'public');
-            $user->video = $videoPath;
-        }
-
+        $user->video = $request->video;
         // معالجة الصورة (أفاتار)
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');

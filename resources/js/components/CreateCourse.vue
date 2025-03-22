@@ -434,7 +434,7 @@ function getExamDate(dateStr) {
 function getDayName(dateStr) {
   if (!dateStr) return "";
   const dateObj = new Date(dateStr + "T00:00:00");
-  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayNames = [ "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   return dayNames[dateObj.getDay()];
 }
 
@@ -494,14 +494,14 @@ export default defineComponent({
     const globalLoading = ref(false);
 
     const days = ref([
-      { label: "Sun", value: 0 },
-      { label: "Mon", value: 1 },
-      { label: "Tue", value: 2 },
-      { label: "Wed", value: 3 },
-      { label: "Thu", value: 4 },
-      { label: "Fri", value: 5 },
-      { label: "Sat", value: 6 }
-    ]);
+    { label: "Sat", value: 6 }, // السبت = 6
+    { label: "Sun", value: 0 }, // الأحد  = 0
+    { label: "Mon", value: 1 }, // الاثنين = 1
+    { label: "Tue", value: 2 }, // الثلاثاء = 2
+    { label: "Wed", value: 3 }, // الأربعاء = 3
+    { label: "Thu", value: 4 }, // الخميس  = 4
+    { label: "Fri", value: 5 }, // الجمعة = 5
+  ]);
     const selectedDays = ref([]);
     const fromTime = ref("");
     const toTime = ref("");
@@ -879,7 +879,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      selectedDays.value = days.value.filter(d => d.value !== 6);
+      selectedDays.value = days.value.filter(day => day.value !== 5);
       getRequirements();
     });
 
