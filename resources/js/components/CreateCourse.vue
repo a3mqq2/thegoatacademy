@@ -434,7 +434,15 @@ function getExamDate(dateStr) {
 function getDayName(dateStr) {
   if (!dateStr) return "";
   const dateObj = new Date(dateStr + "T00:00:00");
-  const dayNames = [ "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+  const dayNames = [
+  "Sunday",    // index 0
+  "Monday",    // index 1
+  "Tuesday",   // index 2
+  "Wednesday", // index 3
+  "Thursday",  // index 4
+  "Friday",    // index 5
+  "Saturday"   // index 6
+];
   return dayNames[dateObj.getDay()];
 }
 
