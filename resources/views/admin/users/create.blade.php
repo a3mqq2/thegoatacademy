@@ -353,47 +353,32 @@
       // Initialize FilePond
       const videoInputElement = document.querySelector('#video');
       FilePond.create(videoInputElement, {
-        server: {
-          process: {
-            url: '{{ route("upload.file") }}', // Adjust as needed
-            method: 'POST',
-            headers: {
-              'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            timeout: 10 * 60 * 1000 // 10 minutes
+      server: {
+        process: {
+          url: '{{ route("upload.file") }}',
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
           },
-          revert: {
-            url: '{{ route("upload.file.revert") }}', // Adjust as needed
-            method: 'DELETE',
-            headers: {
-              'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
+          ondata: (formData) => {
+            const file = formData.get('file');
+            formData.delete('file');
+            formData.append('video', file);
+            return formData;
+          },
+          timeout: 10 * 60 * 1000
+        },
+        revert: {
+          url: '{{ route("upload.file.revert") }}',
+          method: 'DELETE',
+          headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
           }
-        },
-        acceptedFileTypes: ['video/*'],
-        chunkUploads: true,
-        chunkSize: 2 * 1024 * 1024, // 2MB
-        chunkRetryDelays: [500, 1000, 3000],
-        onprocessfilestart: () => {
-          document.getElementById('submitBtn').disabled = true;
-        },
-        onprocessfile: (error, file) => {
-          document.getElementById('submitBtn').disabled = false;
-          if (!error) {
-            let serverResponse = file.serverId;
-            try {
-              serverResponse = JSON.parse(file.serverId);
-            } catch (e) {}
-            document.getElementById('video_path').value = serverResponse.path;
-          }
-        },
-        onprocessfileabort: () => {
-          document.getElementById('submitBtn').disabled = false;
-        },
-        onprocessfileerror: () => {
-          document.getElementById('submitBtn').disabled = false;
         }
-      });
+      },
+      ...
+    });
+
 
       // Shifts Table
       const shiftsTableBody = document.querySelector("#shiftsTable tbody");
