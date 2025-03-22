@@ -416,7 +416,7 @@ function addOneDay(dateStr) {
   return `${newYear}-${newMonth}-${newDay}`;
 }
 
-// Helper: get exam date by adding one day to the given date and skipping Friday if needed
+// Helper: get exam date by adding one day to the g iven date and skippi  ng Friday if needed
 function getExamDate(dateStr) {
   let newDateStr = addOneDay(dateStr);
   let dateObj = new Date(newDateStr + "T00:00:00");
