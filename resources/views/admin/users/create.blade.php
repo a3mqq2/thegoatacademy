@@ -171,10 +171,13 @@
               
               {{-- Introductory Video --}}
               <div class="mb-3 mt-3">
-                <label for="video" class="form-label"><i class="fa fa-video"></i> Introductory Video :</label>
-                <input type="file" name="video" id="video" accept="video/*" class="filepond @error('video') is-invalid @enderror">
+                <label for="video" class="form-label"><i class="fa fa-video"></i> Introductory Video (Youtube Link) :</label>
+                {{-- <input type="file" name="video" id="video" accept="video/*"
+                       class="filepond @error('video') is-invalid @enderror">
                 @error('video') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <input type="hidden" name="video_path" id="video_path" value="">
+                <input type="hidden" name="video_path" id="video_path" value=""> --}}
+
+                <input type="text" placeholder="Enter Youtube Link here" name="video" class="form-control">
               </div>
               
               <div class="mb-3">

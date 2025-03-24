@@ -11,12 +11,9 @@ class FileUploadController extends Controller
     {
         if ($request->hasFile('video')) {
             $file = $request->file('video');
-            $path = Storage::disk('s3')->putFile('videos', $file);
-            // Generate a pre-signed URL valid for 10 minutes
-            $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(10));
-            return response($url, 200);
+            $path = $file->store('videos', 'public');
+            return response()->json(['path' => $path]);
         }
-        
         return response()->json(['error' => 'No file uploaded'], 400);
     }
 
