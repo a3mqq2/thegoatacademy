@@ -125,39 +125,16 @@
             <hr>
           @endif
 
-          {{-- Check if user->video is a YouTube link. We'll embed it in an iframe. --}}
-          @if($user->video)
-            <h5>Introductory Video</h5>
-            @php
-              // Try to extract the YouTube video ID if the link is YouTube
-              function extractYouTubeId($url) {
-                  $pattern = '%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed))?/|.*[?&]v=)|youtu\.be/)([^"&?/ ]{11})%i';
-                  if (preg_match($pattern, $url, $matches)) {
-                      return $matches[1];
-                  }
-                  return null;
-              }
-              $youtubeId = extractYouTubeId($user->video);
-            @endphp
+          @if ($user->video)
+            <h5>Video</h5>
+            <video width="320" height="240" controls>
+              <source src="{{ $user->video }}"  >
+              Your browser does not support the video tag.
+            </video>
+            <hr>
 
-            @if($youtubeId)
-              <!-- If it's a valid YouTube link, show iframe -->
-              <div class="ratio ratio-16x9">
-                <iframe 
-                  src="https://www.youtube.com/embed/{{ $youtubeId }}" 
-                  frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
-                </iframe>
-              </div>
-            @else
-              <!-- Otherwise, just show the link as is -->
-              <p>
-                <a href="{{ $user->video }}" target="_blank" rel="noopener noreferrer">
-                  {{ $user->video }}
-                </a>
-              </p>
-            @endif
           @endif
-
+        
           <div class="mt-3">
             <small class="text-muted">
               <i class="fa fa-calendar"></i> Joined on {{ $user->created_at->format('Y-m-d H:i') }}
