@@ -400,20 +400,6 @@ import instance from "../instance";
 import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
-// Helper: add one day to a given date string ("YYYY-MM-DD")
-function addOneDay(dateStr) {
-  if (!dateStr) return "";
-  const parts = dateStr.split("-");
-  if (parts.length !== 3) return "";
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1;
-  const day = parseInt(parts[2], 10);
-  const dateObj = new Date(year, month, day);
-  dateObj.setDate(dateObj.getDate() + 1);
-  return formatDateLocal(dateObj);
-}
-
-// Helper: format Date object as "YYYY-MM-DD"
 function formatDateLocal(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -421,37 +407,27 @@ function formatDateLocal(date) {
   return `${year}-${month}-${day}`;
 }
 
-// Helper: get day name from date string
-function getDayName(dateStr) {
-  if (!dateStr) return "";
-  const dateObj = new Date(dateStr + "T00:00:00");
-  const dayNames = [
-    "Sunday",    // index 0
-    "Monday",    // index 1
-    "Tuesday",   // index 2
-    "Wednesday", // index 3
-    "Thursday",  // index 4
-    "Friday",    // index 5
-    "Saturday"   // index 6
-  ];
-  return dayNames[dateObj.getDay()];
-}
+// دالة للعثور على أقرب يوم متاح ليس فيه محاضرة (وتخطي الجمعة)
+function findNextAvailableDate(scheduleList, fromDate) {
+  let dateObj = new Date(fromDate + "T00:00:00");
+  // نتجاوز اليوم نفسه
+  dateObj.setDate(dateObj.getDate() + 1);
 
-/**
- * Helper: Get exam date by adding one day to the given date,
- * skip Friday if needed, and also skip any date that already exists in schedule
- * to avoid conflicts.
- */
-function getExamDate(dateStr, schedule = []) {
-  // Start with next day
-  let dateObj = new Date(addOneDay(dateStr) + "T00:00:00");
+  while (true) {
+    // تخطي الجمعة
+    if (dateObj.getDay() === 5) {
+      dateObj.setDate(dateObj.getDate() + 1);
+      continue;
+    }
+    const newDateStr = formatDateLocal(dateObj);
 
-  // We keep adjusting if it's Friday or if the date conflicts with an existing schedule date
-  while (dateObj.getDay() === 5 || schedule.some(sch => sch.date === formatDateLocal(dateObj))) {
+    // إذا وجدنا أن هذا اليوم موجود ضمن الجدول كمحاضرة ننتقل لليوم التالي
+    const isClassDay = scheduleList.some((sch) => sch.date === newDateStr);
+    if (!isClassDay) {
+      return newDateStr;
+    }
     dateObj.setDate(dateObj.getDate() + 1);
   }
-
-  return formatDateLocal(dateObj);
 }
 
 export default defineComponent({
@@ -460,8 +436,8 @@ export default defineComponent({
   props: {
     id: {
       type: [Number, String],
-      default: null
-    }
+      default: null,
+    },
   },
   setup(props) {
     const { appContext } = getCurrentInstance();
@@ -491,6 +467,7 @@ export default defineComponent({
       dateFormat: "Y-m-d",
       allowInput: true,
     });
+
     const dateConfigReadonly = ref({
       dateFormat: "Y-m-d",
       allowInput: false,
@@ -533,7 +510,7 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
-    // Fetch course requirements from API
+    // استرجاع المتطلبات من السيرفر
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
@@ -546,6 +523,7 @@ export default defineComponent({
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
 
+        // إذا كنا في وضع التعديل (edit) نعبئ البيانات
         if (response.data.course) {
           populateCourse(response.data.course);
         }
@@ -557,28 +535,39 @@ export default defineComponent({
       }
     };
 
-    // Populate form fields when editing an existing course
+    // تعبئة بيانات الكورس في وضع التعديل
     const populateCourse = (course) => {
-      selectedCourseType.value = courseTypes.value.find(ct => ct.id === course.course_type_id) || null;
-      selectedGroupType.value = groupTypes.value.find(gt => gt.id === course.group_type_id) || null;
-      selectedInstructor.value = instructors.value.find(i => i.id === course.instructor_id) || null;
-      selectedMeetingPlatform.value = meetingPlatforms.value.find(mp => mp.id === course.meeting_platform_id) || null;
+      selectedCourseType.value =
+        courseTypes.value.find((ct) => ct.id === course.course_type_id) || null;
+      selectedGroupType.value =
+        groupTypes.value.find((gt) => gt.id === course.group_type_id) || null;
+      selectedInstructor.value =
+        instructors.value.find((i) => i.id === course.instructor_id) || null;
+      selectedMeetingPlatform.value =
+        meetingPlatforms.value.find((mp) => mp.id === course.meeting_platform_id) || null;
+
       startDate.value = course.start_date || "";
       midExamDate.value = course.mid_exam_date || "";
       finalExamDate.value = course.final_exam_date || "";
       studentCapacity.value = course.student_capacity || "";
       whatsappGroupLink.value = course.whatsapp_group_link || "";
 
-      // Handle levels
+      // تحديد الـ levels إن وجدت
       if (course.levels) {
-        selectedLevels.value = levels.value.filter(l => course.levels.some(cl => cl.id === l.id));
+        selectedLevels.value = levels.value.filter((l) =>
+          course.levels.some((cl) => cl.id === l.id)
+        );
       }
 
+      // الأيام المختارة
       if (course.days) {
         const splitted = course.days.split("-");
-        selectedDays.value = days.value.filter(d => splitted.includes(d.label));
-        storedSelectedDays.value = splitted.map(d => days.value.find(x => x.label === d).value);
+        selectedDays.value = days.value.filter((d) => splitted.includes(d.label));
+        storedSelectedDays.value = splitted.map(
+          (d) => days.value.find((x) => x.label === d).value
+        );
       }
+      // الأوقات
       if (course.time) {
         const parts = course.time.split("-");
         if (parts.length === 2) {
@@ -586,25 +575,27 @@ export default defineComponent({
           toTime.value = parts[1].trim();
         }
       }
+      // الجدول
       scheduleList.value = [];
       if (course.schedules?.length) {
-        course.schedules.forEach(sch => {
+        course.schedules.forEach((sch) => {
           scheduleList.value.push({
             day: sch.day,
             date: sch.date,
             fromTime: sch.from_time,
-            toTime: sch.to_time
+            toTime: sch.to_time,
           });
         });
       }
+      // الطلاب
       studentsList.value = [];
       if (course.students?.length) {
-        course.students.forEach(st => {
+        course.students.forEach((st) => {
           studentsList.value.push({
             id: st.id,
             name: st.name,
             phone: st.phone,
-            booksDue: st.books_due
+            booksDue: st.books_due,
           });
         });
       }
@@ -632,10 +623,15 @@ export default defineComponent({
       let totalMinutes = hours * 60 + minutes + lessonDuration;
       let newHours = Math.floor(totalMinutes / 60) % 24;
       let newMinutes = totalMinutes % 60;
-      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(2, "0")}`;
+      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(
+        2,
+        "0"
+      )}`;
     };
+
     watch(fromTime, updateToTime);
 
+    // توليد الجدول
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
         $toastr.error("Select a Course Type first.");
@@ -654,96 +650,108 @@ export default defineComponent({
         $toastr.error("Invalid or zero 'duration' in this Course Type.");
         return;
       }
+
       scheduleList.value = [];
-      storedSelectedDays.value = selectedDays.value.map(d => d.value);
+      storedSelectedDays.value = selectedDays.value.map((d) => d.value);
+
       let classesCount = 0;
       let currentDate = new Date(`${startDate.value}T00:00:00`);
 
+      // نملأ الجدول حتى نصل للعدد المطلوب من الحصص
       while (classesCount < totalClasses) {
         if (storedSelectedDays.value.includes(currentDate.getDay())) {
           scheduleList.value.push({
-            day: days.value.find(x => x.value === currentDate.getDay())?.label || "",
+            day: days.value.find((x) => x.value === currentDate.getDay())?.label || "",
             date: formatDateLocal(currentDate),
             fromTime: fromTime.value,
-            toTime: toTime.value
+            toTime: toTime.value,
           });
           classesCount++;
         }
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Auto-set mid/final exam dates without conflict
+      // تحديد تواريخ الامتحانات
       if (scheduleList.value.length > 0) {
         const halfIndex = Math.floor(scheduleList.value.length / 2);
         const midClass = scheduleList.value[halfIndex - 1];
-        if (midClass) {
-          midExamDate.value = getExamDate(midClass.date, scheduleList.value);
-        }
         const lastClass = scheduleList.value[scheduleList.value.length - 1];
-        finalExamDate.value = getExamDate(lastClass.date, scheduleList.value);
+
+        // mid exam
+        if (midClass) {
+          midExamDate.value = findNextAvailableDate(scheduleList.value, midClass.date);
+        }
+        // final exam
+        if (lastClass) {
+          finalExamDate.value = findNextAvailableDate(scheduleList.value, lastClass.date);
+        }
       } else {
         midExamDate.value = "";
         finalExamDate.value = "";
       }
     };
 
+    // حذف صف من الجدول
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
+    // تصفية المدرسين
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
       }
-      const courseSkillIds = selectedCourseType.value.skills.map(s => s.id);
-      return instructors.value.filter(inst => {
+      const courseSkillIds = selectedCourseType.value.skills.map((s) => s.id);
+      return instructors.value.filter((inst) => {
         if (!inst.skills?.length) return false;
-        const instSkillIds = inst.skills.map(s => s.id);
+        const instSkillIds = inst.skills.map((s) => s.id);
+        const skillsMatch = instSkillIds.some((skillId) => courseSkillIds.includes(skillId));
 
-        // Check if at least one skill matches
-        const skillsMatch = instSkillIds.some(skillId => courseSkillIds.includes(skillId));
-
-        // Also check if instructor has at least one of the selected levels (if any selected)
         let levelsMatch = true;
         if (selectedLevels.value && selectedLevels.value.length) {
           if (!inst.levels?.length) {
             levelsMatch = false;
           } else {
-            const instLevelIds = inst.levels.map(l => l.id);
-            levelsMatch = selectedLevels.value.some(selected => instLevelIds.includes(selected.id));
+            const instLevelIds = inst.levels.map((l) => l.id);
+            levelsMatch = selectedLevels.value.some((selected) =>
+              instLevelIds.includes(selected.id)
+            );
           }
         }
         return skillsMatch && levelsMatch;
       });
     });
 
+    // الطلاب المتاحون
     const availableStudents = computed(() => {
-      return allStudents.value.filter(std => {
-        return !studentsList.value.some(s => s.id === std.id);
+      return allStudents.value.filter((std) => {
+        return !studentsList.value.some((s) => s.id === std.id);
       });
     });
 
+    // تصفية الطلاب
     const filteredStudents = computed(() => {
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) {
         return availableStudents.value;
       }
-      const courseSkillIds = selectedCourseType.value.skills.map(s => s.id);
-      return availableStudents.value.filter(std => {
+      const courseSkillIds = selectedCourseType.value.skills.map((s) => s.id);
+      return availableStudents.value.filter((std) => {
         if (!std.skills?.length) return false;
-        const stSkillIds = std.skills.map(s => s.id);
-        return stSkillIds.some(skillId => courseSkillIds.includes(skillId));
+        const stSkillIds = std.skills.map((s) => s.id);
+        return stSkillIds.some((skillId) => courseSkillIds.includes(skillId));
       });
     });
 
     const onStudentSelected = (value) => {
       if (!value) return;
-      const found = studentsList.value.some(s => s.id === value.id);
+      const found = studentsList.value.some((s) => s.id === value.id);
       if (!found) {
         studentsList.value.push({ ...value });
       }
       selectedStudent.value = null;
     };
 
+    // إضافة طالب جديد
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -757,7 +765,7 @@ export default defineComponent({
         age: newStudentAge.value,
         city: newStudentCity.value,
         specialization: newStudentSpecialization.value,
-        emergency_phone: newStudentEmergencyPhone.value
+        emergency_phone: newStudentEmergencyPhone.value,
       };
       globalLoading.value = true;
       try {
@@ -789,10 +797,12 @@ export default defineComponent({
       }
     };
 
+    // حذف طالب من القائمة
     const removeStudent = (index) => {
       studentsList.value.splice(index, 1);
     };
 
+    // التحقق من البيانات قبل الحفظ
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -823,15 +833,15 @@ export default defineComponent({
         errors.value.push("At least one student is required");
       }
       if (errors.value.length) {
-        errors.value.forEach(err => $toastr.error(err));
+        errors.value.forEach((err) => $toastr.error(err));
         return false;
       }
       return true;
     };
 
+    // حفظ أو تحديث الكورس
     const saveCourse = async () => {
       if (!validateCourseData()) return;
-
       const payload = {
         course_type_id: selectedCourseType.value.id,
         group_type_id: selectedGroupType.value.id,
@@ -841,16 +851,15 @@ export default defineComponent({
         final_exam_date: finalExamDate.value,
         student_capacity: studentCapacity.value,
         schedule: scheduleList.value,
-        students: studentsList.value.map(s => s.id),
+        students: studentsList.value.map((s) => s.id),
         selected_days: storedSelectedDays.value,
         time: `${fromTime.value} - ${toTime.value}`,
         meeting_platform_id: selectedMeetingPlatform.value
           ? selectedMeetingPlatform.value.id
           : null,
         whatsapp_group_link: whatsappGroupLink.value || "",
-        levels: selectedLevels.value.map(l => l.id)
+        levels: selectedLevels.value.map((l) => l.id),
       };
-
       globalLoading.value = true;
       try {
         let courseId = null;
@@ -882,6 +891,7 @@ export default defineComponent({
       }
     };
 
+    // إعادة ضبط الحقول
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -897,9 +907,26 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
+    // إسم اليوم من تاريخ
+    const getDayName = (dateStr) => {
+      if (!dateStr) return "";
+      const dateObj = new Date(dateStr + "T00:00:00");
+      const dayNames = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      return dayNames[dateObj.getDay()];
+    };
+
     onMounted(() => {
-      // By default, skip Friday in selectedDays
-      selectedDays.value = days.value.filter(day => day.value !== 5);
+      // بشكل افتراضي نتجنب الجمعة (مثلاً) أو نختار الأيام التي تريدها
+      // هنا مثال: نستثني الجمعة افتراضياً
+      selectedDays.value = days.value.filter((day) => day.value !== 5);
       getRequirements();
     });
 
@@ -949,12 +976,6 @@ export default defineComponent({
       filteredInstructors,
       availableStudents,
       filteredStudents,
-      addOneDay,
-      getExamDate,
-      getDayName,
-      formatDateLocal,
-      getRequirements,
-      populateCourse,
       updateFields,
       updateStudentCapacity,
       updateToTime,
@@ -965,9 +986,11 @@ export default defineComponent({
       removeStudent,
       validateCourseData,
       saveCourse,
-      resetFields
+      resetFields,
+      getDayName,
+      findNextAvailableDate,
     };
-  }
+  },
 });
 </script>
 
