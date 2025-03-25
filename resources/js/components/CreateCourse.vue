@@ -220,25 +220,24 @@
                     </button>
                   </td>
                 </tr>
-                <!-- Insert MID exam row after half the schedule -->
-                <tr
-                  v-if="index === Math.floor(scheduleList.length / 2) - 1"
-                  class="bg-primary text-center"
-                >
-                  <td colspan="6">
-                    <h5 class="text-center p-2 text-light">
-                      MID exam test:
-                      <flatpickr
-                        v-model="midExamDate"
-                        :config="dateConfig"
-                        class="d-inline-block w-auto mx-2"
-                      />
-                      ({{ getDayName(midExamDate) }})
-                    </h5>
-                  </td>
-                </tr>
               </template>
-              <!-- Insert FINAL exam row at the end -->
+
+              <!-- MID exam row (inserted visually after first half) -->
+              <tr class="bg-primary text-center">
+                <td colspan="6">
+                  <h5 class="text-center p-2 text-light">
+                    MID exam test:
+                    <flatpickr
+                      v-model="midExamDate"
+                      :config="dateConfig"
+                      class="d-inline-block w-auto mx-2"
+                    />
+                    ({{ getDayName(midExamDate) }})
+                  </h5>
+                </td>
+              </tr>
+
+              <!-- FINAL exam row (always at the end) -->
               <tr class="bg-primary text-center">
                 <td colspan="6">
                   <h5 class="text-center p-2 text-light">
@@ -405,6 +404,17 @@ function formatDateLocal(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * تخطي يوم الجمعة (اليوم رقم 5 في JavaScript) إلى السبت.
+ * إذا كان التاريخ يقع في يوم الجمعة، نضيف يوماً واحداً (فتصبح السبت).
+ */
+function skipFriday(dateObj) {
+  if (dateObj.getDay() === 5) {
+    dateObj.setDate(dateObj.getDate() + 1); // move to Saturday
+  }
+  return dateObj;
 }
 
 export default defineComponent({
@@ -600,11 +610,11 @@ export default defineComponent({
     watch(fromTime, updateToTime);
 
     /**
-     * Generate schedule in two phases:
+     * Generate schedule in two halves, skipping Friday if an exam date falls on it.
      *  1) First half of the classes
-     *  2) MID exam (the next day)
+     *  2) MID exam (the next day, skipping Friday if needed)
      *  3) Second half of the classes
-     *  4) Final exam (the next day)
+     *  4) Final exam (the next day, skipping Friday if needed)
      */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
@@ -651,11 +661,14 @@ export default defineComponent({
         dateObj.setDate(dateObj.getDate() + 1);
       }
 
-      // MID exam is the next day after first half
+      // MID exam => the next day after first half, skipping Friday if needed
+      dateObj.setDate(dateObj.getDate() + 1);
+      skipFriday(dateObj);
       midExamDate.value = formatDateLocal(dateObj);
 
-      // Now move one more day forward to start the second half
+      // Start second half => the day after the mid exam, skipping Friday if needed
       dateObj.setDate(dateObj.getDate() + 1);
+      skipFriday(dateObj);
 
       // Generate second half
       count = 0;
@@ -673,10 +686,12 @@ export default defineComponent({
         dateObj.setDate(dateObj.getDate() + 1);
       }
 
-      // Final exam is the next day after second half
+      // Final exam => the next day after second half, skipping Friday if needed
+      dateObj.setDate(dateObj.getDate() + 1);
+      skipFriday(dateObj);
       finalExamDate.value = formatDateLocal(dateObj);
 
-      // Combine both halves in one array
+      // Combine both halves
       scheduleList.value = [...firstHalf, ...secondHalf];
     };
 
@@ -912,8 +927,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      // Example: skip Friday by default if you like
-      // Here we just remove Friday from the default selectedDays
+      // Example: skip Friday from default selection if you want
       selectedDays.value = days.value.filter((day) => day.value !== 5);
       getRequirements();
     });
