@@ -407,29 +407,6 @@ function formatDateLocal(date) {
   return `${year}-${month}-${day}`;
 }
 
-// دالة للعثور على أقرب يوم متاح ليس فيه محاضرة (وتخطي الجمعة)
-function findNextAvailableDate(scheduleList, fromDate) {
-  let dateObj = new Date(fromDate + "T00:00:00");
-  // نتجاوز اليوم نفسه
-  dateObj.setDate(dateObj.getDate() + 1);
-
-  while (true) {
-    // تخطي الجمعة
-    if (dateObj.getDay() === 5) {
-      dateObj.setDate(dateObj.getDate() + 1);
-      continue;
-    }
-    const newDateStr = formatDateLocal(dateObj);
-
-    // إذا وجدنا أن هذا اليوم موجود ضمن الجدول كمحاضرة ننتقل لليوم التالي
-    const isClassDay = scheduleList.some((sch) => sch.date === newDateStr);
-    if (!isClassDay) {
-      return newDateStr;
-    }
-    dateObj.setDate(dateObj.getDate() + 1);
-  }
-}
-
 export default defineComponent({
   name: "CreateOrEditCourse",
   components: { "v-select": vSelect, Flatpickr },
@@ -467,7 +444,6 @@ export default defineComponent({
       dateFormat: "Y-m-d",
       allowInput: true,
     });
-
     const dateConfigReadonly = ref({
       dateFormat: "Y-m-d",
       allowInput: false,
@@ -479,13 +455,13 @@ export default defineComponent({
     const globalLoading = ref(false);
 
     const days = ref([
-      { label: "Sat", value: 6 }, // السبت = 6
-      { label: "Sun", value: 0 }, // الأحد  = 0
-      { label: "Mon", value: 1 }, // الاثنين = 1
-      { label: "Tue", value: 2 }, // الثلاثاء = 2
-      { label: "Wed", value: 3 }, // الأربعاء = 3
-      { label: "Thu", value: 4 }, // الخميس  = 4
-      { label: "Fri", value: 5 }, // الجمعة = 5
+      { label: "Sat", value: 6 },
+      { label: "Sun", value: 0 },
+      { label: "Mon", value: 1 },
+      { label: "Tue", value: 2 },
+      { label: "Wed", value: 3 },
+      { label: "Thu", value: 4 },
+      { label: "Fri", value: 5 },
     ]);
     const selectedDays = ref([]);
     const fromTime = ref("");
@@ -510,7 +486,7 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
-    // استرجاع المتطلبات من السيرفر
+    // Fetch initial data
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
@@ -523,19 +499,19 @@ export default defineComponent({
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
 
-        // إذا كنا في وضع التعديل (edit) نعبئ البيانات
+        // If editing existing course
         if (response.data.course) {
           populateCourse(response.data.course);
         }
       } catch (error) {
-        // Handle error if needed
+        // handle error if needed
       } finally {
         loading.value = false;
         globalLoading.value = false;
       }
     };
 
-    // تعبئة بيانات الكورس في وضع التعديل
+    // Populate data in edit mode
     const populateCourse = (course) => {
       selectedCourseType.value =
         courseTypes.value.find((ct) => ct.id === course.course_type_id) || null;
@@ -552,14 +528,12 @@ export default defineComponent({
       studentCapacity.value = course.student_capacity || "";
       whatsappGroupLink.value = course.whatsapp_group_link || "";
 
-      // تحديد الـ levels إن وجدت
       if (course.levels) {
         selectedLevels.value = levels.value.filter((l) =>
           course.levels.some((cl) => cl.id === l.id)
         );
       }
 
-      // الأيام المختارة
       if (course.days) {
         const splitted = course.days.split("-");
         selectedDays.value = days.value.filter((d) => splitted.includes(d.label));
@@ -567,7 +541,6 @@ export default defineComponent({
           (d) => days.value.find((x) => x.label === d).value
         );
       }
-      // الأوقات
       if (course.time) {
         const parts = course.time.split("-");
         if (parts.length === 2) {
@@ -575,7 +548,6 @@ export default defineComponent({
           toTime.value = parts[1].trim();
         }
       }
-      // الجدول
       scheduleList.value = [];
       if (course.schedules?.length) {
         course.schedules.forEach((sch) => {
@@ -587,7 +559,6 @@ export default defineComponent({
           });
         });
       }
-      // الطلاب
       studentsList.value = [];
       if (course.students?.length) {
         course.students.forEach((st) => {
@@ -613,6 +584,7 @@ export default defineComponent({
       }
     };
 
+    // Automatically update 'toTime' based on 'fromTime' + groupType.lesson_duration
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -623,15 +595,17 @@ export default defineComponent({
       let totalMinutes = hours * 60 + minutes + lessonDuration;
       let newHours = Math.floor(totalMinutes / 60) % 24;
       let newMinutes = totalMinutes % 60;
-      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(
-        2,
-        "0"
-      )}`;
+      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(2, "0")}`;
     };
-
     watch(fromTime, updateToTime);
 
-    // توليد الجدول
+    /**
+     * Generate schedule in two phases:
+     *  1) First half of the classes
+     *  2) MID exam (the next day)
+     *  3) Second half of the classes
+     *  4) Final exam (the next day)
+     */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
         $toastr.error("Select a Course Type first.");
@@ -645,6 +619,7 @@ export default defineComponent({
         $toastr.error("Please select at least one day of the week.");
         return;
       }
+
       const totalClasses = parseInt(selectedCourseType.value.duration ?? 0, 10);
       if (isNaN(totalClasses) || totalClasses <= 0) {
         $toastr.error("Invalid or zero 'duration' in this Course Type.");
@@ -654,49 +629,63 @@ export default defineComponent({
       scheduleList.value = [];
       storedSelectedDays.value = selectedDays.value.map((d) => d.value);
 
-      let classesCount = 0;
-      let currentDate = new Date(`${startDate.value}T00:00:00`);
+      // Split classes into two halves
+      const half = Math.floor(totalClasses / 2);
+      const remainder = totalClasses - half;
 
-      // نملأ الجدول حتى نصل للعدد المطلوب من الحصص
-      while (classesCount < totalClasses) {
-        if (storedSelectedDays.value.includes(currentDate.getDay())) {
-          scheduleList.value.push({
-            day: days.value.find((x) => x.value === currentDate.getDay())?.label || "",
-            date: formatDateLocal(currentDate),
+      // Generate first half
+      let count = 0;
+      let dateObj = new Date(`${startDate.value}T00:00:00`);
+      const firstHalf = [];
+
+      while (count < half) {
+        if (storedSelectedDays.value.includes(dateObj.getDay())) {
+          firstHalf.push({
+            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
+            date: formatDateLocal(dateObj),
             fromTime: fromTime.value,
             toTime: toTime.value,
           });
-          classesCount++;
+          count++;
         }
-        currentDate.setDate(currentDate.getDate() + 1);
+        dateObj.setDate(dateObj.getDate() + 1);
       }
 
-      // تحديد تواريخ الامتحانات
-      if (scheduleList.value.length > 0) {
-        const halfIndex = Math.floor(scheduleList.value.length / 2);
-        const midClass = scheduleList.value[halfIndex - 1];
-        const lastClass = scheduleList.value[scheduleList.value.length - 1];
+      // MID exam is the next day after first half
+      midExamDate.value = formatDateLocal(dateObj);
 
-        // mid exam
-        if (midClass) {
-          midExamDate.value = findNextAvailableDate(scheduleList.value, midClass.date);
+      // Now move one more day forward to start the second half
+      dateObj.setDate(dateObj.getDate() + 1);
+
+      // Generate second half
+      count = 0;
+      const secondHalf = [];
+      while (count < remainder) {
+        if (storedSelectedDays.value.includes(dateObj.getDay())) {
+          secondHalf.push({
+            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
+            date: formatDateLocal(dateObj),
+            fromTime: fromTime.value,
+            toTime: toTime.value,
+          });
+          count++;
         }
-        // final exam
-        if (lastClass) {
-          finalExamDate.value = findNextAvailableDate(scheduleList.value, lastClass.date);
-        }
-      } else {
-        midExamDate.value = "";
-        finalExamDate.value = "";
+        dateObj.setDate(dateObj.getDate() + 1);
       }
+
+      // Final exam is the next day after second half
+      finalExamDate.value = formatDateLocal(dateObj);
+
+      // Combine both halves in one array
+      scheduleList.value = [...firstHalf, ...secondHalf];
     };
 
-    // حذف صف من الجدول
+    // Remove a schedule row
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
-    // تصفية المدرسين
+    // Filter instructors by matching skills/levels
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -722,14 +711,12 @@ export default defineComponent({
       });
     });
 
-    // الطلاب المتاحون
+    // Filter students
     const availableStudents = computed(() => {
-      return allStudents.value.filter((std) => {
-        return !studentsList.value.some((s) => s.id === std.id);
-      });
+      return allStudents.value.filter(
+        (std) => !studentsList.value.some((s) => s.id === std.id)
+      );
     });
-
-    // تصفية الطلاب
     const filteredStudents = computed(() => {
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) {
         return availableStudents.value;
@@ -751,7 +738,7 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
-    // إضافة طالب جديد
+    // Add new student
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -775,6 +762,7 @@ export default defineComponent({
           studentsList.value.push(student);
           $toastr.success("Student created successfully");
           showStudentModal.value = false;
+          // reset fields
           newStudentName.value = "";
           newStudentPhone.value = "";
           newStudentBooksDue.value = false;
@@ -797,12 +785,12 @@ export default defineComponent({
       }
     };
 
-    // حذف طالب من القائمة
+    // Remove a student from list
     const removeStudent = (index) => {
       studentsList.value.splice(index, 1);
     };
 
-    // التحقق من البيانات قبل الحفظ
+    // Validate data before saving
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -839,7 +827,7 @@ export default defineComponent({
       return true;
     };
 
-    // حفظ أو تحديث الكورس
+    // Save or update course
     const saveCourse = async () => {
       if (!validateCourseData()) return;
       const payload = {
@@ -891,7 +879,7 @@ export default defineComponent({
       }
     };
 
-    // إعادة ضبط الحقول
+    // Reset all fields
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -907,7 +895,7 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    // إسم اليوم من تاريخ
+    // Get day name from date string
     const getDayName = (dateStr) => {
       if (!dateStr) return "";
       const dateObj = new Date(dateStr + "T00:00:00");
@@ -924,8 +912,8 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      // بشكل افتراضي نتجنب الجمعة (مثلاً) أو نختار الأيام التي تريدها
-      // هنا مثال: نستثني الجمعة افتراضياً
+      // Example: skip Friday by default if you like
+      // Here we just remove Friday from the default selectedDays
       selectedDays.value = days.value.filter((day) => day.value !== 5);
       getRequirements();
     });
@@ -988,7 +976,7 @@ export default defineComponent({
       saveCourse,
       resetFields,
       getDayName,
-      findNextAvailableDate,
+      formatDateLocal,
     };
   },
 });
