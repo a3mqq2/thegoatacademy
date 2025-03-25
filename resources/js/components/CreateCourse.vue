@@ -220,7 +220,7 @@
                     </button>
                   </td>
                 </tr>
-                <!-- Insert MID exam row after half the schedule (VISUAL CENTER) -->
+                <!-- Insert MID exam row (VISUAL CENTER) after half the schedule -->
                 <tr
                   v-if="index === Math.floor(scheduleList.length / 2) - 1"
                   class="bg-primary text-center"
@@ -402,7 +402,7 @@ import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
 /**
- * Helper: format a Date object as YYYY-MM-DD
+ * Helper: format date as YYYY-MM-DD
  */
 function formatDateLocal(date) {
   const year = date.getFullYear();
@@ -412,32 +412,13 @@ function formatDateLocal(date) {
 }
 
 /**
- * If dateObj is Friday, move to Saturday
+ * Skip Friday if date is Friday => move to Saturday.
  */
 function skipIfFriday(dateObj) {
   if (dateObj.getDay() === 5) {
     dateObj.setDate(dateObj.getDate() + 1);
   }
   return dateObj;
-}
-
-/**
- * Find the next free day (not in schedule) after `fromDate`, skipping Friday if needed.
- */
-function findNextFreeDay(scheduleList, fromDate) {
-  let dateObj = new Date(`${fromDate}T00:00:00`);
-  dateObj.setDate(dateObj.getDate() + 1); // next day
-  while (true) {
-    skipIfFriday(dateObj);
-    const dateStr = formatDateLocal(dateObj);
-    // If this date is NOT used in the schedule, we can use it for exam
-    const used = scheduleList.some((sch) => sch.date === dateStr);
-    if (!used) {
-      return dateStr;
-    }
-    // otherwise keep going
-    dateObj.setDate(dateObj.getDate() + 1);
-  }
 }
 
 export default defineComponent({
@@ -453,7 +434,7 @@ export default defineComponent({
     const { appContext } = getCurrentInstance();
     const $toastr = appContext.config.globalProperties.$toastr;
 
-    // Basic data references
+    // Basic references
     const courseTypes = ref([]);
     const instructors = ref([]);
     const groupTypes = ref([]);
@@ -520,6 +501,7 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
+    // Fetch initial data
     onMounted(() => {
       // Example: skip Friday from default selection
       selectedDays.value = days.value.filter((day) => day.value !== 5);
@@ -538,6 +520,7 @@ export default defineComponent({
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
 
+        // If editing
         if (response.data.course) {
           populateCourse(response.data.course);
         }
@@ -620,6 +603,7 @@ export default defineComponent({
       }
     };
 
+    // Auto-update "toTime" if group type has a lesson_duration
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -635,9 +619,12 @@ export default defineComponent({
     watch(fromTime, updateToTime);
 
     /**
-     * Generate schedule in chronological order,
-     * Then set midExamDate and finalExamDate by finding the next free day
-     * (i.e., a day not used in schedule) after the mid-class or the last class.
+     * Generate schedule in two phases:
+     *   1) first half of classes
+     *   2) mid exam day (skip Friday)
+     *   3) second half of classes
+     *   4) final exam day (skip Friday)
+     * Then combine both halves in one array so the table remains consistent.
      */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
@@ -659,56 +646,69 @@ export default defineComponent({
         return;
       }
 
+      // Reset schedule
       scheduleList.value = [];
       storedSelectedDays.value = selectedDays.value.map((d) => d.value);
 
-      let classesCount = 0;
-      let currentDate = new Date(`${startDate.value}T00:00:00`);
+      // Split classes
+      const half = Math.floor(totalClasses / 2);
+      const remainder = totalClasses - half;
 
-      // Generate all classes in chronological order
-      while (classesCount < totalClasses) {
-        if (storedSelectedDays.value.includes(currentDate.getDay())) {
-          scheduleList.value.push({
-            day: days.value.find((x) => x.value === currentDate.getDay())?.label || "",
-            date: formatDateLocal(currentDate),
+      // Generate first half
+      let firstHalf = [];
+      let dateObj = new Date(`${startDate.value}T00:00:00`);
+      let count = 0;
+
+      while (count < half) {
+        if (storedSelectedDays.value.includes(dateObj.getDay())) {
+          firstHalf.push({
+            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
+            date: formatDateLocal(dateObj),
             fromTime: fromTime.value,
             toTime: toTime.value,
           });
-          classesCount++;
+          count++;
         }
-        currentDate.setDate(currentDate.getDate() + 1);
+        dateObj.setDate(dateObj.getDate() + 1);
       }
 
-      // If we have classes, find midExamDate and finalExamDate
-      if (scheduleList.value.length > 0) {
-        const halfIndex = Math.floor(scheduleList.value.length / 2);
-        const midClass = scheduleList.value[halfIndex - 1];
-        const lastClass = scheduleList.value[scheduleList.value.length - 1];
+      // Now mid exam day => skip if Friday
+      skipIfFriday(dateObj);
+      midExamDate.value = formatDateLocal(dateObj);
 
-        // MID exam date => next free day after midClass.date
-        if (midClass) {
-          midExamDate.value = findNextFreeDay(scheduleList.value, midClass.date);
-        } else {
-          midExamDate.value = "";
-        }
+      // Next day after mid exam => skip if Friday => start second half
+      dateObj.setDate(dateObj.getDate() + 1);
+      skipIfFriday(dateObj);
 
-        // FINAL exam date => next free day after lastClass.date
-        if (lastClass) {
-          finalExamDate.value = findNextFreeDay(scheduleList.value, lastClass.date);
-        } else {
-          finalExamDate.value = "";
+      // Generate second half
+      let secondHalf = [];
+      count = 0;
+      while (count < remainder) {
+        if (storedSelectedDays.value.includes(dateObj.getDay())) {
+          secondHalf.push({
+            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
+            date: formatDateLocal(dateObj),
+            fromTime: fromTime.value,
+            toTime: toTime.value,
+          });
+          count++;
         }
-      } else {
-        midExamDate.value = "";
-        finalExamDate.value = "";
+        dateObj.setDate(dateObj.getDate() + 1);
       }
+
+      // Now final exam day => skip if Friday
+      skipIfFriday(dateObj);
+      finalExamDate.value = formatDateLocal(dateObj);
+
+      // Combine
+      scheduleList.value = [...firstHalf, ...secondHalf];
     };
 
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
-    // Filter instructors
+    // Filter instructors by skills/levels
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -761,6 +761,7 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
+    // Add student
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -811,7 +812,7 @@ export default defineComponent({
       studentsList.value.splice(index, 1);
     };
 
-    // Validation
+    // Validate data
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -848,7 +849,7 @@ export default defineComponent({
       return true;
     };
 
-    // Save
+    // Save or update
     const saveCourse = async () => {
       if (!validateCourseData()) return;
       const payload = {
@@ -900,6 +901,7 @@ export default defineComponent({
       }
     };
 
+    // Reset
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -990,7 +992,6 @@ export default defineComponent({
       resetFields,
       getDayName,
       skipIfFriday,
-      findNextFreeDay,
       formatDateLocal,
     };
   },
