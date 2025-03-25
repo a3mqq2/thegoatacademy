@@ -402,7 +402,7 @@ import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
 /**
- * Helper to format a JS Date as "YYYY-MM-DD".
+ * Helper: format a Date object as YYYY-MM-DD
  */
 function formatDateLocal(date) {
   const year = date.getFullYear();
@@ -412,13 +412,32 @@ function formatDateLocal(date) {
 }
 
 /**
- * If the given date is Friday (day === 5), skip to Saturday (add 1 day).
+ * If dateObj is Friday, move to Saturday
  */
 function skipIfFriday(dateObj) {
   if (dateObj.getDay() === 5) {
     dateObj.setDate(dateObj.getDate() + 1);
   }
   return dateObj;
+}
+
+/**
+ * Find the next free day (not in schedule) after `fromDate`, skipping Friday if needed.
+ */
+function findNextFreeDay(scheduleList, fromDate) {
+  let dateObj = new Date(`${fromDate}T00:00:00`);
+  dateObj.setDate(dateObj.getDate() + 1); // next day
+  while (true) {
+    skipIfFriday(dateObj);
+    const dateStr = formatDateLocal(dateObj);
+    // If this date is NOT used in the schedule, we can use it for exam
+    const used = scheduleList.some((sch) => sch.date === dateStr);
+    if (!used) {
+      return dateStr;
+    }
+    // otherwise keep going
+    dateObj.setDate(dateObj.getDate() + 1);
+  }
 }
 
 export default defineComponent({
@@ -434,7 +453,7 @@ export default defineComponent({
     const { appContext } = getCurrentInstance();
     const $toastr = appContext.config.globalProperties.$toastr;
 
-    // Basic references
+    // Basic data references
     const courseTypes = ref([]);
     const instructors = ref([]);
     const groupTypes = ref([]);
@@ -501,14 +520,12 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
-    // On mount, fetch data
     onMounted(() => {
       // Example: skip Friday from default selection
       selectedDays.value = days.value.filter((day) => day.value !== 5);
       getRequirements();
     });
 
-    // Fetch from server
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
@@ -532,7 +549,6 @@ export default defineComponent({
       }
     };
 
-    // Populate data if editing
     const populateCourse = (course) => {
       selectedCourseType.value =
         courseTypes.value.find((ct) => ct.id === course.course_type_id) || null;
@@ -593,20 +609,17 @@ export default defineComponent({
       showFields.value = true;
     };
 
-    // Show/hide fields
     const updateFields = () => {
       showFields.value = !!(selectedCourseType.value && selectedGroupType.value);
       updateStudentCapacity();
     };
 
-    // If group type has default capacity
     const updateStudentCapacity = () => {
       if (selectedGroupType.value) {
         studentCapacity.value = selectedGroupType.value.student_capacity || "";
       }
     };
 
-    // Auto-update toTime
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -617,18 +630,14 @@ export default defineComponent({
       let totalMinutes = hours * 60 + minutes + lessonDuration;
       let newHours = Math.floor(totalMinutes / 60) % 24;
       let newMinutes = totalMinutes % 60;
-      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(
-        2,
-        "0"
-      )}`;
+      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(2, "0")}`;
     };
     watch(fromTime, updateToTime);
 
     /**
      * Generate schedule in chronological order,
-     * then place the MID exam row in the middle (visually),
-     * and place the FINAL exam row at the end (visually).
-     * If the day after the relevant class is Friday, skip to Saturday.
+     * Then set midExamDate and finalExamDate by finding the next free day
+     * (i.e., a day not used in schedule) after the mid-class or the last class.
      */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
@@ -670,27 +679,22 @@ export default defineComponent({
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // Now compute midExamDate => day after the middle class, skipping Friday if needed
+      // If we have classes, find midExamDate and finalExamDate
       if (scheduleList.value.length > 0) {
         const halfIndex = Math.floor(scheduleList.value.length / 2);
         const midClass = scheduleList.value[halfIndex - 1];
         const lastClass = scheduleList.value[scheduleList.value.length - 1];
 
+        // MID exam date => next free day after midClass.date
         if (midClass) {
-          let dateObj = new Date(`${midClass.date}T00:00:00`);
-          dateObj.setDate(dateObj.getDate() + 1);
-          skipIfFriday(dateObj);
-          midExamDate.value = formatDateLocal(dateObj);
+          midExamDate.value = findNextFreeDay(scheduleList.value, midClass.date);
         } else {
           midExamDate.value = "";
         }
 
-        // finalExamDate => day after last class, skipping Friday
+        // FINAL exam date => next free day after lastClass.date
         if (lastClass) {
-          let dateObj = new Date(`${lastClass.date}T00:00:00`);
-          dateObj.setDate(dateObj.getDate() + 1);
-          skipIfFriday(dateObj);
-          finalExamDate.value = formatDateLocal(dateObj);
+          finalExamDate.value = findNextFreeDay(scheduleList.value, lastClass.date);
         } else {
           finalExamDate.value = "";
         }
@@ -700,12 +704,11 @@ export default defineComponent({
       }
     };
 
-    // Remove row
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
-    // Filter instructors by matching skills
+    // Filter instructors
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -758,7 +761,6 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
-    // Add student
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -782,7 +784,7 @@ export default defineComponent({
           studentsList.value.push(student);
           $toastr.success("Student created successfully");
           showStudentModal.value = false;
-          // reset fields
+          // reset
           newStudentName.value = "";
           newStudentPhone.value = "";
           newStudentBooksDue.value = false;
@@ -805,12 +807,11 @@ export default defineComponent({
       }
     };
 
-    // Remove student
     const removeStudent = (index) => {
       studentsList.value.splice(index, 1);
     };
 
-    // Validate
+    // Validation
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -899,7 +900,6 @@ export default defineComponent({
       }
     };
 
-    // Reset
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -915,7 +915,7 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    // Get day name
+    // Day name
     const getDayName = (dateStr) => {
       if (!dateStr) return "";
       const dateObj = new Date(dateStr + "T00:00:00");
@@ -990,6 +990,7 @@ export default defineComponent({
       resetFields,
       getDayName,
       skipIfFriday,
+      findNextFreeDay,
       formatDateLocal,
     };
   },
