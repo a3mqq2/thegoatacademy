@@ -220,22 +220,24 @@
                     </button>
                   </td>
                 </tr>
+                <!-- Insert MID exam row after half the schedule (VISUAL CENTER) -->
+                <tr
+                  v-if="index === Math.floor(scheduleList.length / 2) - 1"
+                  class="bg-primary text-center"
+                >
+                  <td colspan="6">
+                    <h5 class="text-center p-2 text-light">
+                      MID exam test:
+                      <flatpickr
+                        v-model="midExamDate"
+                        :config="dateConfig"
+                        class="d-inline-block w-auto mx-2"
+                      />
+                      ({{ getDayName(midExamDate) }})
+                    </h5>
+                  </td>
+                </tr>
               </template>
-
-              <!-- MID exam row (inserted visually after first half) -->
-              <tr class="bg-primary text-center">
-                <td colspan="6">
-                  <h5 class="text-center p-2 text-light">
-                    MID exam test:
-                    <flatpickr
-                      v-model="midExamDate"
-                      :config="dateConfig"
-                      class="d-inline-block w-auto mx-2"
-                    />
-                    ({{ getDayName(midExamDate) }})
-                  </h5>
-                </td>
-              </tr>
 
               <!-- FINAL exam row (always at the end) -->
               <tr class="bg-primary text-center">
@@ -399,6 +401,9 @@ import instance from "../instance";
 import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
+/**
+ * Helper to format a JS Date as "YYYY-MM-DD".
+ */
 function formatDateLocal(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -407,12 +412,11 @@ function formatDateLocal(date) {
 }
 
 /**
- * تخطي يوم الجمعة (اليوم رقم 5 في JavaScript) إلى السبت.
- * إذا كان التاريخ يقع في يوم الجمعة، نضيف يوماً واحداً (فتصبح السبت).
+ * If the given date is Friday (day === 5), skip to Saturday (add 1 day).
  */
-function skipFriday(dateObj) {
+function skipIfFriday(dateObj) {
   if (dateObj.getDay() === 5) {
-    dateObj.setDate(dateObj.getDate() + 1); // move to Saturday
+    dateObj.setDate(dateObj.getDate() + 1);
   }
   return dateObj;
 }
@@ -430,7 +434,7 @@ export default defineComponent({
     const { appContext } = getCurrentInstance();
     const $toastr = appContext.config.globalProperties.$toastr;
 
-    // Data references
+    // Basic references
     const courseTypes = ref([]);
     const instructors = ref([]);
     const groupTypes = ref([]);
@@ -479,6 +483,7 @@ export default defineComponent({
     const scheduleList = ref([]);
     const storedSelectedDays = ref([]);
 
+    // Students
     const studentsList = ref([]);
     const selectedStudent = ref(null);
     const showStudentModal = ref(false);
@@ -496,7 +501,14 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
-    // Fetch initial data
+    // On mount, fetch data
+    onMounted(() => {
+      // Example: skip Friday from default selection
+      selectedDays.value = days.value.filter((day) => day.value !== 5);
+      getRequirements();
+    });
+
+    // Fetch from server
     const getRequirements = async () => {
       globalLoading.value = true;
       try {
@@ -509,19 +521,18 @@ export default defineComponent({
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
 
-        // If editing existing course
         if (response.data.course) {
           populateCourse(response.data.course);
         }
       } catch (error) {
-        // handle error if needed
+        // handle error
       } finally {
         loading.value = false;
         globalLoading.value = false;
       }
     };
 
-    // Populate data in edit mode
+    // Populate data if editing
     const populateCourse = (course) => {
       selectedCourseType.value =
         courseTypes.value.find((ct) => ct.id === course.course_type_id) || null;
@@ -543,7 +554,6 @@ export default defineComponent({
           course.levels.some((cl) => cl.id === l.id)
         );
       }
-
       if (course.days) {
         const splitted = course.days.split("-");
         selectedDays.value = days.value.filter((d) => splitted.includes(d.label));
@@ -583,18 +593,20 @@ export default defineComponent({
       showFields.value = true;
     };
 
+    // Show/hide fields
     const updateFields = () => {
       showFields.value = !!(selectedCourseType.value && selectedGroupType.value);
       updateStudentCapacity();
     };
 
+    // If group type has default capacity
     const updateStudentCapacity = () => {
       if (selectedGroupType.value) {
         studentCapacity.value = selectedGroupType.value.student_capacity || "";
       }
     };
 
-    // Automatically update 'toTime' based on 'fromTime' + groupType.lesson_duration
+    // Auto-update toTime
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -605,16 +617,18 @@ export default defineComponent({
       let totalMinutes = hours * 60 + minutes + lessonDuration;
       let newHours = Math.floor(totalMinutes / 60) % 24;
       let newMinutes = totalMinutes % 60;
-      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(2, "0")}`;
+      toTime.value = `${String(newHours).padStart(2, "0")}:${String(newMinutes).padStart(
+        2,
+        "0"
+      )}`;
     };
     watch(fromTime, updateToTime);
 
     /**
-     * Generate schedule in two halves, skipping Friday if an exam date falls on it.
-     *  1) First half of the classes
-     *  2) MID exam (the next day, skipping Friday if needed)
-     *  3) Second half of the classes
-     *  4) Final exam (the next day, skipping Friday if needed)
+     * Generate schedule in chronological order,
+     * then place the MID exam row in the middle (visually),
+     * and place the FINAL exam row at the end (visually).
+     * If the day after the relevant class is Friday, skip to Saturday.
      */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
@@ -639,68 +653,59 @@ export default defineComponent({
       scheduleList.value = [];
       storedSelectedDays.value = selectedDays.value.map((d) => d.value);
 
-      // Split classes into two halves
-      const half = Math.floor(totalClasses / 2);
-      const remainder = totalClasses - half;
+      let classesCount = 0;
+      let currentDate = new Date(`${startDate.value}T00:00:00`);
 
-      // Generate first half
-      let count = 0;
-      let dateObj = new Date(`${startDate.value}T00:00:00`);
-      const firstHalf = [];
-
-      while (count < half) {
-        if (storedSelectedDays.value.includes(dateObj.getDay())) {
-          firstHalf.push({
-            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
-            date: formatDateLocal(dateObj),
+      // Generate all classes in chronological order
+      while (classesCount < totalClasses) {
+        if (storedSelectedDays.value.includes(currentDate.getDay())) {
+          scheduleList.value.push({
+            day: days.value.find((x) => x.value === currentDate.getDay())?.label || "",
+            date: formatDateLocal(currentDate),
             fromTime: fromTime.value,
             toTime: toTime.value,
           });
-          count++;
+          classesCount++;
         }
-        dateObj.setDate(dateObj.getDate() + 1);
+        currentDate.setDate(currentDate.getDate() + 1);
       }
 
-      // MID exam => the next day after first half, skipping Friday if needed
-      dateObj.setDate(dateObj.getDate() + 1);
-      skipFriday(dateObj);
-      midExamDate.value = formatDateLocal(dateObj);
+      // Now compute midExamDate => day after the middle class, skipping Friday if needed
+      if (scheduleList.value.length > 0) {
+        const halfIndex = Math.floor(scheduleList.value.length / 2);
+        const midClass = scheduleList.value[halfIndex - 1];
+        const lastClass = scheduleList.value[scheduleList.value.length - 1];
 
-      // Start second half => the day after the mid exam, skipping Friday if needed
-      dateObj.setDate(dateObj.getDate() + 1);
-      skipFriday(dateObj);
-
-      // Generate second half
-      count = 0;
-      const secondHalf = [];
-      while (count < remainder) {
-        if (storedSelectedDays.value.includes(dateObj.getDay())) {
-          secondHalf.push({
-            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
-            date: formatDateLocal(dateObj),
-            fromTime: fromTime.value,
-            toTime: toTime.value,
-          });
-          count++;
+        if (midClass) {
+          let dateObj = new Date(`${midClass.date}T00:00:00`);
+          dateObj.setDate(dateObj.getDate() + 1);
+          skipIfFriday(dateObj);
+          midExamDate.value = formatDateLocal(dateObj);
+        } else {
+          midExamDate.value = "";
         }
-        dateObj.setDate(dateObj.getDate() + 1);
+
+        // finalExamDate => day after last class, skipping Friday
+        if (lastClass) {
+          let dateObj = new Date(`${lastClass.date}T00:00:00`);
+          dateObj.setDate(dateObj.getDate() + 1);
+          skipIfFriday(dateObj);
+          finalExamDate.value = formatDateLocal(dateObj);
+        } else {
+          finalExamDate.value = "";
+        }
+      } else {
+        midExamDate.value = "";
+        finalExamDate.value = "";
       }
-
-      // Final exam => the next day after second half, skipping Friday if needed
-      dateObj.setDate(dateObj.getDate() + 1);
-      skipFriday(dateObj);
-      finalExamDate.value = formatDateLocal(dateObj);
-
-      // Combine both halves
-      scheduleList.value = [...firstHalf, ...secondHalf];
     };
 
-    // Remove a schedule row
+    // Remove row
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
-    // Filter instructors by matching skills/levels
+    // Filter instructors by matching skills
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -753,7 +758,7 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
-    // Add new student
+    // Add student
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -800,12 +805,12 @@ export default defineComponent({
       }
     };
 
-    // Remove a student from list
+    // Remove student
     const removeStudent = (index) => {
       studentsList.value.splice(index, 1);
     };
 
-    // Validate data before saving
+    // Validate
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -842,7 +847,7 @@ export default defineComponent({
       return true;
     };
 
-    // Save or update course
+    // Save
     const saveCourse = async () => {
       if (!validateCourseData()) return;
       const payload = {
@@ -894,7 +899,7 @@ export default defineComponent({
       }
     };
 
-    // Reset all fields
+    // Reset
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -910,7 +915,7 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    // Get day name from date string
+    // Get day name
     const getDayName = (dateStr) => {
       if (!dateStr) return "";
       const dateObj = new Date(dateStr + "T00:00:00");
@@ -925,12 +930,6 @@ export default defineComponent({
       ];
       return dayNames[dateObj.getDay()];
     };
-
-    onMounted(() => {
-      // Example: skip Friday from default selection if you want
-      selectedDays.value = days.value.filter((day) => day.value !== 5);
-      getRequirements();
-    });
 
     return {
       props,
@@ -990,6 +989,7 @@ export default defineComponent({
       saveCourse,
       resetFields,
       getDayName,
+      skipIfFriday,
       formatDateLocal,
     };
   },
