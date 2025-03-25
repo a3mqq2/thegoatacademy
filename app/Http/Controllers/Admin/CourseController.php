@@ -89,13 +89,13 @@ class CourseController extends Controller
         $data = $validator->validated();
     
         $daysMapping = [
-            0 => 'Sat',
-            1 => 'Sun',
-            2 => 'Mon',
-            3 => 'Tue',
-            4 => 'Wed',
-            5 => 'Thu',
-            6 => 'Fri',
+            0 => 'Sun',
+            1 => 'Mon',
+            2 => 'Tue',
+            3 => 'Wed',
+            4 => 'Thu',
+            5 => 'Fri',
+            6 => 'Sat',
         ];
     
         $selectedDays = collect($request->selected_days)->map(function ($day) use ($daysMapping) {

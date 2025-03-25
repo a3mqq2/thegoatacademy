@@ -410,40 +410,7 @@ function addOneDay(dateStr) {
   const day = parseInt(parts[2], 10);
   const dateObj = new Date(year, month, day);
   dateObj.setDate(dateObj.getDate() + 1);
-  const newYear = dateObj.getFullYear();
-  const newMonth = String(dateObj.getMonth() + 1).padStart(2, "0");
-  const newDay = String(dateObj.getDate()).padStart(2, "0");
-  return `${newYear}-${newMonth}-${newDay}`;
-}
-
-// Helper: get exam date by adding one day to the g iven date and skippi  ng Friday if needed
-function getExamDate(dateStr) {
-  let newDateStr = addOneDay(dateStr);
-  let dateObj = new Date(newDateStr + "T00:00:00");
-  if (dateObj.getDay() === 5) { // Friday (in JS, Friday is 5)
-    dateObj.setDate(dateObj.getDate() + 1);
-    const newYear = dateObj.getFullYear();
-    const newMonth = String(dateObj.getMonth() + 1).padStart(2, "0");
-    const newDay = String(dateObj.getDate()).padStart(2, "0");
-    newDateStr = `${newYear}-${newMonth}-${newDay}`;
-  }
-  return newDateStr;
-}
-
-// Helper: get day name from date string
-function getDayName(dateStr) {
-  if (!dateStr) return "";
-  const dateObj = new Date(dateStr + "T00:00:00");
-  const dayNames = [
-  "Sunday",    // index 0
-  "Monday",    // index 1
-  "Tuesday",   // index 2
-  "Wednesday", // index 3
-  "Thursday",  // index 4
-  "Friday",    // index 5
-  "Saturday"   // index 6
-];
-  return dayNames[dateObj.getDay()];
+  return formatDateLocal(dateObj);
 }
 
 // Helper: format Date object as "YYYY-MM-DD"
@@ -452,6 +419,39 @@ function formatDateLocal(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+// Helper: get day name from date string
+function getDayName(dateStr) {
+  if (!dateStr) return "";
+  const dateObj = new Date(dateStr + "T00:00:00");
+  const dayNames = [
+    "Sunday",    // index 0
+    "Monday",    // index 1
+    "Tuesday",   // index 2
+    "Wednesday", // index 3
+    "Thursday",  // index 4
+    "Friday",    // index 5
+    "Saturday"   // index 6
+  ];
+  return dayNames[dateObj.getDay()];
+}
+
+/**
+ * Helper: Get exam date by adding one day to the given date,
+ * skip Friday if needed, and also skip any date that already exists in schedule
+ * to avoid conflicts.
+ */
+function getExamDate(dateStr, schedule = []) {
+  // Start with next day
+  let dateObj = new Date(addOneDay(dateStr) + "T00:00:00");
+
+  // We keep adjusting if it's Friday or if the date conflicts with an existing schedule date
+  while (dateObj.getDay() === 5 || schedule.some(sch => sch.date === formatDateLocal(dateObj))) {
+    dateObj.setDate(dateObj.getDate() + 1);
+  }
+
+  return formatDateLocal(dateObj);
 }
 
 export default defineComponent({
@@ -502,14 +502,14 @@ export default defineComponent({
     const globalLoading = ref(false);
 
     const days = ref([
-    { label: "Sat", value: 6 }, // السبت = 6
-    { label: "Sun", value: 0 }, // الأحد  = 0
-    { label: "Mon", value: 1 }, // الاثنين = 1
-    { label: "Tue", value: 2 }, // الثلاثاء = 2
-    { label: "Wed", value: 3 }, // الأربعاء = 3
-    { label: "Thu", value: 4 }, // الخميس  = 4
-    { label: "Fri", value: 5 }, // الجمعة = 5
-  ]);
+      { label: "Sat", value: 6 }, // السبت = 6
+      { label: "Sun", value: 0 }, // الأحد  = 0
+      { label: "Mon", value: 1 }, // الاثنين = 1
+      { label: "Tue", value: 2 }, // الثلاثاء = 2
+      { label: "Wed", value: 3 }, // الأربعاء = 3
+      { label: "Thu", value: 4 }, // الخميس  = 4
+      { label: "Fri", value: 5 }, // الجمعة = 5
+    ]);
     const selectedDays = ref([]);
     const fromTime = ref("");
     const toTime = ref("");
@@ -545,6 +545,7 @@ export default defineComponent({
         allStudents.value = response.data.students || [];
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
+
         if (response.data.course) {
           populateCourse(response.data.course);
         }
@@ -567,12 +568,12 @@ export default defineComponent({
       finalExamDate.value = course.final_exam_date || "";
       studentCapacity.value = course.student_capacity || "";
       whatsappGroupLink.value = course.whatsapp_group_link || "";
-      
-      // Handle levels: if course.levels exists, set selectedLevels accordingly
+
+      // Handle levels
       if (course.levels) {
         selectedLevels.value = levels.value.filter(l => course.levels.some(cl => cl.id === l.id));
       }
-      
+
       if (course.days) {
         const splitted = course.days.split("-");
         selectedDays.value = days.value.filter(d => splitted.includes(d.label));
@@ -657,6 +658,7 @@ export default defineComponent({
       storedSelectedDays.value = selectedDays.value.map(d => d.value);
       let classesCount = 0;
       let currentDate = new Date(`${startDate.value}T00:00:00`);
+
       while (classesCount < totalClasses) {
         if (storedSelectedDays.value.includes(currentDate.getDay())) {
           scheduleList.value.push({
@@ -669,14 +671,16 @@ export default defineComponent({
         }
         currentDate.setDate(currentDate.getDate() + 1);
       }
+
+      // Auto-set mid/final exam dates without conflict
       if (scheduleList.value.length > 0) {
         const halfIndex = Math.floor(scheduleList.value.length / 2);
         const midClass = scheduleList.value[halfIndex - 1];
         if (midClass) {
-          midExamDate.value = getExamDate(midClass.date);
+          midExamDate.value = getExamDate(midClass.date, scheduleList.value);
         }
         const lastClass = scheduleList.value[scheduleList.value.length - 1];
-        finalExamDate.value = getExamDate(lastClass.date);
+        finalExamDate.value = getExamDate(lastClass.date, scheduleList.value);
       } else {
         midExamDate.value = "";
         finalExamDate.value = "";
@@ -695,7 +699,11 @@ export default defineComponent({
       return instructors.value.filter(inst => {
         if (!inst.skills?.length) return false;
         const instSkillIds = inst.skills.map(s => s.id);
+
+        // Check if at least one skill matches
         const skillsMatch = instSkillIds.some(skillId => courseSkillIds.includes(skillId));
+
+        // Also check if instructor has at least one of the selected levels (if any selected)
         let levelsMatch = true;
         if (selectedLevels.value && selectedLevels.value.length) {
           if (!inst.levels?.length) {
@@ -714,6 +722,7 @@ export default defineComponent({
         return !studentsList.value.some(s => s.id === std.id);
       });
     });
+
     const filteredStudents = computed(() => {
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) {
         return availableStudents.value;
@@ -822,6 +831,7 @@ export default defineComponent({
 
     const saveCourse = async () => {
       if (!validateCourseData()) return;
+
       const payload = {
         course_type_id: selectedCourseType.value.id,
         group_type_id: selectedGroupType.value.id,
@@ -840,6 +850,7 @@ export default defineComponent({
         whatsapp_group_link: whatsappGroupLink.value || "",
         levels: selectedLevels.value.map(l => l.id)
       };
+
       globalLoading.value = true;
       try {
         let courseId = null;
@@ -887,6 +898,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
+      // By default, skip Friday in selectedDays
       selectedDays.value = days.value.filter(day => day.value !== 5);
       getRequirements();
     });
