@@ -259,6 +259,13 @@
             <li class="pc-item"><a class="pc-link" href="{{ route('admin.group-types.index') }}">Show all Group Types</a></li>
           </ul>
         </li>
+
+        <li class="pc-item">
+          <a href="{{ route('admin.settings.index') }}" class="pc-link">
+              <span class="pc-mtext">General Settings</span>
+          </a>
+      </li>
+
       </ul>
     </li>
 
