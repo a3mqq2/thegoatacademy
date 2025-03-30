@@ -1,6 +1,8 @@
 import { createApp } from 'vue';
 import vSelect from 'vue-select';
 import CreateCourse from './components/CreateCourse.vue';
+import Attendance from './components/Attendance.vue';
+import ProgressTest from './components/ProgressTest.vue';
 import 'vue-select/dist/vue-select.css';
 // Import Toastr
 import toastr from 'toastr';
@@ -28,5 +30,7 @@ toastr.options = {
 // Register components
 app.component('v-select', vSelect);
 app.component('create-course', CreateCourse);
+app.component('Attendance', Attendance);
+app.component('progress-test', ProgressTest);
 // Mount the app
 app.mount('#app');

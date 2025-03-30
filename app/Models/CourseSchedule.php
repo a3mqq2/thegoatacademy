@@ -14,7 +14,8 @@ class CourseSchedule extends Model
         'day',
         'date',
         'from_time',
-        'to_time'
+        'to_time',
+        'attendance_taken_at'
     ];
 
     /**
@@ -23,5 +24,10 @@ class CourseSchedule extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(CourseAttendance::class, 'course_schedule_id');
     }
 }

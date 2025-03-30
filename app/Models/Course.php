@@ -90,4 +90,9 @@ class Course extends Model
         return $this->belongsToMany(Level::class);
     }
 
+    public function progressTests()
+    {
+        return $this->hasMany(ProgressTest::class);
+    }
+
 }

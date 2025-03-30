@@ -2,8 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\LevelController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\ExcludeReasonController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -15,8 +17,7 @@ use App\Http\Controllers\Admin\StudentFileController;
 use App\Http\Controllers\Admin\CourseStudentController;
 use App\Http\Controllers\Admin\QualitySettingController;
 use App\Http\Controllers\Admin\MeetingPlatformController;
-use App\Http\Controllers\Admin\LevelController;
-use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Instructor\ProgressTestController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -75,3 +76,5 @@ Route::delete('/students/files/{file}', [StudentFileController::class, 'destroy'
     ->name('students.files.destroy');
 
     Route::resource('meeting_platforms', MeetingPlatformController::class);
+
+    Route::resource('progressTests', ProgressTestController::class);

@@ -11,13 +11,13 @@
 
 
 <li class="pc-item">
-   <a href="{{route('instructor.courses', ['status' => 'upcoming'])}}" class="pc-link">
+   <a href="{{route('instructor.courses.index', ['status' => 'ongoing'])}}" class="pc-link">
      <span class="pc-micon">
        <svg class="pc-icon">
          <use xlink:href="#custom-element-plus"></use>
        </svg>
      </span>
-     <span class="pc-mtext">Upcoming Courses</span>
+     <span class="pc-mtext">Ongoing Courses</span>
    </a>
 </li>
 

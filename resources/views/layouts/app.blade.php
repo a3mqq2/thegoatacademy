@@ -75,6 +75,12 @@
       {
         width: auto !important;
       }
+
+      /* update primary color root */
+      :root {
+        --primary-color: #151f42 !important;
+      }
+
     </style>
 
     {{-- Allow child views to inject extra CSS if needed --}}
