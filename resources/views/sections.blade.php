@@ -9,8 +9,7 @@
             $roles = [
                ['name' => 'Admin', 'icon' => 'fa-user-shield', 'route' => 'admin.dashboard'],
                ['name' => 'Instructor', 'icon' => 'fa-chalkboard-teacher', 'route' => 'instructor.dashboard'],
-               // ['name' => 'Supervisor', 'icon' => 'fa-eye', 'route' => 'supervisor.dashboard'],
-               // ['name' => 'Exam Officer', 'icon' => 'fa-file-alt', 'route' => 'exam_officer.dashboard'],
+               ['name' => 'Exam Officer', 'icon' => 'fa-file-alt', 'route' => 'exam_officer.dashboard'],
             ];
          @endphp
 

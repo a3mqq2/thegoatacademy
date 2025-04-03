@@ -172,6 +172,11 @@
                 @include('layouts.menus.instructor')
             @endif
 
+            @if (get_area_name() == "exam_officer")
+              @include('layouts.menus.exam_officer')
+          @endif
+
+
           </ul>
         </div>
       </div>
