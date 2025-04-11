@@ -29,15 +29,14 @@ class CourseType extends Model
         );
     }
 
-
-
-
+    /**
+     * Relationship with skills, including pivot grade data.
+     */
     public function skills()
     {
-        return $this->belongsToMany(Skill::class, 'skill_course_types', 'course_type_id', 'skill_id');
+        return $this->belongsToMany(Skill::class, 'course_type_skill', 'course_type_id', 'skill_id')
+                    ->withPivot(['mid_max', 'final_max']);
     }
-
-
 
     public static function boot()
     {

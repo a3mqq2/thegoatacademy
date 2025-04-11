@@ -14,6 +14,7 @@ class Course extends Model
         'group_type_id',
         'instructor_id',
         'start_date',
+        'pre_test_date',
         'mid_exam_date',
         'final_exam_date',
         'end_date',
@@ -95,4 +96,17 @@ class Course extends Model
         return $this->hasMany(ProgressTest::class);
     }
 
+
+    public function exams()
+    {
+        return $this->hasMany(Exam::class);
+    }
+
+    /**
+     * A Course has many ExamGrades through its Exams.
+     */
+    public function examGrades()
+    {
+        return $this->hasManyThrough(ExamGrade::class, Exam::class, 'course_id', 'exam_id');
+    }
 }

@@ -49,4 +49,29 @@ class Student extends Model
     {
         return $this->hasMany(StudentFile::class);
     }
+
+    /**
+     * A Student has many ExamGrades.
+     */
+    public function examGrades()
+    {
+        return $this->hasMany(ExamGrade::class);
+    }
+
+    /**
+     * A Student belongs to many Exams through the exam_grades pivot table.
+     */
+    public function exams()
+    {
+        return $this->belongsToMany(Exam::class, 'exam_grades');
+    }
+
+    /**
+     * A Student has many ExamGradeDetails through ExamGrades.
+     */
+    public function examGradeDetails()
+    {
+        return $this->hasManyThrough(ExamGradeDetail::class, ExamGrade::class, 'student_id', 'exam_grade_id');
+    }
+
 }

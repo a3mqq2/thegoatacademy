@@ -31,7 +31,8 @@
         <div class="row g-3">
           <div class="col-md-6">
             <label for="name" class="form-label"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $courseType->name) }}" placeholder="Enter course type name">
+            <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" 
+                   value="{{ old('name', $courseType->name) }}" placeholder="Enter course type name">
             @error('name')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -47,15 +48,15 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
-          
         
           <div class="col-md-6">
-            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count) </label>
-            <input type="number" name="duration" value="{{old('duration', $courseType->duration)}}" id="" class="form-control">
+            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count)</label>
+            <input type="number" name="duration" value="{{ old('duration', $courseType->duration) }}" class="form-control">
             @error('duration')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
+          
           <!-- Multiselect for Skills using Select2 -->
           <div class="col-md-6">
             <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills</label>
@@ -70,8 +71,27 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
-          
         </div>
+        
+        <!-- Table for editing skill grades -->
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <h5>Skill Grades Settings</h5>
+            <table class="table table-bordered" id="skills-grades-table">
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Mid Max Grade</th>
+                  <th>Final Max Grade</th>
+                </tr>
+              </thead>
+              <tbody id="skills-grades-tbody">
+                {{-- Rows will be inserted dynamically using JavaScript --}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
         <div class="mt-4 d-flex justify-content-end">
           <a href="{{ route('admin.course-types.index') }}" class="btn btn-outline-secondary me-2">
             <i class="fa fa-arrow-left"></i> Cancel
@@ -97,6 +117,46 @@
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true
+      });
+
+      // Preload existing pivot grade values into a JavaScript object.
+      let initialSkillGrades = @json(
+        $courseType->skills->mapWithKeys(function ($skill) {
+            return [
+                $skill->id => [
+                    'mid_max' => $skill->pivot->mid_max,
+                    'final_max' => $skill->pivot->final_max
+                ]
+            ];
+        })
+      );
+
+      // Function to update the skills grades table based on selected skills and prefill values if available.
+      function updateSkillsTable() {
+        let data = $('#skills').select2('data');
+        let tbody = $('#skills-grades-tbody');
+        tbody.empty();
+        
+        data.forEach(function(skill) {
+          let optionId = skill.id;
+          let skillName = skill.text;
+          let midMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].mid_max : '';
+          let finalMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].final_max : '';
+          
+          let row = '<tr>';
+          // Display the skill name and include a hidden input for the skill ID.
+          row += '<td>' + skillName + '<input type="hidden" name="skill_grades['+ optionId +'][skill_id]" value="'+ optionId +'"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][mid_max]" class="form-control" placeholder="Mid Max Grade" value="'+ midMax +'"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][final_max]" class="form-control" placeholder="Final Max Grade" value="'+ finalMax +'"></td>';
+          row += '</tr>';
+          tbody.append(row);
+        });
+      }
+      
+      // Update the table on page load and when skill selections change.
+      updateSkillsTable();
+      $('#skills').on('change', function() {
+        updateSkillsTable();
       });
     });
   </script>

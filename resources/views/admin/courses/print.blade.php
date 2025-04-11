@@ -286,6 +286,18 @@
                   $total = $course->schedules->count();
                   $midPoint = ceil($total / 2);
                 @endphp
+
+
+                {{-- pre test --}}
+                
+                <tr style="background-color: #007bff; color: #fff;">
+                  <td colspan="2">Pre test Exam</td>
+                  <td>
+                    {{ $course->pre_test_date }} ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})
+                  </td>
+                  <td colspan="2"></td>
+                </tr>
+
                 @foreach ($course->schedules as $item)
                   <tr>
                     <td>{{ $loop->iteration }}</td>

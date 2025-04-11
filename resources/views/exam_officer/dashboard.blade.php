@@ -1,202 +1,278 @@
 @extends('layouts.app')
+@section('title', 'Exam Officer Dashboard')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css"/>
+<!-- Include ApexCharts CSS if needed -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@latest/dist/apexcharts.css">
+
 <style>
-@media print {
-  body { font-size: 12pt; color: #000; }
-  table.dataTable, .table-bordered { border: 1px solid #000 !important; }
-  table.dataTable th, table.dataTable td {
-    border: 1px solid #000 !important;
-    padding: 8px !important;
+  /* Gradient Cards */
+  .gradient-card-1 {
+    background: linear-gradient(135deg, #007bff 0%, #5bc0de 100%);
+    color: #fff;
   }
-  .dataTables_length, .dataTables_filter,
-  .dataTables_info, .dataTables_paginate {
-    display: none !important;
+  .gradient-card-2 {
+    background: linear-gradient(135deg, #28a745 0%, #72c583 100%);
+    color: #fff;
   }
-}
+  .gradient-card-3 {
+    background: linear-gradient(135deg, #f0ad4e 0%, #f8c471 100%);
+    color: #fff;
+  }
+  .gradient-card-4 {
+    background: linear-gradient(135deg, #e74c3c 0%, #f1948a 100%);
+    color: #fff;
+  }
+
+  /* Subtle subtitle below big numbers */
+  .card-subtitle {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+
+  /* Custom styling for upcoming and logs card */
+  .custom-list-card {
+    border-radius: 0.375rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .scrollable-list {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+  .scrollable-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollable-list::-webkit-scrollbar-track {
+    background: #f9f9f9;
+  }
+  .scrollable-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+
+  /* Overdue icon size and color */
+  .overdue-icon {
+    font-size: 1.75rem;
+    color: #fff;
+  }
+
+  /* Badge for logs or types */
+  .badge-exams {
+    background-color: #eaeaea;
+    color: #555;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  /* Example for donut chart container */
+  #examStatusChart {
+    min-height: 240px;
+  }
 </style>
 @endpush
 
 @section('content')
-<div class="container">
-  <div class="card shadow-sm">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h4 class="mb-0">Exam Officer Dashboard</h4>
-    </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table id="coursesTable" class="table table-bordered table-hover">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Instructor</th>
-              <th>Group Type</th>
-              <th>Course Type</th>
-              <th>Days</th>
-              <th>Time</th>
-              <th>Mid Exam Date</th>
-              <th>Final Exam Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach($courses as $course)
-            <tr>
-              <td>{{ $course->id }}</td>
-              <td>{{ optional($course->instructor)->name }}</td>
-              <td>{{ optional($course->groupType)->name }}</td>
-              <td>{{ optional($course->courseType)->name }}</td>
-              <td>{{ $course->days }}</td>
-              <td>{{ $course->time }}</td>
-              <td>{{ $course->mid_exam_date }}</td>
-              <td>{{ $course->final_exam_date }}</td>
-              <td>
-                <button
-                  class="btn btn-sm btn-primary editExamDates"
-                  data-id="{{ $course->id }}"
-                  data-mid="{{ $course->mid_exam_date }}"
-                  data-final="{{ $course->final_exam_date }}"
-                >
-                  Edit
-                </button>
-              </td>
-            </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
+<div class="container-fluid mt-4">
 
-      <div class="card shadow-sm mt-4">
+  <!-- Quick Stats (4 Cards) -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card gradient-card-1 h-100" style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="mb-2 text-light">Total Exams</h5>
+          <h2 class="fw-bolder mb-1 text-light">
+            {{ $totalExams }}
+          </h2>
+          <span class="card-subtitle">All exams in the system</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card gradient-card-2 h-100"  style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="mb-2 text-light">New Exams</h5>
+          <h2 class="fw-bolder mb-1 text-light">
+            {{ $newExams }}
+          </h2>
+          <span class="card-subtitle">Awaiting preparation</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card gradient-card-3 h-100" style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="mb-2 text-light">Pending Exams</h5>
+          <h2 class="fw-bolder mb-1 text-light">
+            {{ $pendingExams }}
+          </h2>
+          <span class="card-subtitle">In progress</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card gradient-card-4 h-100" style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="mb-2 text-light">Completed Exams</h5>
+          <h2 class="fw-bolder mb-1 text-light">
+            {{ $completedExams }}
+          </h2>
+          <span class="card-subtitle">All done & archived</span>
+        </div>
+      </div>
+    </div>
+  </div> <!-- row -->
+
+  <!-- Overdue / Today’s Exams / Upcoming Exams List -->
+  <div class="row">
+    <!-- Overdue Exams -->
+    <div class="col-md-6 col-xl-3 mb-3">
+      <div class="card bg-danger text-white h-100" style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h5 class="mb-2 text-light">Overdue Exams</h5>
+              <h2 class="fw-bolder mb-0 text-light">{{ $overdueExams }}</h2>
+            </div>
+            <div class="flex-shrink-0 ms-3 overdue-icon">
+              <i class="ti ti-alert-triangle"></i>
+            </div>
+          </div>
+          <p class="mb-0 mt-2 text-white-75">Past scheduled exam date</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today’s Exams -->
+    <div class="col-md-6 col-xl-3 mb-3">
+      <div class="card bg-info text-white h-100" style="border: 0!important;">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+              <h5 class="mb-2 text-light">Today’s Exams</h5>
+              <h2 class="fw-bolder mb-0 text-light">{{ $todayExams->count() }}</h2>
+            </div>
+            <div class="flex-shrink-0 ms-3" style="font-size:1.75rem;">
+              <i class="ti ti-calendar"></i>
+            </div>
+          </div>
+          <p class="mb-0 mt-2 text-white-75">
+            {{ \Carbon\Carbon::today()->format('d M Y') }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Exams List -->
+    <div class="col-xl-6 mb-3">
+      <div class="card custom-list-card h-100" style="border: 0!important;">
         <div class="card-header">
-          <h5 class="mb-0">Exam Dates Update Logs</h5>
+          <h5 class="mb-0">Upcoming Exams</h5>
         </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>User</th>
-                  <th>Description</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                @forelse($logs as $log)
-                <tr>
-                  <td>{{ $log->id }}</td>
-                  <td>{{ optional($log->user)->name }}</td>
-                  <td>{{ $log->description }}</td>
-                  <td>{{ $log->created_at->format('Y-m-d H:i') }}</td>
-                </tr>
-                @empty
-                <tr>
-                  <td colspan="4" class="text-center">No logs found</td>
-                </tr>
-                @endforelse
-              </tbody>
-            </table>
-          </div>
+        <div class="card-body scrollable-list">
+          @forelse($upcomingExams as $exam)
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <h6 class="mb-1 text-primary">
+                  #{{ $exam->id }} - {{ ucfirst($exam->exam_type) }}
+                </h6>
+                <small class="text-muted">
+                  {{ optional($exam->exam_date)->format('d M Y') }}
+                  / Course #{{ $exam->course_id }}
+                </small>
+              </div>
+              <span class="badge
+                @if($exam->status === 'pending') bg-warning text-dark
+                @elseif($exam->status === 'new') bg-secondary
+                @elseif($exam->status === 'completed') bg-success
+                @endif
+              ">
+                {{ ucfirst($exam->status) }}
+              </span>
+            </div>
+            <hr class="my-1" />
+          @empty
+            <p class="text-muted">No upcoming exams found.</p>
+          @endforelse
         </div>
       </div>
-
     </div>
-  </div>
-</div>
+  </div> <!-- row -->
 
-<!-- Modal for Editing Exam Dates -->
-<div class="modal fade" id="examDateModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Edit Exam Dates</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="examDateForm">
-          <input type="hidden" name="course_id" id="course_id">
-          <div class="mb-3">
-            <label class="form-label">Mid Exam Date</label>
-            <input type="date" class="form-control" name="mid_exam_date" id="mid_exam_date">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Final Exam Date</label>
-            <input type="date" class="form-control" name="final_exam_date" id="final_exam_date">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="saveExamDates">Save</button>
+  <!-- Chart + Logs row -->
+  <div class="row">
+    <!-- Recent Logs (Exam Manager only) -->
+    @if($isExamManager)
+    <div class="col-xl-12 mb-3">
+      <div class="card custom-list-card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Recent Exam Updates</h5>
+          <span class="text-muted" style="font-size:0.9rem;">Last 10 logs</span>
+        </div>
+        <div class="card-body scrollable-list">
+          @forelse($recentLogs as $log)
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <p class="text-muted mb-1" style="font-size:0.8rem;">
+                  <i class="ti ti-clock"></i> {{ $log->created_at->diffForHumans() }}
+                </p>
+                <h6 class="mb-0">{{ $log->description }}</h6>
+              </div>
+              <span class="badge badge-exams">{{ $log->type }}</span>
+            </div>
+            <hr class="my-1" />
+          @empty
+            <p class="text-muted mb-0">No recent logs found.</p>
+          @endforelse
+        </div>
       </div>
     </div>
-  </div>
+    @endif
+  </div> <!-- row -->
 </div>
 @endsection
 
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<!-- Load ApexCharts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@latest"></script>
 
 <script>
-$(document).ready(function(){
-  let table = $('#coursesTable').DataTable({
-    dom: 'Bfrtip',
-    buttons: [
-      {
-        extend: 'print',
-        text: 'Print',
-        title: 'Exam Officer Dashboard',
-        customize: function (win) {
-          $(win.document.body).css('font-size', '14px');
-          $(win.document.body).find('table').addClass('compact').css('font-size', 'inherit');
-        }
-      },
-      {
-        extend: 'excelHtml5',
-        text: 'Export to Excel',
-        title: 'Exam_Officer_Dashboard'
-      }
-    ]
-  });
+document.addEventListener('DOMContentLoaded', () => {
+  // Convert counts to numbers (guarding against strings)
+  let newCount       = Number('{{ $newExams }}');
+  let pendingCount   = Number('{{ $pendingExams }}');
+  let completedCount = Number('{{ $completedExams }}');
 
-  // Open modal with existing dates
-  $(document).on('click', '.editExamDates', function(){
-    $('#course_id').val($(this).data('id'));
-    $('#mid_exam_date').val($(this).data('mid'));
-    $('#final_exam_date').val($(this).data('final'));
-    $('#examDateModal').modal('show');
-  });
-
-  // Save updated dates via Ajax
-  $('#saveExamDates').on('click', function(){
-    let courseId = $('#course_id').val();
-    $.ajax({
-      url: '/exam_officer/update-exam-dates/' + courseId,
-      type: 'POST',
-      data: {
-        mid_exam_date: $('#mid_exam_date').val(),
-        final_exam_date: $('#final_exam_date').val(),
-        _token: '{{ csrf_token() }}'
-      },
-      success: function(resp) {
-        if (resp.success) {
-          let row = table.row($('button[data-id="'+courseId+'"]').closest('tr'));
-          let data = row.data();
-          data[6] = $('#mid_exam_date').val();
-          data[7] = $('#final_exam_date').val();
-          row.data(data).draw();
-          $('#examDateModal').modal('hide');
+  // ApexCharts Donut
+  let donutOptions = {
+    chart: {
+      type: 'donut',
+      height: 320
+    },
+    labels: ['New', 'Pending', 'Completed'],
+    series: [newCount, pendingCount, completedCount],
+    colors: ['#6c757d', '#ffc107', '#28a745'], // Gray, Warning, Success
+    legend: {
+      position: 'bottom'
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%'
         }
       }
-    });
-  });
+    },
+    dataLabels: {
+      dropShadow: { enabled: false }
+    },
+  };
+
+  let donutChart = new ApexCharts(document.querySelector('#examStatusChart'), donutOptions);
+  donutChart.render();
 });
 </script>
 @endpush

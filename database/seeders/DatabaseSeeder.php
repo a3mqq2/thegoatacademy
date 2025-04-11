@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Permissions
-        $permissions = [
+        $admin_permissions = [
             'Manage Users',
             'Students List',
             'Courses List',
@@ -25,6 +25,13 @@ class DatabaseSeeder extends Seeder
             'Audit Logs',
         ];
 
+
+        $exammanPermissions = [
+            'Exam Manager'
+        ];
+
+       $permissions = array_merge($admin_permissions, $exammanPermissions);
+
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
@@ -33,11 +40,11 @@ class DatabaseSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
         $instructorRole = Role::firstOrCreate(['name' => 'Instructor']);
         $monitorRole = Role::firstOrCreate(['name' => 'Supervisor']);
-        $examOfficerRole = Role::firstOrCreate(['name' => 'Exam Officer']);
+        $examOfficerRole = Role::firstOrCreate(['name' => 'Examiner']);
 
         // Assign Permissions to Admin Role
         $adminRole->syncPermissions($permissions);
-
+        $examOfficerRole->syncPermissions($exammanPermissions);
         // Create an Admin User
         $user = User::firstOrCreate([
             'email' => 'admin@demo.com',

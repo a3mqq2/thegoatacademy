@@ -8806,7 +8806,7 @@ textarea.is-invalid.dataTable-input {
 }
 [data-pc-direction=ltr] .bg-primary {
   --bs-bg-opacity: 1;
-  background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+  background-color: rgb(21 31 66) !important;
 }
 [data-pc-direction=ltr] .bg-secondary {
   --bs-bg-opacity: 1;
@@ -13562,7 +13562,7 @@ textarea.is-invalid.dataTable-input {
 }
 [data-pc-direction=rtl] .bg-primary {
   --bs-bg-opacity: 1;
-  background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+  background-color: rgb(21 31 66) !important;
 }
 [data-pc-direction=rtl] .bg-secondary {
   --bs-bg-opacity: 1;

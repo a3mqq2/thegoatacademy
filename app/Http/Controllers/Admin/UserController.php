@@ -264,14 +264,10 @@ class UserController extends Controller
         // ينصح باستخدام syncRoles لحذف الأدوار القديمة التلقائيًا 
         // وإضافة الجديدة.
         $user->syncRoles($validatedData['roles']);
-
+        $user->syncPermissions($request->permissions);
         // في حالة permissions 
         // نفضل فك الارتباط القديم ومن ثم تعيين الجديد (إذا أردت مسح القديم):
-        $user->permissions()->detach();
-        if ($request->filled('permissions')) {
-            $user->givePermissionTo($request->permissions);
-        }
-
+  
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
     }

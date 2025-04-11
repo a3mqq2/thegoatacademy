@@ -44,33 +44,49 @@ class CourseTypeController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255|unique:course_types',
-            'status'   => 'required|in:active,inactive',
-            'duration' => 'nullable',
-            'skills'  => 'nullable|array',
+            'name'                      => 'required|string|max:255|unique:course_types',
+            'status'                    => 'required|in:active,inactive',
+            'duration'                  => 'nullable',
+            'skills'                    => 'nullable|array',
+            'skill_grades'              => 'nullable|array',
+            'skill_grades.*.mid_max'    => 'required|numeric|min:0',
+            'skill_grades.*.final_max'  => 'required|numeric|min:0',
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
+    
+        // Create the course type from the validated request data.
         $courseType = CourseType::create($request->only(['name', 'status', 'duration']));
-
-        if ($request->filled('skills')) {
+    
+        // If the dynamic skill grades data is provided, attach each skill with pivot data.
+        if ($request->filled('skill_grades')) {
+            $pivotData = [];
+            foreach ($request->input('skill_grades') as $skillId => $grades) {
+                $pivotData[$skillId] = [
+                    'mid_max'   => $grades['mid_max'] ?? 0,
+                    'final_max' => $grades['final_max'] ?? 0,
+                ];
+            }
+            $courseType->skills()->attach($pivotData);
+        } elseif ($request->filled('skills')) {
+            // Fallback: if only skills are provided without grade details.
             $courseType->skills()->attach($request->skills);
         }
-
-
+    
+        // Log the creation event.
         AuditLog::create([
-            'user_id' => Auth::id(),
+            'user_id'     => Auth::id(),
             'description' => 'Created a new course type: ' . $courseType->name,
-            'type' => 'create',
-            'entity_id' => $courseType->id,
+            'type'        => 'create',
+            'entity_id'   => $courseType->id,
             'entity_type' => CourseType::class,
         ]);
-
+    
         return redirect()->route('admin.course-types.index')->with('success', 'Course Type created successfully.');
     }
+    
 
     public function edit($id)
     {
@@ -79,13 +95,17 @@ class CourseTypeController extends Controller
         return view('admin.course_types.edit', compact('courseType', 'skills'));
     }
 
+  
     public function update(Request $request, CourseType $courseType)
     {
         $validator = Validator::make($request->all(), [
-            'name'     => 'required|string|max:255|unique:course_types,name,' . $courseType->id,
-            'status'   => 'required|in:active,inactive',
-            'duration' => 'nullable',
-            'skills'   => 'nullable|array',
+            'name'                      => 'required|string|max:255|unique:course_types,name,' . $courseType->id,
+            'status'                    => 'required|in:active,inactive',
+            'duration'                  => 'nullable',
+            'skills'                    => 'nullable|array',
+            'skill_grades'              => 'nullable|array',
+            'skill_grades.*.mid_max'    => 'required|numeric|min:0',
+            'skill_grades.*.final_max'  => 'required|numeric|min:0',
         ]);
     
         if ($validator->fails()) {
@@ -96,8 +116,22 @@ class CourseTypeController extends Controller
     
         $courseType->update($request->only(['name', 'status', 'duration']));
     
-        if ($request->filled('skills')) {
-            $courseType->skills()->sync($request->skills);
+        if ($request->filled('skill_grades')) {
+            $pivotData = [];
+            foreach ($request->input('skill_grades') as $skillId => $grades) {
+                $pivotData[$skillId] = [
+                    'mid_max'   => $grades['mid_max'] ?? 0,
+                    'final_max' => $grades['final_max'] ?? 0,
+                ];
+            }
+            $courseType->skills()->sync($pivotData);
+        } elseif ($request->filled('skills')) {
+            // Fallback: attach skills with default pivot values if grades are not provided.
+            $pivotData = [];
+            foreach ($request->input('skills') as $skillId) {
+                $pivotData[$skillId] = ['mid_max' => 0, 'final_max' => 0];
+            }
+            $courseType->skills()->sync($pivotData);
         } else {
             $courseType->skills()->detach();
         }
@@ -109,10 +143,10 @@ class CourseTypeController extends Controller
     
         if (!empty($changes)) {
             AuditLog::create([
-                'user_id' => Auth::id(),
+                'user_id'     => Auth::id(),
                 'description' => 'Updated course type: ' . $courseType->name . ' (' . implode(', ', $changes) . ')',
-                'type' => 'update',
-                'entity_id' => $courseType->id,
+                'type'        => 'update',
+                'entity_id'   => $courseType->id,
                 'entity_type' => CourseType::class,
             ]);
         }

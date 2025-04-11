@@ -1,9 +1,11 @@
 <template>
   <div>
+    <!-- Global Loading Spinner -->
     <div v-if="globalLoading" class="global-spinner-overlay">
       <div class="spinner"></div>
     </div>
 
+    <!-- Selection Row for Course Type, Group Type, and Instructor -->
     <div class="row">
       <!-- Course Type -->
       <div class="col-md-4">
@@ -59,7 +61,7 @@
       </div>
     </div>
 
-    <!-- Levels Select -->
+    <!-- Levels Selection -->
     <div class="row mt-2">
       <div class="col-md-4">
         <label>Select Levels</label>
@@ -74,7 +76,7 @@
       </div>
     </div>
 
-    <!-- Show fields only when Course Type & Group Type selected -->
+    <!-- Show Additional Fields When Course Type & Group Type Are Selected -->
     <div class="row mt-2" v-if="showFields">
       <div class="col-md-12">
         <div class="form-check form-switch">
@@ -91,7 +93,7 @@
       </div>
     </div>
 
-    <!-- Basic Fields -->
+    <!-- Basic Course Fields -->
     <div v-if="showFields" class="row mt-3">
       <!-- Start Date -->
       <div class="col-md-4">
@@ -140,7 +142,7 @@
       </div>
       <div class="card-body">
         <div class="row">
-          <!-- Days -->
+          <!-- Select Days -->
           <div class="col-md-4">
             <label>Select Days</label>
             <v-select
@@ -179,6 +181,7 @@
           Generate Schedule
         </button>
 
+        <!-- Schedule Table -->
         <div class="table-responsive mt-3" v-if="scheduleList.length">
           <table class="table table-bordered">
             <thead>
@@ -192,7 +195,22 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Display schedule rows -->
+              <!-- Pre Test Row -->
+              <tr class="bg-primary text-center" v-if="scheduleList.length">
+                <td colspan="6">
+                  <h5 class="text-center p-2 text-light">
+                    Pre test:
+                    <flatpickr
+                      v-model="preTestDate"
+                      :config="dateConfig"
+                      class="d-inline-block w-auto mx-2"
+                    />
+                    ({{ getDayName(preTestDate) }})
+                  </h5>
+                </td>
+              </tr>
+
+              <!-- Schedule Rows -->
               <template v-for="(item, index) in scheduleList" :key="index">
                 <tr>
                   <td>{{ index + 1 }}</td>
@@ -220,7 +238,7 @@
                     </button>
                   </td>
                 </tr>
-                <!-- Insert MID exam row (VISUAL CENTER) after half the schedule -->
+                <!-- Insert MID exam row in the middle of the table -->
                 <tr
                   v-if="index === Math.floor(scheduleList.length / 2) - 1"
                   class="bg-primary text-center"
@@ -239,7 +257,7 @@
                 </tr>
               </template>
 
-              <!-- FINAL exam row (always at the end) -->
+              <!-- Final Exam Row -->
               <tr class="bg-primary text-center">
                 <td colspan="6">
                   <h5 class="text-center p-2 text-light">
@@ -402,7 +420,7 @@ import Flatpickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
 
 /**
- * Helper: format date as YYYY-MM-DD
+ * Helper: format a Date object as YYYY-MM-DD.
  */
 function formatDateLocal(date) {
   const year = date.getFullYear();
@@ -412,7 +430,7 @@ function formatDateLocal(date) {
 }
 
 /**
- * Skip Friday if date is Friday => move to Saturday.
+ * Helper: if the date lands on Friday (day 5), skip to Saturday.
  */
 function skipIfFriday(dateObj) {
   if (dateObj.getDay() === 5) {
@@ -449,25 +467,17 @@ export default defineComponent({
     const selectedMeetingPlatform = ref(null);
 
     const startDate = ref("");
-    const midExamDate = ref("");
-    const finalExamDate = ref("");
+    const preTestDate = ref(""); // manually editable pre-test date
+    const midExamDate = ref("");   // manually editable MID exam date
+    const finalExamDate = ref(""); // manually editable final exam date
+
     const studentCapacity = ref("");
     const whatsappGroupLink = ref("");
 
-    const dateConfig = ref({
-      dateFormat: "Y-m-d",
-      allowInput: true,
-    });
-    const dateConfigReadonly = ref({
-      dateFormat: "Y-m-d",
-      allowInput: false,
-      clickOpens: false,
-    });
+    const fromTime = ref("");
+    const toTime = ref("");
 
-    const showFields = ref(false);
-    const loading = ref(true);
-    const globalLoading = ref(false);
-
+    const scheduleList = ref([]);
     const days = ref([
       { label: "Sat", value: 6 },
       { label: "Sun", value: 0 },
@@ -478,9 +488,6 @@ export default defineComponent({
       { label: "Fri", value: 5 },
     ]);
     const selectedDays = ref([]);
-    const fromTime = ref("");
-    const toTime = ref("");
-    const scheduleList = ref([]);
     const storedSelectedDays = ref([]);
 
     // Students
@@ -501,9 +508,22 @@ export default defineComponent({
     const matchStudentSkills = ref(false);
     const errors = ref([]);
 
-    // Fetch initial data
+    const showFields = ref(false);
+    const loading = ref(true);
+    const globalLoading = ref(false);
+
+    const dateConfig = ref({
+      dateFormat: "Y-m-d",
+      allowInput: true,
+    });
+    const dateConfigReadonly = ref({
+      dateFormat: "Y-m-d",
+      allowInput: false,
+      clickOpens: false,
+    });
+
     onMounted(() => {
-      // Example: skip Friday from default selection
+      // Default: Exclude Friday from selected days if needed.
       selectedDays.value = days.value.filter((day) => day.value !== 5);
       getRequirements();
     });
@@ -520,12 +540,12 @@ export default defineComponent({
         meetingPlatforms.value = response.data.meeting_platforms || [];
         levels.value = response.data.levels || [];
 
-        // If editing
+        // If editing, populate existing course data.
         if (response.data.course) {
           populateCourse(response.data.course);
         }
       } catch (error) {
-        // handle error
+        // Handle any errors here.
       } finally {
         loading.value = false;
         globalLoading.value = false;
@@ -545,6 +565,7 @@ export default defineComponent({
       startDate.value = course.start_date || "";
       midExamDate.value = course.mid_exam_date || "";
       finalExamDate.value = course.final_exam_date || "";
+      preTestDate.value = course.pre_test_date || "";
       studentCapacity.value = course.student_capacity || "";
       whatsappGroupLink.value = course.whatsapp_group_link || "";
 
@@ -603,7 +624,7 @@ export default defineComponent({
       }
     };
 
-    // Auto-update "toTime" if group type has a lesson_duration
+    // Auto-update "toTime" based on "fromTime" and group's lesson_duration.
     const updateToTime = () => {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) {
         toTime.value = "";
@@ -619,12 +640,11 @@ export default defineComponent({
     watch(fromTime, updateToTime);
 
     /**
-     * Generate schedule in two phases:
-     *   1) first half of classes
-     *   2) mid exam day (skip Friday)
-     *   3) second half of classes
-     *   4) final exam day (skip Friday)
-     * Then combine both halves in one array so the table remains consistent.
+     * generateSchedule:
+     * Recalculates the schedule based on exam dates.
+     * - If preTestDate is set manually, first class starts the day after it.
+     * - If midExamDate is set manually, the second half begins one day later.
+     * - finalExamDate is used directly if provided.
      */
     const generateSchedule = () => {
       if (!selectedCourseType.value) {
@@ -646,19 +666,28 @@ export default defineComponent({
         return;
       }
 
-      // Reset schedule
+      // Reset schedule list.
       scheduleList.value = [];
       storedSelectedDays.value = selectedDays.value.map((d) => d.value);
 
-      // Split classes
       const half = Math.floor(totalClasses / 2);
       const remainder = totalClasses - half;
 
-      // Generate first half
-      let firstHalf = [];
-      let dateObj = new Date(`${startDate.value}T00:00:00`);
-      let count = 0;
+      // Determine effective start date:
+      // If preTestDate is manually set, the first class is the day after it.
+      let effectiveStartDate;
+      if (preTestDate.value) {
+        let preDate = new Date(preTestDate.value + "T00:00:00");
+        preDate.setDate(preDate.getDate() + 1);
+        effectiveStartDate = formatDateLocal(preDate);
+      } else {
+        effectiveStartDate = startDate.value;
+      }
 
+      // Generate first half of classes starting from effectiveStartDate.
+      let firstHalf = [];
+      let dateObj = new Date(`${effectiveStartDate}T00:00:00`);
+      let count = 0;
       while (count < half) {
         if (storedSelectedDays.value.includes(dateObj.getDay())) {
           firstHalf.push({
@@ -672,43 +701,70 @@ export default defineComponent({
         dateObj.setDate(dateObj.getDate() + 1);
       }
 
-      // Now mid exam day => skip if Friday
-      skipIfFriday(dateObj);
-      midExamDate.value = formatDateLocal(dateObj);
+      // Set MID exam date:
+      if (!midExamDate.value) {
+        skipIfFriday(dateObj);
+        midExamDate.value = formatDateLocal(dateObj);
+      }
+      // Second half starts one day after MID exam.
+      let midDateObj = new Date(midExamDate.value + "T00:00:00");
+      midDateObj.setDate(midDateObj.getDate() + 1);
+      skipIfFriday(midDateObj);
 
-      // Next day after mid exam => skip if Friday => start second half
-      dateObj.setDate(dateObj.getDate() + 1);
-      skipIfFriday(dateObj);
-
-      // Generate second half
+      // Generate second half of classes.
       let secondHalf = [];
       count = 0;
       while (count < remainder) {
-        if (storedSelectedDays.value.includes(dateObj.getDay())) {
+        if (storedSelectedDays.value.includes(midDateObj.getDay())) {
           secondHalf.push({
-            day: days.value.find((x) => x.value === dateObj.getDay())?.label || "",
-            date: formatDateLocal(dateObj),
+            day: days.value.find((x) => x.value === midDateObj.getDay())?.label || "",
+            date: formatDateLocal(midDateObj),
             fromTime: fromTime.value,
             toTime: toTime.value,
           });
           count++;
         }
-        dateObj.setDate(dateObj.getDate() + 1);
+        midDateObj.setDate(midDateObj.getDate() + 1);
       }
 
-      // Now final exam day => skip if Friday
-      skipIfFriday(dateObj);
-      finalExamDate.value = formatDateLocal(dateObj);
+      // Set Final exam date.
+      if (!finalExamDate.value) {
+        skipIfFriday(midDateObj);
+        finalExamDate.value = formatDateLocal(midDateObj);
+      }
 
-      // Combine
       scheduleList.value = [...firstHalf, ...secondHalf];
+
+      // If preTestDate is not manually set, set it as the day before the first class.
+      if (!preTestDate.value) {
+        let firstClass = new Date(scheduleList.value[0].date + "T00:00:00");
+        firstClass.setDate(firstClass.getDate() - 1);
+        preTestDate.value = formatDateLocal(firstClass);
+      }
     };
+
+    // Watch exam date changes so the schedule re-generates automatically.
+    watch(preTestDate, (newVal, oldVal) => {
+      if (newVal !== oldVal) {
+        generateSchedule();
+      }
+    });
+    watch(midExamDate, (newVal, oldVal) => {
+      if (newVal !== oldVal) {
+        generateSchedule();
+      }
+    });
+    watch(finalExamDate, (newVal, oldVal) => {
+      if (newVal !== oldVal) {
+        generateSchedule();
+      }
+    });
 
     const removeSchedule = (index) => {
       scheduleList.value.splice(index, 1);
     };
 
-    // Filter instructors by skills/levels
+    // Filter instructors based on skills and levels.
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) {
         return instructors.value;
@@ -734,7 +790,7 @@ export default defineComponent({
       });
     });
 
-    // Filter students
+    // Filter students.
     const availableStudents = computed(() => {
       return allStudents.value.filter(
         (std) => !studentsList.value.some((s) => s.id === std.id)
@@ -761,7 +817,7 @@ export default defineComponent({
       selectedStudent.value = null;
     };
 
-    // Add student
+    // Add a new student.
     const addStudent = async () => {
       if (!newStudentName.value || !newStudentPhone.value) {
         $toastr.error("Name and Phone are required.");
@@ -785,7 +841,7 @@ export default defineComponent({
           studentsList.value.push(student);
           $toastr.success("Student created successfully");
           showStudentModal.value = false;
-          // reset
+          // Reset new student fields.
           newStudentName.value = "";
           newStudentPhone.value = "";
           newStudentBooksDue.value = false;
@@ -812,7 +868,7 @@ export default defineComponent({
       studentsList.value.splice(index, 1);
     };
 
-    // Validate data
+    // Validate course data before submission.
     const validateCourseData = () => {
       errors.value = [];
       if (!selectedCourseType.value) {
@@ -849,7 +905,7 @@ export default defineComponent({
       return true;
     };
 
-    // Save or update
+    // Save or update the course.
     const saveCourse = async () => {
       if (!validateCourseData()) return;
       const payload = {
@@ -857,6 +913,7 @@ export default defineComponent({
         group_type_id: selectedGroupType.value.id,
         instructor_id: selectedInstructor.value.id,
         start_date: startDate.value,
+        pre_test_date: preTestDate.value,
         mid_exam_date: midExamDate.value,
         final_exam_date: finalExamDate.value,
         student_capacity: studentCapacity.value,
@@ -901,7 +958,7 @@ export default defineComponent({
       }
     };
 
-    // Reset
+    // Reset all fields.
     const resetFields = () => {
       selectedCourseType.value = null;
       selectedGroupType.value = null;
@@ -910,6 +967,7 @@ export default defineComponent({
       startDate.value = "";
       midExamDate.value = "";
       finalExamDate.value = "";
+      preTestDate.value = "";
       studentCapacity.value = "";
       whatsappGroupLink.value = "";
       scheduleList.value = [];
@@ -917,7 +975,7 @@ export default defineComponent({
       showStudentModal.value = false;
     };
 
-    // Day name
+    // Return day name from a date string.
     const getDayName = (dateStr) => {
       if (!dateStr) return "";
       const dateObj = new Date(dateStr + "T00:00:00");
@@ -934,7 +992,6 @@ export default defineComponent({
     };
 
     return {
-      props,
       courseTypes,
       instructors,
       groupTypes,
@@ -949,16 +1006,14 @@ export default defineComponent({
       startDate,
       midExamDate,
       finalExamDate,
+      preTestDate,
       studentCapacity,
       whatsappGroupLink,
-      showFields,
-      loading,
-      globalLoading,
-      days,
-      selectedDays,
       fromTime,
       toTime,
       scheduleList,
+      days,
+      selectedDays,
       storedSelectedDays,
       studentsList,
       selectedStudent,
@@ -974,23 +1029,25 @@ export default defineComponent({
       matchInstructorSkills,
       matchStudentSkills,
       errors,
+      showFields,
+      loading,
+      filteredInstructors,
+      globalLoading,
       dateConfig,
       dateConfigReadonly,
-      filteredInstructors,
-      availableStudents,
-      filteredStudents,
       updateFields,
       updateStudentCapacity,
       updateToTime,
       generateSchedule,
       removeSchedule,
+      getDayName,
       onStudentSelected,
       addStudent,
       removeStudent,
       validateCourseData,
       saveCourse,
       resetFields,
-      getDayName,
+      filteredStudents,
       skipIfFriday,
       formatDateLocal,
     };

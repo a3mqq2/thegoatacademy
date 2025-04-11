@@ -30,7 +30,8 @@
         <div class="row g-3">
           <div class="col-md-6">
             <label for="name" class="form-label"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="Enter course type name">
+            <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" 
+                   value="{{ old('name') }}" placeholder="Enter course type name">
             @error('name')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -48,8 +49,8 @@
           </div>
        
           <div class="col-md-6">
-            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count) </label>
-            <input type="number" name="duration" value="{{old('duration')}}" id="" class="form-control">
+            <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count)</label>
+            <input type="number" name="duration" value="{{ old('duration') }}" class="form-control">
             @error('duration')
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -57,7 +58,7 @@
           
           <!-- Multiselect for Skills using Select2 -->
           <div class="col-md-6">
-            <label for="skills" class="form-label"><i class="fa fa-code"></i>Skills to Develop</label>
+            <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills to Develop</label>
             <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
               @foreach($skills as $skill)
                 <option value="{{ $skill->id }}" selected>
@@ -69,7 +70,25 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
-          
+        </div>
+        
+        <!-- جدول لإدخال درجات mid max و final max لكل مهارة -->
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <h5>Skill Grades Settings</h5>
+            <table class="table table-bordered" id="skills-grades-table">
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Mid Max Grade</th>
+                  <th>Final Max Grade</th>
+                </tr>
+              </thead>
+              <tbody id="skills-grades-tbody">
+                {{-- سيتم تعبئة الصفوف تلقائيًا باستخدام JavaScript --}}
+              </tbody>
+            </table>
+          </div>
         </div>
         
         <div class="mt-4 d-flex justify-content-end">
@@ -97,6 +116,30 @@
       $('#skills').select2({
         placeholder: 'Select skills',
         allowClear: true
+      });
+
+      // Function to update the skills grades table based on selected skills
+      function updateSkillsTable() {
+        var data = $('#skills').select2('data');
+        var tbody = $('#skills-grades-tbody');
+        tbody.empty();
+        data.forEach(function(skill) {
+          var optionId = skill.id;
+          var skillName = skill.text;
+          var row = '<tr>';
+          // تضمين الـ skill_id عبر حقل مخفي داخل عمود اسم المهارة
+          row += '<td>' + skillName + '<input type="hidden" name="skill_grades['+ optionId +'][skill_id]" value="'+ optionId +'"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][mid_max]" class="form-control" placeholder="Mid Max Grade"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][final_max]" class="form-control" placeholder="Final Max Grade"></td>';
+          row += '</tr>';
+          tbody.append(row);
+        });
+      }
+
+      // تحديث الجدول عند تحميل الصفحة وعند تغيير الاختيارات
+      updateSkillsTable();
+      $('#skills').on('change', function() {
+        updateSkillsTable();
       });
     });
   </script>

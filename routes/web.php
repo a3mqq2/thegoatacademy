@@ -26,7 +26,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         require base_path('routes/web/instructor.php');
     });
 
-    Route::group(['middleware' => ['role:Exam Officer'], 'prefix' => 'exam_officer', 'as' => 'exam_officer.'], function () {
+    Route::group(['middleware' => ['role:Examiner'], 'prefix' => 'exam_officer', 'as' => 'exam_officer.'], function () {
          require base_path('routes/web/exam_officer.php');
    });
 
