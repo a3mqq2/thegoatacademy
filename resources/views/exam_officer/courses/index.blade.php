@@ -26,8 +26,8 @@
           <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['status' => 'overdue'])) }}" class="btn btn-outline-primary">Overdue</a>
         </div>
         <div class="btn-group mb-2" role="group" aria-label="Schedule Filters">
-          <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['schedule' => 'daily'])) }}" class="btn btn-outline-primary">Daily</a>
-          <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['schedule' => 'weekly'])) }}" class="btn btn-outline-primary">Weekly</a>
+          <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['schedule' => 'daily'])) }}" class="btn btn-outline-primary">This Day</a>
+          <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['schedule' => 'weekly'])) }}" class="btn btn-outline-primary">This Week</a>
           <a href="{{ route(get_area_name().'.courses.index', array_merge(request()->all(), ['schedule' => 'afterTwoDays'])) }}" class="btn btn-outline-primary">After Two Days</a>
         </div>
         <a href="{{ route(get_area_name().'.courses.index') }}" class="btn btn-outline-secondary mb-2">Remove Filter</a>
