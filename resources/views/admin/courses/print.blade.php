@@ -260,7 +260,13 @@
         </tr>
         <tr>
           <th>Time</th>
-          <td>{{ $course->time }}</td>
+          @php
+            [$start, $end] = explode(' - ', $course->time);
+            $formattedStart = \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A');
+            $formattedEnd = \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A');
+          @endphp
+          <td>{{ $formattedStart }} - {{ $formattedEnd }}</td>
+          
         </tr>
         <tr>
          <th>برنامج الاجتماع </th>

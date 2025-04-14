@@ -39,13 +39,13 @@ class CourseController extends Controller
                       ->orWhereDate('pre_test_date', '=', $today);
                 });
             } elseif ($request->schedule == 'weekly') {
-                // Using Carbon's startOfWeek (Monday) and endOfWeek (Sunday).
-                $monday = $today->copy()->startOfWeek();
-                $sunday = $today->copy()->endOfWeek();
-                $coursesQuery->where(function ($q) use ($monday, $sunday) {
-                    $q->whereBetween('mid_exam_date', [$monday, $sunday])
-                      ->orWhereBetween('pre_test_date', [$monday, $sunday])
-                      ->orWhereBetween('final_exam_date', [$monday, $sunday]);
+                $saturday = $today->copy()->startOfWeek(Carbon::SATURDAY);
+                $friday = $today->copy()->endOfWeek(Carbon::FRIDAY);
+            
+                $coursesQuery->where(function ($q) use ($saturday, $friday) {
+                    $q->whereBetween('mid_exam_date', [$saturday, $friday])
+                      ->orWhereBetween('pre_test_date', [$saturday, $friday])
+                      ->orWhereBetween('final_exam_date', [$saturday, $friday]);
                 });
             } elseif ($request->schedule == 'afterTwoDays') {
                 $target = $today->copy()->addDays(2);

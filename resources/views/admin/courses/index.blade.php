@@ -127,7 +127,13 @@
                   <td>{{ $course->mid_exam_date }}</td>
                   <td>{{ $course->final_exam_date }}</td>
                   <td>{{ $course->days }}</td>
-                  <td>{{ $course->time }}</td>
+                  @php
+                  [$start, $end] = explode(' - ', $course->time);
+                  $formattedStart = \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A');
+                  $formattedEnd = \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A');
+                @endphp
+                <td>{{ $formattedStart }} - {{ $formattedEnd }}</td>
+                
                   <td>{{ $course->student_capacity }}</td>
                   <td>{{ $course->student_count }}</td>
                   <td>{{ $course->student_capacity - $course->student_count }}</td>

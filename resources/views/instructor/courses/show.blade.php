@@ -262,7 +262,13 @@
           <div class="text-primary mb-1">
             <i class="fa fa-clock info-icon"></i>Time:
           </div>
-          <div class="text-secondary">{{ $course->time }}</div>
+          @php
+          [$start, $end] = explode(' - ', $course->time);
+          $formattedStart = \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A');
+          $formattedEnd = \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A');
+          @endphp
+
+          <div class="text-secondary">{{ $formattedStart }} - {{ $formattedEnd }}</div>
         </div>
         <!-- Whatsapp Group Link -->
         <div class="col-4">
