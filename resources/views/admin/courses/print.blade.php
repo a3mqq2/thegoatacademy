@@ -196,7 +196,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="window.print()">
 
   <!-- Top wave shape -->
   <div class="header-wave">

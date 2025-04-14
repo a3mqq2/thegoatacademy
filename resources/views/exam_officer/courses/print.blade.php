@@ -142,7 +142,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="window.print()" >
   <!-- TOP WAVE -->
   <div class="header-wave">
     <svg viewBox="0 0 500 280" preserveAspectRatio="none">
