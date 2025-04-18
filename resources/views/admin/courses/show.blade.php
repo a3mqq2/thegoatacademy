@@ -177,6 +177,15 @@
                 </tr>
               </thead>
               <tbody>
+                <tr style="background-color: #151f42; color: #fff;">
+                  <td colspan="2" class="text-light">Pre exam test</td>
+                  <td class="text-light">
+                    {{ $course->mid_exam_date }} 
+                    ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})
+                  </td>
+                  <td colspan="2"></td>
+                </tr>
+
                 @foreach($course->schedules as $i => $schedule)
                   <tr>
                     <td>{{ $i + 1 }}</td>
@@ -186,7 +195,7 @@
                     <td>{{ $schedule->to_time }}</td>
                   </tr>
                   @if($i + 1 == $midPoint)
-                    <tr style="background-color: #000000; color: #fff;">
+                    <tr style="background-color: #151f42; color: #fff;">
                       <td colspan="2" class="text-light">MID exam test</td>
                       <td class="text-light">
                         {{ $course->mid_exam_date }} 
