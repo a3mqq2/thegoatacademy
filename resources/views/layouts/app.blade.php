@@ -441,7 +441,7 @@
       });
     </script>
 
-
+{{-- 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     flatpickr('input[type="date"]', {
@@ -462,7 +462,7 @@
       }
     });
   });
-  </script>
+  </script> --}}
   
 
   </body>
