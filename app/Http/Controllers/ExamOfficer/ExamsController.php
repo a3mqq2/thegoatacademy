@@ -79,6 +79,7 @@ class ExamsController extends Controller
         }
 
 
+
         // if i'm examiner, show only my exams check permission Exam Manager
        
         if (Auth::user()->hasRole('Examiner') && auth()->user()->permissions->where('name','Exam Manager')->count() == 0) {
@@ -87,6 +88,8 @@ class ExamsController extends Controller
 
 
         $exams = $query->orderByDesc('id')->get();
+
+
 
         return view('exam_officer.exams.index', compact(
             'exams',
@@ -97,100 +100,132 @@ class ExamsController extends Controller
             'examStatuses'
         ));
     }
-
     public function prepareExam(Request $request)
     {
         // 1) Validate request fields
-        $request->validate([
+        $data = $request->validate([
             'exam_id'        => 'required|exists:exams,id',
             'examiner_id'    => 'required|exists:users,id',
             'time'           => 'required',
             'exam_date'      => 'required|date',
             'current_status' => 'required|in:new,pending,completed',
         ]);
-        
-        $exam = Exam::findOrFail($request->exam_id);
-        $originalExaminerId = $exam->examiner_id;
-        $originalTime       = $exam->time;
-        $originalDate       = $exam->exam_date;
-        $originalStatus     = $exam->status;
-        
-        $exam->examiner_id = $request->examiner_id;
-        $exam->time        = $request->time;
-        $exam->exam_date   = $request->exam_date;
-        
-        // Check if the exam date is at least two days before today.
-        // If so, set the status to 'overdue'.
+    
+        // 2) Load the exam
+        $exam = Exam::findOrFail($data['exam_id']);
+    
+        // 3) Preserve originals for audit
+        $origExaminer = $exam->examiner_id;
+        $origTime     = $exam->time;
+        $origDate     = $exam->exam_date;
+        $origStatus   = $exam->status;
+    
+        // 4) Apply incoming updates
+        $exam->examiner_id = $data['examiner_id'];
+        $exam->time        = $data['time'];
+        $exam->exam_date   = Carbon::parse($data['exam_date']);
+    
+        // 5) Recompute status
         if ($exam->exam_date->lt(Carbon::today()->subDays(2))) {
-            $exam->status = "overdue";
+            $exam->status = 'overdue';
         } else {
-            $exam->status = "pending";
+            $exam->status = 'pending';
         }
-        
+    
         $exam->save();
+    
+        // 6) Collect audit changes
         $changes = [];
-        
-        // Examiner changes
-        if ($originalExaminerId != $exam->examiner_id) {
-            $oldExaminerName = $originalExaminerId
-                ? optional(\App\Models\User::find($originalExaminerId))->name
+    
+        if ($origExaminer != $exam->examiner_id) {
+            $old = $origExaminer
+                ? optional(User::find($origExaminer))->name
                 : 'NULL';
-            $newExaminerName = $exam->examiner_id
-                ? optional($exam->examiner)->name
+            $new = $exam->examiner
+                ? $exam->examiner->name
                 : 'NULL';
-            if ($oldExaminerName !== $newExaminerName) {
-                $changes[] = "Examiner changed from [{$oldExaminerName}] to [{$newExaminerName}]";
+            if ($old !== $new) {
+                $changes[] = "Examiner changed from [{$old}] to [{$new}]";
             }
         }
-        
-        // Time change
-        if ($originalTime != $exam->time) {
-            $oldTime = $originalTime ?? 'NULL';
-            $newTime = $exam->time ?? 'NULL';
-            $changes[] = "Time changed from [{$oldTime}] to [{$newTime}]";
+    
+        if ($origTime != $exam->time) {
+            $changes[] = "Time changed from [{$origTime}] to [{$exam->time}]";
         }
-        
-        // Exam Date change
-        if ($originalDate != $exam->exam_date) {
-            $oldDateFmt = $originalDate ? $originalDate->format('Y-m-d') : 'NULL';
-            $newDateFmt = $exam->exam_date ? $exam->exam_date->format('Y-m-d') : 'NULL';
-            $changes[] = "Exam Date changed from [{$oldDateFmt}] to [{$newDateFmt}]";
+    
+        if ($origDate != $exam->exam_date) {
+            $old = $origDate ? $origDate->format('Y-m-d') : 'NULL';
+            $new = $exam->exam_date->format('Y-m-d');
+            $changes[] = "Exam Date changed from [{$old}] to [{$new}]";
         }
-        
-        // Status change
-        if ($originalStatus != $exam->status) {
-            $changes[] = "Status changed from [{$originalStatus}] to [{$exam->status}]";
+    
+        if ($origStatus != $exam->status) {
+            $changes[] = "Status changed from [{$origStatus}] to [{$exam->status}]";
         }
-        
-        if (count($changes) > 0) {
-            \App\Models\AuditLog::create([
-                'user_id'     => \Illuminate\Support\Facades\Auth::id(),
+    
+        if (count($changes)) {
+            AuditLog::create([
+                'user_id'     => auth()->id(),
                 'description' => "Updated exam #{$exam->id}: " . implode(' | ', $changes),
                 'type'        => 'exams',
                 'entity_id'   => $exam->id,
-                'entity_type' => \App\Models\Exam::class,
+                'entity_type' => Exam::class,
             ]);
         }
-        
+    
+        // 7) If this exam belongs to a course, sync course dates & regenerate its schedule
+        if ($course = $exam->course) {
+            // update the matching course date field
+            switch ($exam->exam_type) {
+                case 'pre':
+                    $course->pre_test_date = $exam->exam_date->toDateString();
+                    break;
+                case 'mid':
+                    $course->mid_exam_date = $exam->exam_date->toDateString();
+                    break;
+                case 'final':
+                    $course->final_exam_date = $exam->exam_date->toDateString();
+                    break;
+            }
+            $course->save();
+    
+            // regenerate the course schedule (skip Fridays, week starts Saturday)
+            $course->generateSchedule();
+    
+            // 8) Propagate those three dates to all OTHER exams of that course
+            $course->exams()
+                ->where('id', '!=', $exam->id)
+                ->get()
+                ->each(function(Exam $other) use ($course) {
+                    switch ($other->exam_type) {
+                        case 'pre':
+                            $other->exam_date = $course->pre_test_date;
+                            break;
+                        case 'mid':
+                            $other->exam_date = $course->mid_exam_date;
+                            break;
+                        case 'final':
+                            $other->exam_date = $course->final_exam_date;
+                            break;
+                    }
+                    $other->save();
+                });
+        }
+    
         return redirect()
             ->route('exam_officer.exams.index')
             ->with('success', 'Exam preparation updated successfully!');
     }
     
     
+    
     public function showRecordForm($examId)
     {
-        // Load exam with course and its students (with pivot data)
         $exam = Exam::with(['course', 'course.students'])->findOrFail($examId);
-        
-        // Ensure only the assigned examiner can record grades
         if ($exam->examiner_id !== \Illuminate\Support\Facades\Auth::id()) {
             abort(403, 'You are not authorized to record grades for this exam.');
         }
-        
-        // In the simplified design, we use the exam's belongsToMany relation to fetch students along with their pivot (grades)
         $students = $exam->students;  // This relies on the defined relationship in the Exam model
-        
         return view('exam_officer.exams.grads_record', compact('exam', 'students'));
     }
 
@@ -198,77 +233,77 @@ class ExamsController extends Controller
  
     public function storeGrades(Request $request, $examId)
     {
-        // Validate that 'grades' is provided and is an array.
+        // 0) Prevent entering grades before the exam start
+        $exam = Exam::findOrFail($examId);
+        [$startTime] = explode(' - ', $exam->time);
+        $examStartsAt = $exam->exam_date
+            ->copy()
+            ->setTimeFromTimeString($startTime);
+    
+        if (Carbon::now()->lt($examStartsAt)) {
+            return redirect()
+                ->back()
+                ->with('error', 'You cannot submit grades before the exam start time.');
+        }
+    
+        // 1) Validate input
         $validatedData = $request->validate([
            'grades' => 'required|array',
         ]);
-        
-        // Retrieve the exam; if not found, fail.
-        $exam = Exam::findOrFail($examId);
-        $course_type = $exam->course->courseType;
-        $skills = $course_type->skills;
-        
-        // Determine max grade for each skill based on exam type.
+    
+        $courseType = $exam->course->courseType;
+        $skills     = $courseType->skills;
+    
+        // 2) Determine max grades per skill based on exam_type
         $max_grades = [];
         foreach ($skills as $skill) {
             if ($exam->exam_type == 'pre') {
-                $max_grades[$skill->id] = $skill->pivot->final_max;
+                $max_grades[$skill->id] = $skill->pivot->pre_max;
             } elseif ($exam->exam_type == 'mid') {
                 $max_grades[$skill->id] = $skill->pivot->mid_max;
-            } else {
-                // Fallback; adjust as needed.
+            } else { // final
                 $max_grades[$skill->id] = $skill->pivot->final_max;
             }
         }
-        
-        // Iterate over each student in the submitted grades.
-        // Here, the keys of the 'grades' array represent student IDs.
+    
+        // 3) Save each student's grades
         foreach ($validatedData['grades'] as $studentId => $gradeData) {
-            // Try to find the exam-student record using the ExamStudent model.
-            $examStudent = \App\Models\ExamStudent::where('exam_id', $exam->id)
-                                ->where('student_id', $studentId)
-                                ->first();
-            // If not found, create it.
-            if (!$examStudent) {
-                $examStudent = \App\Models\ExamStudent::create([
-                    'exam_id'    => $exam->id,
-                    'student_id' => $studentId,
-                ]);
-            }
-            
-            // For each submitted grade for this student, keyed by skill_id:
+            $examStudent = \App\Models\ExamStudent::firstOrCreate([
+                'exam_id'    => $exam->id,
+                'student_id' => $studentId,
+            ]);
+    
             foreach ($gradeData as $skillId => $gradeValue) {
-                // OPTIONAL: Cap the grade to the maximum allowed if necessary.
                 if (isset($max_grades[$skillId]) && $gradeValue > $max_grades[$skillId]) {
                     $gradeValue = $max_grades[$skillId];
                 }
-                
-                // Create or update the exam student grade record.
+    
                 \App\Models\ExamStudentGrade::updateOrCreate(
                     [
                         'exam_student_id'      => $examStudent->id,
                         'course_type_skill_id' => $skillId,
                     ],
-                    [
-                        'grade' => $gradeValue,
-                    ]
+                    ['grade' => $gradeValue]
                 );
             }
         }
-        
-        // Update the exam's status to completed.
+    
+        // 4) Mark exam as completed
         $exam->status = 'completed';
         $exam->save();
-        
-        // If this is a final exam, update the course status to completed.
+    
+        // 5) If final exam, mark course completed
         if ($exam->exam_type == 'final') {
-            $exam->course->status = 'completed';
-            $exam->course->save();
+            $course = $exam->course;
+            $course->status = 'completed';
+            $course->save();
         }
-        
-        return redirect()->route('exam_officer.exams.index')
-                         ->with('success', 'Grades recorded successfully!');
+    
+        return redirect()
+            ->route('exam_officer.exams.index')
+            ->with('success', 'Grades recorded successfully!');
     }
+    
     
 
 

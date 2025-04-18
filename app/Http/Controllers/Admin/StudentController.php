@@ -46,12 +46,20 @@ class StudentController extends Controller
             $query->where('age', $request->age);
         }
 
+        if(request('search'))
+        {
+            $query->where('name', 'like', "%" . request('search') . "%")
+            ->orWhere('city', '%' . request('search') . '%')
+            ->orWhere('specialization', '%' . request('search') . '%')
+            ->orWhere('phone', '%' . request('search') . '%');
+        }
+
         if ($request->filled('specialization')) {
             $query->where('specialization', 'like', '%' . $request->input('specialization') . '%');
         }
 
 
-        $students = $query->paginate(10);
+        $students = $query->orderByDesc('id')->paginate(10);
 
         return view('admin.students.index', compact('students'));
     }

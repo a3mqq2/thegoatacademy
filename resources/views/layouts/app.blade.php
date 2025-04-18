@@ -23,7 +23,9 @@
 
     <meta name="ast" content="{{ request()->cookie('access_token') }}" />
 
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+    
 
     <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -439,6 +441,29 @@
       });
     </script>
 
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('input[type="date"]', {
+      altInput: true,
+      altFormat: 'd/m/Y',
+      dateFormat: 'Y-m-d',
+      allowInput: true,
+      locale: {
+      },
+      onClose: function(selectedDates, dateStr, instance) {
+        var raw = instance.input.value;
+        var parsed = instance.parseDate(raw, instance.config.altFormat);
+        if (parsed instanceof Date && !isNaN(parsed)) {
+          instance.setDate(parsed, false);
+        } else {
+          instance.clear();
+        }
+      }
+    });
+  });
+  </script>
+  
 
   </body>
 </html>

@@ -1,28 +1,28 @@
-@extends('layouts.app')
+    @extends('layouts.app')
 
-@section('title', 'Course Details')
+    @section('title', 'Course Details')
 
-@section('breadcrumb')
-  <li class="breadcrumb-item">
+    @section('breadcrumb')
+    <li class="breadcrumb-item">
     <a href="{{ route('admin.dashboard') }}">
       <i class="fa fa-tachometer-alt"></i> Dashboard
     </a>
-  </li>
-  <li class="breadcrumb-item">
+    </li>
+    <li class="breadcrumb-item">
     <a href="{{ route('admin.courses.index') }}">
       <i class="fa fa-book"></i> Courses
     </a>
-  </li>
-  <li class="breadcrumb-item active">
+    </li>
+    <li class="breadcrumb-item active">
     <i class="fa fa-info-circle"></i> Course Details
-  </li>
-@endsection
+    </li>
+    @endsection
 
-@section('content')
-<div class="container">
+    @section('content')
+    <div class="container">
 
-  <!-- Course Overview Card -->
-  <div class="card mt-3">
+    <!-- Course Overview Card -->
+    <div class="card mt-3">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-white">
       <div>
         <h4 class="mb-0 text-primary">
@@ -145,11 +145,11 @@
         </div>
       </div>
     </div>
-  </div>
-  <!-- End Course Overview Card -->
+    </div>
+    <!-- End Course Overview Card -->
 
-  <!-- Schedule Section -->
-  <div class="card mt-4">
+    <!-- Schedule Section -->
+    <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
       <h5 class="mb-0">
         <i class="fa fa-calendar"></i> Schedule
@@ -160,11 +160,12 @@
     </div>
     <div id="scheduleCollapse" class="collapse">
       <div class="card-body">
-        @if($course->schedules->count())
+        @if ($course->schedules->count())
           @php
-            $total = $course->schedules->count();
+            $total    = $course->schedules->count();
             $midPoint = ceil($total / 2);
           @endphp
+
           <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle">
               <thead class="table-light">
@@ -172,38 +173,56 @@
                   <th class="text-primary">#</th>
                   <th class="text-primary">Day</th>
                   <th class="text-primary">Date</th>
-                  <th class="text-primary">From Time</th>
-                  <th class="text-primary">To Time</th>
+                  <th class="text-primary">From</th>
+                  <th class="text-primary">To</th>
                 </tr>
               </thead>
               <tbody>
-                @foreach($course->schedules as $i => $schedule)
+                {{-- pre‑test --}}
+                @if ($course->pre_test_date)
+                  <tr class="text-light" style="background:#151f42">
+                    <td colspan="2" class="text-light">Pre‑test</td>
+                    <td class="text-light">
+                      {{ $course->pre_test_date }}
+                      ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})
+                    </td>
+                    <td colspan="2"></td>
+                  </tr>
+                @endif
+
+                {{-- classes + mid‑exam --}}
+                @foreach ($course->schedules as $i => $sc)
                   <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $schedule->day }}</td>
-                    <td>{{ $schedule->date }}</td>
-                    <td>{{ $schedule->from_time }}</td>
-                    <td>{{ $schedule->to_time }}</td>
+                    <td>{{ $sc->day }}</td>
+                    <td>{{ $sc->date }}</td>
+                    <td>{{ $sc->from_time }}</td>
+                    <td>{{ $sc->to_time }}</td>
                   </tr>
-                  @if($i + 1 == $midPoint)
-                    <tr style="background-color: #000000; color: #fff;">
-                      <td colspan="2" class="text-light">MID exam test</td>
+
+                  @if ($i + 1 === $midPoint && $course->mid_exam_date)
+                    <tr class="text-light" style="background:#151f42">
+                      <td colspan="2" class="text-light">MID‑exam</td>
                       <td class="text-light">
-                        {{ $course->mid_exam_date }} 
+                        {{ $course->mid_exam_date }}
                         ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
                       </td>
                       <td colspan="2"></td>
                     </tr>
                   @endif
                 @endforeach
-                <tr style="background-color: #080809; color: #fff;">
-                  <td colspan="2" class="text-light">Final exam test</td>
-                  <td class="text-light">
-                    {{ $course->final_exam_date }} 
-                    ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})
-                  </td>
-                  <td colspan="2"></td>
-                </tr>
+
+                {{-- final‑exam --}}
+                @if ($course->final_exam_date)
+                  <tr class="text-light" style="background:#151f42">
+                    <td colspan="2" class="text-light">Final‑exam</td>
+                    <td class="text-light">
+                      {{ $course->final_exam_date }}
+                      ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})
+                    </td>
+                    <td colspan="2"></td>
+                  </tr>
+                @endif
               </tbody>
             </table>
           </div>
@@ -212,11 +231,12 @@
         @endif
       </div>
     </div>
-  </div>
-  <!-- End Schedule Section -->
+    </div>
+    </div>
+    <!-- End Schedule Section -->
 
-  <!-- Progress Tests Section -->
-  <div class="card mt-4">
+    <!-- Progress Tests Section -->
+    <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
       <h5 class="mb-0">
         <i class="fa fa-clipboard"></i> Progress Tests
@@ -261,11 +281,11 @@
         @endif
       </div>
     </div>
-  </div>
-  <!-- End Progress Tests Section -->
+    </div>
+    <!-- End Progress Tests Section -->
 
-  <!-- Enrolled Students Section -->
-  <div class="card mt-4">
+    <!-- Enrolled Students Section -->
+    <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
       <h5 class="mb-0">
         <i class="fa fa-users"></i> Enrolled Students
@@ -351,20 +371,20 @@
         @endif
       </div>
     </div>
-  </div>
-  <!-- End Enrolled Students Section -->
+    </div>
+    <!-- End Enrolled Students Section -->
 
-  <!-- Cancel Course Button -->
-  @if($course->status === 'ongoing')
+    <!-- Cancel Course Button -->
+    @if($course->status === 'ongoing')
     <div class="mt-4 text-end">
       <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelCourseModal" data-course-id="{{ $course->id }}">
         <i class="fa fa-ban"></i> Cancel Course
       </button>
     </div>
-  @endif
+    @endif
 
-  <!-- Audit Logs Section -->
-  <div class="card mt-4">
+    <!-- Audit Logs Section -->
+    <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
       <h5 class="mb-0">
         <i class="fa fa-history"></i> Audit Logs
@@ -403,13 +423,13 @@
         @endif
       </div>
     </div>
-  </div>
-</div>
-<!-- End Container -->
+    </div>
+    </div>
+    <!-- End Container -->
 
-<!-- Modals for Progress Test Details -->
-@foreach($course->progressTests as $test)
-  <div class="modal fade" id="progressTestDetailsModal-{{ $test->id }}" tabindex="-1">
+    <!-- Modals for Progress Test Details -->
+    @foreach($course->progressTests as $test)
+    <div class="modal fade" id="progressTestDetailsModal-{{ $test->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -449,12 +469,12 @@
         </div>
       </div>
     </div>
-  </div>
-@endforeach
+    </div>
+    @endforeach
 
-<!-- Enroll Student Modal -->
-<div class="modal fade" id="enrollStudentModal" tabindex="-1">
-  <div class="modal-dialog">
+    <!-- Enroll Student Modal -->
+    <div class="modal fade" id="enrollStudentModal" tabindex="-1">
+    <div class="modal-dialog">
     <form id="enrollStudentForm" method="POST" action="{{ route('admin.courses.enroll', $course) }}">
       @csrf
       <div class="modal-content">
@@ -479,12 +499,12 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Exclude Student Modal -->
-<div class="modal fade" id="excludeStudentModal" tabindex="-1">
-  <div class="modal-dialog">
+    <!-- Exclude Student Modal -->
+    <div class="modal fade" id="excludeStudentModal" tabindex="-1">
+    <div class="modal-dialog">
     <form id="excludeStudentForm" method="POST">
       @csrf
       @method('PUT')
@@ -513,12 +533,12 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Withdraw Student Modal -->
-<div class="modal fade" id="withdrawStudentModal" tabindex="-1">
-  <div class="modal-dialog">
+    <!-- Withdraw Student Modal -->
+    <div class="modal fade" id="withdrawStudentModal" tabindex="-1">
+    <div class="modal-dialog">
     <form id="withdrawStudentForm" method="POST">
       @csrf
       @method('PUT')
@@ -547,12 +567,12 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Cancel Course Modal -->
-<div class="modal fade" id="cancelCourseModal" tabindex="-1">
-  <div class="modal-dialog">
+    <!-- Cancel Course Modal -->
+    <div class="modal fade" id="cancelCourseModal" tabindex="-1">
+    <div class="modal-dialog">
     <form id="cancelCourseForm" method="POST">
       @csrf
       @method('PUT')
@@ -570,12 +590,12 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Complete Course Modal -->
-<div class="modal fade" id="completeCourseModal" tabindex="-1">
-  <div class="modal-dialog">
+    <!-- Complete Course Modal -->
+    <div class="modal fade" id="completeCourseModal" tabindex="-1">
+    <div class="modal-dialog">
     <form id="completeCourseForm" method="POST">
       @csrf
       @method('PUT')
@@ -593,39 +613,39 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Audit Logs Modal -->
-<div class="modal fade" id="auditChangeModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+    <!-- Audit Logs Modal -->
+    <div class="modal fade" id="auditChangeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="fa fa-eye"></i> Audit Changes</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-         <div class="row mb-3">
-           <div class="col-md-6">
-             <label class="form-label fw-bold">Old Values:</label>
-             <pre id="logOldValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-bold">New Values:</label>
-             <pre id="logNewValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
-           </div>
-         </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Old Values:</label>
+              <pre id="logOldValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">New Values:</label>
+              <pre id="logNewValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
+            </div>
+          </div>
       </div>
       <div class="modal-footer">
-         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
-  </div>
-</div>
+    </div>
+    </div>
 
-<!-- Scripts for modals, Select2, and FilePond -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
+    <!-- Scripts for modals, Select2, and FilePond -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
     // Cancel Course Modal
     document.querySelectorAll('[data-bs-target="#cancelCourseModal"]').forEach(button => {
       button.addEventListener("click", function () {
@@ -722,6 +742,6 @@
         document.getElementById('submitBtn').disabled = false;
       }
     });
-  });
-</script>
-@endsection
+    });
+    </script>
+    @endsection

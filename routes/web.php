@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminController;
 use App\Http\Controllers\FileUploadController;
@@ -40,3 +41,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::post('/upload-file', [FileUploadController::class, 'upload'])->name('upload.file');
 Route::delete('/upload-file', [FileUploadController::class, 'revert'])->name('upload.file.revert');
+
+Route::get('/update-exams-statuses', function() {
+    $exams = \App\Models\Exam::where('status', 'pending')
+        ->whereDate('exam_date', '<=', now()->addDays(2))
+        ->update(['status' => 'overdue']); 
+        return response()->json([
+            'message' => 'Exam statuses updated successfully.',
+        ]);
+});

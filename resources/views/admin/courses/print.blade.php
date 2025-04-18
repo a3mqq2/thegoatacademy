@@ -305,23 +305,24 @@
                 </tr>
 
                 @foreach ($course->schedules as $item)
-                  <tr>
-                    <td>{{ $loop->iteration }}</td>
-                    <td>{{ $item->day }}</td>
-                    <td>{{ $item->date }}</td>
-                    <td>{{ $item->from_time }}</td>
-                    <td>{{ $item->to_time }}</td>
+                <tr>
+                  <td>{{ $loop->iteration }}</td>
+                  <td>{{ $item->day }}</td>
+                  <td>{{ $item->date }}</td>
+                  <td>{{ \Carbon\Carbon::parse($item->from_time)->format('g:i A') }}</td>
+                  <td>{{ \Carbon\Carbon::parse($item->to_time)->format('g:i A') }}</td>
+                </tr>
+                @if ($loop->iteration == $midPoint)
+                  <tr style="background-color: #007bff; color: #fff;">
+                    <td colspan="2">MID exam test</td>
+                    <td>
+                      {{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
+                    </td>
+                    <td colspan="2"></td>
                   </tr>
-                  @if ($loop->iteration == $midPoint)
-                    <tr style="background-color: #007bff; color: #fff;">
-                      <td colspan="2">MID exam test</td>
-                      <td>
-                        {{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
-                      </td>
-                      <td colspan="2"></td>
-                    </tr>
-                  @endif
-                @endforeach
+                @endif
+              @endforeach
+              
                 <tr style="background-color: #007bff; color: #fff;">
                   <td colspan="2">Final exam test</td>
                   <td>

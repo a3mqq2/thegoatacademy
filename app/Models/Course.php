@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Course extends Model
 {
@@ -108,5 +109,117 @@ class Course extends Model
     public function examGrades()
     {
         return $this->hasManyThrough(ExamGrade::class, Exam::class, 'course_id', 'exam_id');
+    }
+
+    public function generateSchedule(): void
+    {
+        // parse our lesson times
+        [$fromTime, $toTime] = array_map('trim', explode(' - ', $this->time));
+    
+        // map day labels to Carbon dayOfWeek
+        $labelToDay = [
+            'Sat' => Carbon::SATURDAY,
+            'Sun' => Carbon::SUNDAY,
+            'Mon' => Carbon::MONDAY,
+            'Tue' => Carbon::TUESDAY,
+            'Wed' => Carbon::WEDNESDAY,
+            'Thu' => Carbon::THURSDAY,
+            'Fri' => Carbon::FRIDAY,
+        ];
+    
+        // which days are selected? stored as "Sat-Mon-Wed"
+        $selected = array_filter(
+            explode('-', $this->days),
+            fn($lbl) => isset($labelToDay[$lbl])
+        );
+        $selectedDays = array_map(fn($lbl) => $labelToDay[$lbl], $selected);
+    
+        // helper to skip Fridays
+        $skipIfFriday = function(Carbon $d) {
+            return $d->dayOfWeek === Carbon::FRIDAY
+                ? $d->addDay()
+                : $d;
+        };
+    
+        // occupied dates
+        $occupied = [];
+    
+        // 1) pre-test date: if already set, parse it; otherwise day before start_date
+        $pre = $this->pre_test_date
+            ? Carbon::parse($this->pre_test_date)
+            : Carbon::parse($this->start_date)->subDay();
+        $pre = $skipIfFriday($pre);
+        $this->pre_test_date = $pre->toDateString();
+        $occupied[$this->pre_test_date] = true;
+    
+        // start scheduling classes the day after pre-test
+        $cursor = $pre->copy()->addDay();
+        $cursor = $skipIfFriday($cursor);
+    
+        $totalClasses = (int) $this->courseType->duration;
+        $firstHalf    = (int) floor($totalClasses / 2);
+    
+        $classDates = [];
+    
+        // 2) first half
+        while (count($classDates) < $firstHalf) {
+            $key = $cursor->toDateString();
+            if (in_array($cursor->dayOfWeek, $selectedDays) && !isset($occupied[$key])) {
+                $classDates[]     = $cursor->copy();
+                $occupied[$key]   = true;
+            }
+            $cursor->addDay();
+            $cursor = $skipIfFriday($cursor);
+        }
+    
+        // 3) mid-exam
+        $mid = $cursor->copy();
+        while (isset($occupied[$mid->toDateString()])) {
+            $mid->addDay();
+            $mid = $skipIfFriday($mid);
+        }
+        $this->mid_exam_date = $mid->toDateString();
+        $occupied[$this->mid_exam_date] = true;
+    
+        // advance past mid-exam
+        $cursor = $mid->copy()->addDay();
+        $cursor = $skipIfFriday($cursor);
+    
+        // 4) second half
+        $secondNeeded = $totalClasses - $firstHalf;
+        $generated    = 0;
+        while ($generated < $secondNeeded) {
+            $key = $cursor->toDateString();
+            if (in_array($cursor->dayOfWeek, $selectedDays) && !isset($occupied[$key])) {
+                $classDates[]     = $cursor->copy();
+                $occupied[$key]   = true;
+                $generated++;
+            }
+            $cursor->addDay();
+            $cursor = $skipIfFriday($cursor);
+        }
+    
+        // 5) final exam
+        $final = $cursor->copy();
+        while (isset($occupied[$final->toDateString()])) {
+            $final->addDay();
+            $final = $skipIfFriday($final);
+        }
+        $this->final_exam_date = $final->toDateString();
+    
+        // persist dates
+        $this->save();
+    
+        // rebuild schedules
+        $this->schedules()->delete();
+        foreach ($classDates as $i => $date) {
+            $this->schedules()->create([
+                'day'       => $date->format('l'),          // "Monday"
+                'date'      => $date->toDateString(),       // "YYYY-MM-DD"
+                'from_time' => $fromTime,
+                'to_time'   => $toTime,
+                'order'     => $i + 1,
+            ]);
+        }
     }
 }

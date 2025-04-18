@@ -1,14 +1,13 @@
 @extends('layouts.app')
-@section('title', "Exam #$exam->id Details")
+@section('title', "Exam #{$exam->id} Details")
 
-{{-- تأكدي من تضمين Font Awesome في ال layout الرئيسي --}}
 @section('content')
 <div class="container-fluid">
     <div class="card shadow-sm">
         <div class="card-header d-flex align-items-center">
             <h4 class="mb-0">
                 <i class="fas fa-info-circle me-2"></i>
-                Exam #{{$exam->id}} - {{ ucfirst($exam->exam_type) }}
+                Exam #{{ $exam->id }} - {{ ucfirst($exam->exam_type) }}
             </h4>
         </div>
         <div class="card-body">
@@ -24,7 +23,7 @@
                         <tbody>
                             <tr>
                                 <th class="bg-light text-dark">Exam Date:</th>
-                                <td>{{ $exam->exam_date }}</td>
+                                <td>{{ $exam->exam_date->format('Y-m-d') }}</td>
                             </tr>
                             <tr>
                                 <th class="bg-light text-dark">Exam Time:</th>
@@ -39,7 +38,7 @@
                                         <span class="badge bg-warning text-dark">Pending</span>
                                     @elseif($exam->status === 'completed')
                                         <span class="badge bg-success">Completed</span>
-                                    @elseif($exam->status == "overdue")
+                                    @elseif($exam->status === 'overdue')
                                         <span class="badge bg-danger">Overdue</span>
                                     @endif
                                 </td>
@@ -80,19 +79,29 @@
             </div>
 
             @php
-            use Carbon\Carbon;
-            // Current time
-            $now = Carbon::now();
-            // Combine the exam's date (only date part) with the exam's time.
-            $examDateTime = Carbon::parse($exam->exam_date->format('Y-m-d') . ' ' . $exam->time);
-            // Allow grade entry if the exam status is pending AND now >= exam dateTime,
-            // OR if the authenticated user is the examiner, unless the exam status is "completed" or "new".
-            $canEnterGrades = (($exam->status === 'pending' && $now->gte($examDateTime)) 
-                                 || ($exam->examiner_id == auth()->id()))
-                                && !in_array($exam->status, ['completed', 'new']);
-        @endphp
-        
-            <!-- جدول: عرض المهارات مع الدرجات القصوى -->
+                use Carbon\Carbon;
+                $now = Carbon::now();
+                $examDateTime = Carbon::parse($exam->exam_date->format('Y-m-d').' '.$exam->time);
+                $isExaminer   = $exam->examiner_id === auth()->id();
+                $hasStarted   = $now->gte($examDateTime);
+                $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new','completed']);
+            @endphp
+
+            @if(! $canEnter)
+                <div class="alert alert-warning">
+                    @unless($isExaminer)
+                        You cannot enter grades because you are not the assigned examiner.
+                    @else
+                        @unless($hasStarted)
+                            You cannot enter grades before the exam date and time.
+                        @else
+                            Grades cannot be entered in the current status ({{ ucfirst($exam->status) }}).
+                        @endunless
+                    @endunless
+                </div>
+            @endif
+
+            <!-- Skills & Max Grades -->
             <h5 class="mt-4">
                 <i class="fas fa-star text-primary me-1"></i>
                 Skills & Maximum Grades
@@ -100,100 +109,106 @@
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
-                        <tr>
-                            @foreach($exam->course->courseType->skills as $skill)
-                                <td class="bg-success text-light font-weight-bold text-center">
-                                    {{ ucfirst($skill->name) }}
-                                </td>
-                            @endforeach
-                        </tr>
+                    <tr>
+                        @foreach($exam->course->courseType->skills as $skill)
+                            <th class="bg-success text-light text-center">
+                                {{ ucfirst($skill->name) }}
+                            </th>
+                        @endforeach
+                    </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            @foreach($exam->course->courseType->skills as $skill)
-                                <td class="text-center">
-                                    @if($exam->exam_type === 'pre')
-                                        {{ $skill->pivot->final_max }}
-                                    @elseif($exam->exam_type === 'mid')
-                                        {{ $skill->pivot->mid_max }}
-                                    @else
-                                        {{ $skill->pivot->final_max }}
-                                    @endif
-                                </td>
-                            @endforeach
-                        </tr>
+                    <tr>
+                        @foreach($exam->course->courseType->skills as $skill)
+                            <td class="text-center">
+                                @if($exam->exam_type === 'pre')
+                                    {{ $skill->pivot->pre_max }}
+                                @elseif($exam->exam_type === 'mid')
+                                    {{ $skill->pivot->mid_max }}
+                                @else
+                                    {{ $skill->pivot->final_max }}
+                                @endif
+                            </td>
+                        @endforeach
+                    </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- جدول: عرض الطلاب والدرجات مع قيم الدرجات الحالية من ExamStudentGrade -->
+            <!-- Students & Grades -->
             <h5 class="mt-4">
                 <i class="fas fa-user-graduate text-primary me-1"></i>
                 Enrolled Students & Grades
             </h5>
             @php
-                // استرجاع الطلاب ذوي الحالة ongoing من العلاقة.
-                $ongoingStudents = $exam->course->students()->wherePivot('status', 'ongoing')->get();
+                $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
             @endphp
+
             <form action="{{ route('exam_officer.exams.grades.store', $exam->id) }}" method="POST">
                 @csrf
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered align-middle">
                         <thead>
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Student Name</th>
-                                @foreach($exam->course->courseType->skills as $skill)
-                                    <th>
-                                        {{ $skill->name }}<br>
-                                        <small>
-                                            @if($exam->exam_type === 'pre')
-                                                (Max: {{ $skill->pivot->final_max }})
-                                            @elseif($exam->exam_type === 'mid')
-                                                (Max: {{ $skill->pivot->mid_max }})
-                                            @else
-                                                (Max: {{ $skill->pivot->final_max }})
-                                            @endif
-                                        </small>
-                                    </th>
-                                @endforeach
-                            </tr>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            @foreach($exam->course->courseType->skills as $skill)
+                                <th class="text-center">
+                                    {{ $skill->name }}<br>
+                                    <small>
+                                        @if($exam->exam_type==='pre')
+                                            (Max: {{ $skill->pivot->pre_max }})
+                                        @elseif($exam->exam_type==='mid')
+                                            (Max: {{ $skill->pivot->mid_max }})
+                                        @else
+                                            (Max: {{ $skill->pivot->final_max }})
+                                        @endif
+                                    </small>
+                                </th>
+                            @endforeach
+                        </tr>
                         </thead>
                         <tbody>
-                            @foreach($ongoingStudents as $student)
-                                <tr>
-                                    <td>{{ $student->id }}</td>
-                                    <td>{{ $student->name }}</td>
-                                    @foreach($exam->course->courseType->skills as $skill)
-                                        @php
-                                            // محاولة إيجاد سجل ExamStudentGrade الخاص بهذا الطالب والمهارة.
-                                            $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
-                                            $gradeValue = null;
-                                            if ($examStudent) {
-                                                $gradeRecord = $examStudent->grades->firstWhere('course_type_skill_id', $skill->id);
-                                                if ($gradeRecord) {
-                                                    $gradeValue = $gradeRecord->grade;
-                                                }
-                                            }
-                                        @endphp
-                                        <td>
-                                            <input type="number" step="0.01"
-                                                   name="grades[{{ $student->id }}][{{ $skill->id }}]"
-                                                   value="{{ old("grades.$student->id.$skill->id", $gradeValue) }}"
-                                                   class="form-control"
-                                                   @if(!$canEnterGrades) disabled @endif>
-                                        </td>
-                                    @endforeach
-                                </tr>
-                            @endforeach
+                        @foreach($ongoing as $student)
+                            <tr>
+                                <td>{{ $student->id }}</td>
+                                <td>{{ $student->name }}</td>
+                                @foreach($exam->course->courseType->skills as $skill)
+                                    @php
+                                        $examStudent = $exam->examStudents->firstWhere('student_id',$student->id);
+                                        $gradeValue  = optional($examStudent?->grades->firstWhere('course_type_skill_id',$skill->id))->grade;
+                                    @endphp
+                                    <td>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            name="grades[{{ $student->id }}][{{ $skill->id }}]"
+                                            value="{{ old("grades.{$student->id}.{$skill->id}", $gradeValue) }}"
+                                            class="form-control"
+                                            @if(! $canEnter) disabled @endif
+                                        >
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @endforeach
                         </tbody>
                     </table>
                 </div>
-                @if($canEnterGrades)
-                    <button type="submit" class="btn btn-primary mt-3">Save Grades</button>
-                @endif
+
+                <div class="mt-3">
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        @if(! $canEnter)
+                            disabled
+                        @endif
+                    >
+                        Save Grades
+                    </button>
+                </div>
             </form>
-        </div> <!-- card-body -->
-    </div> <!-- card -->
-</div> <!-- container-fluid -->
+
+        </div>
+    </div>
+</div>
 @endsection
