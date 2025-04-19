@@ -22,41 +22,41 @@ class StudentController extends Controller
     {
         $query = Student::query();
 
-        if ($request->filled('name')) {
-            $query->where('name', 'like', '%' . $request->input('name') . '%');
-        }
+        // if ($request->filled('name')) {
+        //     $query->where('name', 'like', '%' . $request->input('name') . '%');
+        // }
 
-        if ($request->filled('phone')) {
-            $query->where('phone', 'like', '%' . $request->input('phone') . '%');
-        }
+        // if ($request->filled('phone')) {
+        //     $query->where('phone', 'like', '%' . $request->input('phone') . '%');
+        // }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        // if ($request->filled('status')) {
+        //     $query->where('status', $request->status);
+        // }
 
-        if ($request->filled('books_due')) {
-            $query->where('books_due', $request->books_due);
-        }
+        // if ($request->filled('books_due')) {
+        //     $query->where('books_due', $request->books_due);
+        // }
 
-        if ($request->filled('city')) {
-            $query->where('city', 'like', '%' . $request->input('city') . '%');
-        }
+        // if ($request->filled('city')) {
+        //     $query->where('city', 'like', '%' . $request->input('city') . '%');
+        // }
 
-        if ($request->filled('age')) {
-            $query->where('age', $request->age);
-        }
+        // if ($request->filled('age')) {
+        //     $query->where('age', $request->age);
+        // }
 
         if(request('search'))
         {
             $query->where('name', 'like', "%" . request('search') . "%")
-            ->orWhere('city', '%' . request('search') . '%')
-            ->orWhere('specialization', '%' . request('search') . '%')
-            ->orWhere('phone', '%' . request('search') . '%');
+            ->orWhere('city','like', '%' . request('search') . '%')
+            ->orWhere('specialization','like', '%' . request('search') . '%')
+            ->orWhere('phone','like', '%' . request('search') . '%');
         }
 
-        if ($request->filled('specialization')) {
-            $query->where('specialization', 'like', '%' . $request->input('specialization') . '%');
-        }
+        // if ($request->filled('specialization')) {
+        //     $query->where('specialization', 'like', '%' . $request->input('specialization') . '%');
+        // }
 
 
         $students = $query->orderByDesc('id')->paginate(10);

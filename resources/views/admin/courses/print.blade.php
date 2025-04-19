@@ -295,7 +295,7 @@
 
 
                 {{-- pre test --}}
-                
+                @if ($course->pre_test_date)
                 <tr style="background-color: #007bff; color: #fff;">
                   <td colspan="2">Pre test Exam</td>
                   <td>
@@ -303,6 +303,7 @@
                   </td>
                   <td colspan="2"></td>
                 </tr>
+                @endif
 
                 @foreach ($course->schedules as $item)
                 <tr>
@@ -313,6 +314,7 @@
                   <td>{{ \Carbon\Carbon::parse($item->to_time)->format('g:i A') }}</td>
                 </tr>
                 @if ($loop->iteration == $midPoint)
+                  @if ($course->mid_exam_date)
                   <tr style="background-color: #007bff; color: #fff;">
                     <td colspan="2">MID exam test</td>
                     <td>
@@ -320,9 +322,12 @@
                     </td>
                     <td colspan="2"></td>
                   </tr>
+                  @endif
+                  
                 @endif
               @endforeach
               
+              @if ($course->final_exam_date)
                 <tr style="background-color: #007bff; color: #fff;">
                   <td colspan="2">Final exam test</td>
                   <td>
@@ -330,6 +335,7 @@
                   </td>
                   <td colspan="2"></td>
                 </tr>
+              @endif
               </tbody>
             </table>
           </div>

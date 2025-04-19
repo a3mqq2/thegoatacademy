@@ -22,7 +22,7 @@
     table { width:100%; border-collapse:collapse; margin-top:20px; }
     table th, table td { border:1px solid #444; padding:8px 10px; text-align:center; }
     table th { background:#f2f2f2; }
-    .table-success { background-color: #d4edda !important; } /* bootstrapsuccess */
+    .table-danger { background-color: #fbb4b4 !important; } /* bootstrapdanger */
     .section-title { font-size:18pt; margin:30px 0 10px; border-bottom:2px solid #666; padding-bottom:5px; }
     @media print { body{font-size:12pt;} .container{padding:10mm;} }
   </style>
@@ -104,9 +104,9 @@
               };
 
               // compute classes
-              $preCls   = $course->pre_test_date   && $match($course->pre_test_date)   ? 'table-success' : '';
-              $midCls   = $course->mid_exam_date   && $match($course->mid_exam_date)   ? 'table-success' : '';
-              $finalCls = $course->final_exam_date && $match($course->final_exam_date) ? 'table-success' : '';
+              $preCls   = $course->pre_test_date   && $match($course->pre_test_date)   ? 'table-danger' : '';
+              $midCls   = $course->mid_exam_date   && $match($course->mid_exam_date)   ? 'table-danger' : '';
+              $finalCls = $course->final_exam_date && $match($course->final_exam_date) ? 'table-danger' : '';
             @endphp
 
             <tr>

@@ -97,19 +97,10 @@
 
                  @foreach($course->exams as $exam)
 
-                 @php
-                              // تجهيز تاريخ ووقت الامتحان كـ Carbon
-                              $examDateTime = null;
-                            if ($exam->exam_date && $exam->time) {
-                               $examDateTime = $exam->exam_date;
-                            }
 
-                            // هل تأخر لأكثر من 48 ساعة ولم يُكتمل؟
-                            $isOverdue = false;
-                            if ($examDateTime && $exam->status !== 'completed') {
-                               $isOverdue = $examDateTime->copy()->addHours(48)->isPast();
-                            }
-                 @endphp
+                    @php
+                        $isOverdue = $exam->status == "overdue";
+                    @endphp
 
                      <tr  class="{{ $isOverdue ? 'table-danger' : '' }}" >
                          <td>{{ $exam->id }}</td>
@@ -260,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
        btn.addEventListener('click', () => {
            let examId     = btn.getAttribute('data-examid');
            let examTime   = btn.getAttribute('data-examtime') || '';
-           let examDate   = btn.getAttribute('data-examdate') || '';
+        //    let examDate   = btn.getAttribute('data-examdate') || '';
            let examinerId = btn.getAttribute('data-examinerid') || '';
            let currStatus = btn.getAttribute('data-status') || 'new';
 
@@ -276,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
            // Populate modal fields
            document.getElementById('modal_exam_id').value        = examId;
            document.getElementById('modal_exam_time').value      = examTime;
-           document.getElementById('modal_exam_date').value      = examDate;
+        //    document.getElementById('modal_exam_date').value      = examDate;
            document.getElementById('modal_examiner_id').value    = examinerId;
            document.getElementById('modal_current_status').value = currStatus;
 

@@ -33,6 +33,15 @@
         <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-light btn-sm me-2">
           <i class="fa fa-edit"></i> Edit
         </a>
+
+
+        @if (in_array($course->status,['canceled','completed','cancelled','paused']))
+          <a href="{{ route('admin.courses.restore', $course->id) }}"   class="btn btn-success btn-sm me-2">
+            <i class="fa fa-redo"></i> Restore The Course
+          </a>
+        @endif
+
+
         <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-dark btn-sm me-2">
           <i class="fa fa-arrow-left"></i> Back
         </a>
@@ -177,14 +186,18 @@
                 </tr>
               </thead>
               <tbody>
+
+                @if ($course->pre_test_date)
                 <tr style="background-color: #151f42; color: #fff;">
                   <td colspan="2" class="text-light">Pre exam test</td>
                   <td class="text-light">
-                    {{ $course->mid_exam_date }} 
+                    {{ $course->pre_test_date }} 
                     ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})
                   </td>
                   <td colspan="2"></td>
                 </tr>
+                @endif
+
 
                 @foreach($course->schedules as $i => $schedule)
                   <tr>
@@ -195,17 +208,23 @@
                     <td>{{ $schedule->to_time }}</td>
                   </tr>
                   @if($i + 1 == $midPoint)
-                    <tr style="background-color: #151f42; color: #fff;">
-                      <td colspan="2" class="text-light">MID exam test</td>
-                      <td class="text-light">
-                        {{ $course->mid_exam_date }} 
-                        ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
-                      </td>
-                      <td colspan="2"></td>
-                    </tr>
+                  
+                  @if ($course->mid_exam_date)
+                  <tr style="background-color: #151f42; color: #fff;">
+                    <td colspan="2" class="text-light">MID exam test</td>
+                    <td class="text-light">
+                      {{ $course->mid_exam_date }} 
+                      ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
+                    </td>
+                    <td colspan="2"></td>
+                  </tr>
+                  @endif
+                    
                   @endif
                 @endforeach
-                <tr style="background-color: #080809; color: #fff;">
+                
+                @if ($course->final_exam_date)
+                <tr style="background-color: #151f42; color: #fff;">
                   <td colspan="2" class="text-light">Final exam test</td>
                   <td class="text-light">
                     {{ $course->final_exam_date }} 
@@ -213,6 +232,8 @@
                   </td>
                   <td colspan="2"></td>
                 </tr>
+                @endif
+
               </tbody>
             </table>
           </div>

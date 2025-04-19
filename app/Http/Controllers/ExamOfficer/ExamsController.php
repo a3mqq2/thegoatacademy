@@ -312,5 +312,12 @@ class ExamsController extends Controller
         $exam = Exam::with(['examStudents.grades', 'course.courseType.skills'])->findOrFail($id);
         return view('exam_officer.exams.show', compact('exam'));
     }
+
+
+    public function print($id)
+    {
+        $exam = Exam::with(['examStudents.grades', 'course.courseType.skills'])->findOrFail($id);
+        return view('exam_officer.exams.print', compact('exam'));
+    }
     
 }

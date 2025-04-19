@@ -217,18 +217,17 @@ class CourseController extends Controller
 
   
     
-    public function update(Request $request, $id)
+    public function update(Request $request, Course $course)
     {
-        $course = Course::findOrFail($id);
-    
         $validator = Validator::make($request->all(), [
             'course_type_id'        => 'required|exists:course_types,id',
             'group_type_id'         => 'required|exists:group_types,id',
             'instructor_id'         => 'required|exists:users,id',
             'start_date'            => 'required|date',
-            'pre_test_date'         => 'required|date', // Ensure pre test date is validated
-            'mid_exam_date'         => 'required|date',
-            'final_exam_date'       => 'required|date',
+            'pre_test_date'         => 'nullable|date',
+            'mid_exam_date'         => 'nullable|date',
+            'final_exam_date'       => 'nullable|date',
+            'meeting_platform_id'   => 'nullable|exists:meeting_platforms,id',
             'student_capacity'      => 'required|integer|min:1',
             'schedule'              => 'required|array|min:1',
             'schedule.*.day'        => 'required|string',
@@ -237,141 +236,124 @@ class CourseController extends Controller
             'schedule.*.toTime'     => 'required',
             'students'              => 'required|array|min:1',
             'students.*'            => 'exists:students,id',
-    
-            // Validate selected_days
-            'selected_days'         => 'required|array|min:1',
-            'selected_days.*'       => 'integer|in:0,1,2,3,4,5,6',
-    
-            'meeting_platform_id'   => 'nullable|exists:meeting_platforms,id',
             'whatsapp_group_link'   => 'nullable',
-            'levels'                => 'nullable',
+            'levels'                => 'nullable|array',
+            'levels.*'              => 'exists:levels,id',
         ]);
     
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
-                'errors'  => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
     
         $data = $validator->validated();
-    
-        $daysMapping = [
-            0 => 'Sun',
-            1 => 'Mon',
-            2 => 'Tue',
-            3 => 'Wed',
-            4 => 'Thu',
-            5 => 'Fri',
-            6 => 'Sat',
-        ];
-    
-        // Convert numeric days to short codes (e.g. "Sun", "Mon", ...)
-        $selectedDays = collect($data['selected_days'])->map(
-            fn($day) => $daysMapping[$day] ?? null
-        )->filter();
-    
-        $start = Carbon::parse($data['start_date']);
-        $end   = Carbon::parse($data['final_exam_date']);
-        $today = Carbon::now();
-    
-        // Determine status
-        $status = 'upcoming';
-        if ($today->lt($start)) {
-            $status = 'upcoming';
-        } elseif ($today->gt($end)) {
-            $status = 'completed';
-        } else {
-            $status = 'ongoing';
+        foreach (['start_date','pre_test_date','mid_exam_date','final_exam_date'] as $f) {
+            $data[$f] = empty($data[$f])
+                ? null
+                : Carbon::parse($data[$f])->toDateString();
         }
     
-        // Check capacity
-        if (count($data['students']) > $data['student_capacity']) {
+        $students    = $data['students']   ?? [];
+        $levels      = $data['levels']     ?? [];
+        $rawSchedule = $data['schedule']   ?? [];
+        $selected    = $request->input('selected_days', []);
+    
+        if (count($students) > $data['student_capacity']) {
             return response()->json([
-                'message' => 'The number of students exceeds the student capacity.'
+                'message' => 'The number of students exceeds the student capacity.',
             ], 422);
         }
     
+        $daysMap = [0=>'Sun',1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri',6=>'Sat'];
+        $daysStr = collect($selected)->map(fn($d) => $daysMap[$d])->implode('-');
+    
+        $today  = now();
+        $status = $today->lt($data['start_date'])
+            ? 'upcoming'
+            : ($data['final_exam_date'] && $today->gt($data['final_exam_date']) ? 'completed' : 'ongoing');
+    
+        $examDates = collect([$data['pre_test_date'],$data['mid_exam_date'],$data['final_exam_date']])->filter();
+        $schedule  = collect($rawSchedule)
+            ->unique('date')
+            ->reject(fn($r) => $examDates->contains($r['date']))
+            ->values();
+    
+        if ($schedule->isEmpty()) {
+            return response()->json([
+                'message' => 'Schedule is empty or overlaps entirely with exam dates.',
+            ], 422);
+        }
+    
+        DB::beginTransaction();
         try {
-            // Update the Course
             $course->update([
                 'course_type_id'       => $data['course_type_id'],
                 'group_type_id'        => $data['group_type_id'],
                 'instructor_id'        => $data['instructor_id'],
                 'start_date'           => $data['start_date'],
-                'pre_test_date'        => $data['pre_test_date'], // Update pre test date
+                'pre_test_date'        => $data['pre_test_date'],
                 'mid_exam_date'        => $data['mid_exam_date'],
                 'final_exam_date'      => $data['final_exam_date'],
                 'end_date'             => $data['final_exam_date'],
                 'student_capacity'     => $data['student_capacity'],
                 'status'               => $status,
-                'days'                 => $selectedDays->isEmpty()
-                                          ? ''
-                                          : implode('-', $selectedDays->toArray()),
+                'days'                 => $daysStr,
                 'time'                 => $request->time,
-                'student_count'        => count($data['students']),
-                'meeting_platform_id'  => $data['meeting_platform_id'],
-                'whatsapp_group_link'  => $data['whatsapp_group_link'],
+                'student_count'        => count($students),
+                'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
+                'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
             ]);
     
-            // Delete old schedules before re-inserting
             $course->schedules()->delete();
-    
-            if(isset($data['levels'])) {
-                $course->levels()->sync($data['levels']);
-            }
-    
-            // Re-create schedule records
-            foreach ($data['schedule'] as $item) {
+            foreach ($schedule as $row) {
                 $course->schedules()->create([
-                    'day'       => $item['day'],
-                    'date'      => $item['date'],
-                    'from_time' => $item['fromTime'],
-                    'to_time'   => $item['toTime'],
+                    'day'       => $row['day'],
+                    'date'      => $row['date'],
+                    'from_time' => $row['fromTime'],
+                    'to_time'   => $row['toTime'],
                 ]);
             }
     
-            // Sync students
-            $course->students()->sync($data['students']);
-    
-            // Update exam records (if exam dates or pre test date have changed)
-            // Update Pre-test exam
-            $examPre = $course->exams()->where('exam_type', 'pre')->first();
-            if ($examPre) {
-                $examPre->update(['exam_date' => $data['pre_test_date']]);
+            $course->exams()->delete();
+            $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
+            foreach ($examMap as $type => $field) {
+                if ($data[$field]) {
+                    $course->exams()->create([
+                        'exam_type' => $type,
+                        'exam_date' => $data[$field],
+                        'status'    => 'new',
+                    ]);
+                }
             }
     
-            // Update Mid exam
-            $examMid = $course->exams()->where('exam_type', 'mid')->first();
-            if ($examMid) {
-                $examMid->update(['exam_date' => $data['mid_exam_date']]);
-            }
-    
-            // Update Final exam
-            $examFinal = $course->exams()->where('exam_type', 'final')->first();
-            if ($examFinal) {
-                $examFinal->update(['exam_date' => $data['final_exam_date']]);
-            }
+            $course->students()->sync($students);
+            $course->levels()->sync($levels);
     
             AuditLog::create([
-                'user_id'      => Auth::id(),
-                'description'  => 'Updated course: ' . ($course->courseType->name ?? 'Unnamed'),
-                'type'         => 'update',
-                'entity_id'    => $course->id,
-                'entity_type'  => Course::class,
+                'user_id'     => Auth::id(),
+                'description' => 'Updated course: '.($course->courseType->name ?? ''),
+                'type'        => 'update',
+                'entity_id'   => $course->id,
+                'entity_type' => Course::class,
             ]);
+    
+            DB::commit();
     
             return response()->json([
                 'message' => 'Course updated successfully',
-                'course'  => $course
+                'course'  => $course->load('schedules','exams','students','levels'),
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'An error occurred while updating the course',
-                'error'   => $e->getMessage()
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
+    
     
     public function destroy($id)
     {
@@ -663,7 +645,38 @@ class CourseController extends Controller
     
         return response()->json(['message' => 'Attendance saved successfully']);
     }
-    
+
+    public function restore($courseId)
+    {
+
+        $course = Course::findOrFail($courseId);
+
+        // check the start date if > today and < end date set ongoing
+        $today = now()->startOfDay();
+        $startDate = Carbon::parse($course->start_date)->startOfDay();
+        $endDate = $course->end_date ? Carbon::parse($course->end_date)->startOfDay() : null;
+
+        if ($startDate->isFuture() && ($endDate && $endDate->isFuture())) {
+            $course->status = 'upcoming';
+        } elseif ($endDate && $endDate->isPast()) {
+            $course->status = 'completed';
+        } else {
+            $course->status = 'ongoing';
+        }
+
+        $course->save();
+
+        // Optionally log this action (e.g. AuditLog)
+        AuditLog::create([
+            'user_id'     => Auth::id(),
+            'description' => "Restored course #{$course->id}",
+            'type'        => 'restore',
+            'entity_id'   => $course->id,
+            'entity_type' => Course::class,
+        ]);
+
+        return redirect()->back()->with('success', 'Course restored successfully.');
+    }
     
     
 }

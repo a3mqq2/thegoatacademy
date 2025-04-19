@@ -2,11 +2,6 @@
 
 @section('title', 'Courses Table')
 
-@push('styles')
-  <style>
-    .blur { filter: blur(2px); }
-  </style>
-@endpush
 
 @php
   use Carbon\Carbon;
@@ -64,7 +59,7 @@
               </div>
               <div class="col-md-3">
                 <label>Exam Date</label>
-                <input type="text" name="exam_date" id="exam_date" class="form-control" value="{{ request('exam_date') }}" autocomplete="off">
+                <input type="date" name="exam_date" id="exam_date" class="form-control" value="{{ request('exam_date') }}" autocomplete="off">
               </div>
               <div class="col-md-3">
                 <label>Course Type</label>
@@ -109,17 +104,17 @@
                 $classes = [];
                 foreach($dates as $key=>$d) {
                   $cls = '';
-                  if ($schedule==='daily' && $d && $d != $today->toDateString()) {
-                    $cls = 'blur';
+                  if ($schedule==='daily' && $d && $d == $today->toDateString()) {
+                    $cls = 'table-danger';
                   }
-                  if ($schedule==='weekly' && $d && ! \Carbon\Carbon::parse($d)->between($startWeek,$endWeek)) {
-                    $cls = 'blur';
+                  if ($schedule==='weekly' && $d && \Carbon\Carbon::parse($d)->between($startWeek,$endWeek)) {
+                    $cls = 'table-danger';
                   }
-                  if ($schedule==='afterTwoDays' && $d && $d != $afterTwo) {
-                    $cls = 'blur';
+                  if ($schedule==='afterTwoDays' && $d && $d == $afterTwo) {
+                    $cls = 'table-danger';
                   }
-                  if ($schedule==='afterADay' && $d && $d != $afterOne) {
-                    $cls = 'blur';
+                  if ($schedule==='afterADay' && $d && $d == $afterOne) {
+                    $cls = 'table-danger';
                   }
                   $classes[$key] = $cls;
                 }
@@ -148,9 +143,5 @@
 @push('scripts')
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-  <script>
-    $(function(){
-      $("#exam_date").datepicker({ dateFormat: "yy-mm-dd" });
-    });
-  </script>
+
 @endpush

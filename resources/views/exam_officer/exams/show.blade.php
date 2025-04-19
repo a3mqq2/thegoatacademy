@@ -2,13 +2,28 @@
 @section('title', "Exam #{$exam->id} Details")
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid mt-3">
     <div class="card shadow-sm">
         <div class="card-header d-flex align-items-center">
             <h4 class="mb-0">
                 <i class="fas fa-info-circle me-2"></i>
                 Exam #{{ $exam->id }} - {{ ucfirst($exam->exam_type) }}
             </h4>
+
+            <div class="ms-auto">
+                <a href="{{ route('exam_officer.exams.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Exams
+                </a>
+                @if($exam->status === 'new')
+                    <a href="{{ route('exam_officer.exams.edit', $exam->id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Exam
+                    </a>
+                @endif
+                <a href="{{ route('exam_officer.exams.print', $exam->id) }}" class="btn btn-outline-danger">
+                    <i class="fas fa-print"></i> Print Exam
+                </a>
+            </div>
+                
         </div>
         <div class="card-body">
 

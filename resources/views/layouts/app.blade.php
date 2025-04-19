@@ -432,37 +432,17 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        flatpickr(".datepicker", {
-          dateFormat: "Y-m-d", // Customize the date format as needed
-          // You can add more options here
-          altInput: true,
-          altFormat: "F j, Y",
-        });
+        flatpickr(
+          'input[type="date"], input.datepicker',
+          {
+            dateFormat: "Y-m-d",   // what gets submitted
+            altInput: true,
+            altFormat: "F j, Y",    // what the user sees
+            allowInput: true
+          }
+        );
       });
     </script>
-
-{{-- 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    flatpickr('input[type="date"]', {
-      altInput: true,
-      altFormat: 'd/m/Y',
-      dateFormat: 'Y-m-d',
-      allowInput: true,
-      locale: {
-      },
-      onClose: function(selectedDates, dateStr, instance) {
-        var raw = instance.input.value;
-        var parsed = instance.parseDate(raw, instance.config.altFormat);
-        if (parsed instanceof Date && !isNaN(parsed)) {
-          instance.setDate(parsed, false);
-        } else {
-          instance.clear();
-        }
-      }
-    });
-  });
-  </script> --}}
   
 
   </body>

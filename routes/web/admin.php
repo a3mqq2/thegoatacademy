@@ -31,6 +31,7 @@ Route::resource('students', StudentController::class);
 Route::get('students/{student}/print-suggestion-courses', [StudentController::class, 'print_suggestion_courses'])->name('students.print_suggestion_courses');
 Route::put('students/{student}/exclude', [StudentController::class, 'exclude'])->name('students.exclude');
 Route::put('students/{student}/withdraw', [StudentController::class, 'withdraw'])->name('students.withdraw');
+Route::get('/courses/{id}/restore', [CourseController::class, 'restore'])->name('courses.restore');
 Route::put('/courses/{id}/cancel', [CourseController::class, 'cancel'])->name('courses.cancel');
 Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
 Route::get('/courses/{id}/print', [CourseController::class, 'print'])->name('courses.print');
