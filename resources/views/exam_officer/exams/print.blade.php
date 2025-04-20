@@ -64,7 +64,6 @@
       top: 50px;
       left: 14px;
       text-transform: uppercase;
-      background: #212529;
       padding: 4px;
       border-radius: 30px;
     }
