@@ -114,12 +114,7 @@
           <tbody>
             @foreach($exams as $exam)
               @php
-                $examDateTime = $exam->exam_date && $exam->time
-                  ? $exam->exam_date
-                  : null;
-                $isOverdue = $examDateTime
-                  && $exam->status!=='completed'
-                  && $examDateTime->copy()->addHours(48)->isPast();
+                $isOverdue = $exam->status == 'overdue';
                 $course = $exam->course;
               @endphp
               <tr @class(['table-danger'=>$isOverdue])>

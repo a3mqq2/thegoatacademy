@@ -48,10 +48,10 @@ class StudentController extends Controller
 
         if(request('search'))
         {
-            $query->where('name', 'like', "%" . request('search') . "%")
-            ->orWhere('city','like', '%' . request('search') . '%')
-            ->orWhere('specialization','like', '%' . request('search') . '%')
-            ->orWhere('phone','like', '%' . request('search') . '%');
+            $query->where('name', 'like',  request('search'))
+            ->orWhere('city','like', request('search'))
+            ->orWhere('specialization','like', request('search') )
+            ->orWhere('phone','like', request('search') );
         }
 
         // if ($request->filled('specialization')) {

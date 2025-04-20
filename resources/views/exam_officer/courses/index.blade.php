@@ -28,7 +28,7 @@
         </div>
         <a href="{{ route(get_area_name().'.courses.index') }}" class="btn btn-outline-secondary mb-2">Remove Filter</a>
         @if (request('schedule'))
-        <a href="{{ route(get_area_name().'.courses.index', ['print' => 1, 'schedule' => request('schedule')]) }}" class="btn btn-outline-danger mb-2">Print <i class="fa fa-print"></i></a>
+        <a href="{{ route(get_area_name().'.courses.index', [ "instructor_id" => request('instructor_id'),  'print' => 1, 'schedule' => request('schedule'), 'examiner_id' => request('examiner_id'), "exam_date" => request('exam_date'), "course_type_id" => request('course_type_id') ]) }}" class="btn btn-outline-danger mb-2">Print <i class="fa fa-print"></i></a>
       @endif
     </div>
       </div>
@@ -39,6 +39,9 @@
         <div class="card-body">
           <form method="GET" action="{{ route(get_area_name().'.courses.index') }}">
             <div class="row gx-2 gy-2">
+
+              <input type="hidden" name="schedule" value="{{request('schedule')}}">
+
               <div class="col-md-3">
                 <label>Instructor</label>
                 <select name="instructor_id" class="form-control">
