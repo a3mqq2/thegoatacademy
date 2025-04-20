@@ -92,7 +92,7 @@
 <body onload="window.print()">
   <div class="container">
     <!-- Header Title -->
-    <h1 class="title">{{ ucfirst($exam->course->courseType->name) }} {{ ucfirst($exam->exam_type) }} - FINAL RESULTS (#{{ $exam->id }})</h1>
+    <h1 class="title">{{ ucfirst($exam->course->courseType->name) }} {{ ucfirst($exam->exam_type) }} - EXAM RESULTS (#{{ $exam->id }})</h1>
 
     <!-- Examiner -->
     <div class="examiner">
