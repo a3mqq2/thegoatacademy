@@ -118,10 +118,7 @@
     </div>
 
     <!-- Date -->
-    <div class="time date" style="width: 100%;
-    position: absolute;
-    top: 114px;
-    left: 0;">
+    <div class="time date" style="">
       <i class="fa fa-calendar"></i>
       Date: {{ \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') }}
     </div>
@@ -132,7 +129,7 @@
     @endphp
 
     <table class="table table-dark text-light table-bordered"
-           style="width:90%; position:absolute; top:114px;">
+           style="width:100%; position:absolute; top:114px;left:0px;">
       <thead>
         <tr>
           <th>NO</th>
