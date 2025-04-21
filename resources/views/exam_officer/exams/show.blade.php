@@ -26,7 +26,7 @@
                     <i class="fas fa-arrow-left"></i> Back to Exams
                 </a>
                 <a href="{{ route('exam_officer.exams.print', $exam->id) }}" class="btn btn-outline-danger">
-                    <i class="fas fa-print"></i> Print Exam
+                    <i class="fas fa-print"></i> Print Results
                 </a>
             </div>
         </div>

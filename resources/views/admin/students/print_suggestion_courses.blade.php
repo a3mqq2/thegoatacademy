@@ -11,6 +11,17 @@
   />
 
   <style>
+
+
+    /* 2. Force color printing */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        -moz-print-colors: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+    
     /* A4 page, no default margins so wave shapes can fill edges */
     @page {
       size: A4;

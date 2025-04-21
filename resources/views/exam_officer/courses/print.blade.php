@@ -7,6 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     /* Remove default page margins for A4 printing */
+
+    /* 2. Force color printing */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        -moz-print-colors: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
     @page { size: A4; margin: 0; }
     body { font-family: "Poppins", Arial, sans-serif; font-size:14px; margin:0; padding:0; color:#333; }
     .container { position:relative; width:100%; min-height:100vh; padding:11mm 10mm; box-sizing:border-box; }

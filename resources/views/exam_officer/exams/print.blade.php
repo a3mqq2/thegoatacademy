@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Print Exam #{{ $exam->id }}</title>
+  <title>Print Results #{{ $exam->id }}</title>
 
   {{-- Bootstrap CDN --}}
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -118,7 +118,10 @@
     </div>
 
     <!-- Date -->
-    <div class="time date">
+    <div class="time date" style="width: 100%;
+    position: absolute;
+    top: 114px;
+    left: 0;">
       <i class="fa fa-calendar"></i>
       Date: {{ \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') }}
     </div>
