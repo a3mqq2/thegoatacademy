@@ -75,7 +75,7 @@ class StudentController extends Controller
         // 1) Validate basic Student fields as before
         $validatedData = $request->validate([
             'name'              => 'required|string|max:255',
-            'phone'             => 'required|string|max:20',
+            'phone'             => 'required|string|max:20|unique:students,phone',
             'city'              => 'nullable|string|max:255',
             'age'               => 'nullable|integer|min:1|max:100',
             'specialization'    => 'nullable|string|max:255',
