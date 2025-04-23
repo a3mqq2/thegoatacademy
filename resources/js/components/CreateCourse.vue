@@ -538,6 +538,30 @@ export default defineComponent({
       defaultMidExamDate.value = ''
       generateSchedule()
     }
+
+    function getLastLectureDate () {
+      if (!scheduleList.value.length) return null
+      return new Date(scheduleList.value[scheduleList.value.length - 1].date)
+    }
+
+    watch(midExamDate, newVal => {
+      if (!newVal || !defaultMidExamDate.value) return
+      if (new Date(newVal) < new Date(defaultMidExamDate.value)) {
+        midExamDate.value = defaultMidExamDate.value
+        $toastr.error('Mid-exam date cannot be earlier than the suggested date')
+      }
+    })
+
+    // enforce final exam after last lecture
+    watch(finalExamDate, newVal => {
+      if (!newVal) return
+      const lastLecture = getLastLectureDate()
+      if (lastLecture && new Date(newVal) < lastLecture) {
+        finalExamDate.value = formatDateLocal(lastLecture)
+        $toastr.error('Final exam date cannot be earlier than the last lecture')
+      }
+    })
+
     function deleteFinalExam () {
       showFinalExam.value = false
       finalExamDate.value = ''
