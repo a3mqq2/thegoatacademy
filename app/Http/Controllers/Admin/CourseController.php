@@ -27,25 +27,29 @@ class CourseController extends Controller
     public function index(Request $request)
     {
         $query = Course::with(['courseType', 'groupType', 'instructor', 'schedules']);
-
-        if ($request->filled('course_type')) {
-            $query->where('course_type_id', $request->course_type);
+    
+        if ($request->filled('course_name')) {
+            $query->whereHas('courseType', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->course_name . '%');
+            });
         }
-
-        if ($request->filled('group_type')) {
-            $query->where('group_type_id', $request->group_type);
+    
+        if ($request->filled('instructor_id')) {
+            $query->where('instructor_id', $request->instructor_id);
         }
-
+    
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
+    
         $courses = $query->paginate(10);
         $courseTypes = CourseType::all();
         $groupTypes = GroupType::all();
         $instructors = User::role('instructor')->get();
+    
         return view('admin.courses.index', compact('courses', 'courseTypes', 'groupTypes','instructors'));
     }
+    
 
     public function create()
     {
