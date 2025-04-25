@@ -68,11 +68,10 @@
               </tr>
             </thead>
             <tbody>
-            @php use Carbon\Carbon; @endphp
             @foreach($courses as $course)
               @php [$s,$e]=explode(' - ',$course->time);
-                   $fs=Carbon::createFromFormat('H:i',$s)->format('h:i A');
-                   $fe=Carbon::createFromFormat('H:i',$e)->format('h:i A'); @endphp
+                   $fs=Carbon\Carbon::createFromFormat('H:i',$s)->format('h:i A');
+                   $fe=Carbon\Carbon::createFromFormat('H:i',$e)->format('h:i A'); @endphp
               <tr>
                 <td>{{ $course->id }}</td>
                 <td>{{ $fs }} – {{ $fe }}</td>
