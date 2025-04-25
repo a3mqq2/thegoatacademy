@@ -321,51 +321,51 @@ class ExamsController extends Controller
     /*--------------  App\Http\Controllers\ExamController.php --------------*/
     public function print(int $id)
     {
-        /* 1. البيانات تجميع الـ HTML */
+        /* البيانات + خلفية Base64 */
         $exam  = Exam::with(['course.courseType.skills'])->findOrFail($id);
         $bgB64 = base64_encode(file_get_contents(public_path('images/exam.png')));
     
         $html  = view('exam_officer.exams.print', [
             'exam'   => $exam,
-            'bgData' => $bgB64
+            'bgData' => $bgB64,
         ])->render();
     
-        /* 2. HTML → PDF مربّع (90 mm × 90 mm ≈ 255pt) */
-        $sidePt = 255.1;                                     // 90 mm
+        /* HTML → PDF (مربّع = 90 mm ≈ 255 pt) */
+        $sidePt = 255.1;
         $pdfBin = Pdf::loadHTML($html)
                      ->setPaper([0, 0, $sidePt, $sidePt])
                      ->setOptions([
+                         'dpi'                     => 96,
                          'isRemoteEnabled'         => true,
                          'isHtml5ParserEnabled'    => true,
                          'isFontSubsettingEnabled' => true,
-                         'defaultFont'              => 'cairo',   // ↙️
-                         'dpi'                     => 96,
+                         'defaultFont'             => 'cairo',   // 👈
                      ])->output();
     
-        /* 3. PDF مؤقّت */
+        /* PDF مؤقّت */
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf, $pdfBin);
     
-        /* 4. Imagick → JPG مربّع ممتلئ */
+        /* Imagick → JPG */
         $img = new \Imagick();
         $img->setResolution(300, 300);
-        $img->readImage($tmpPdf . '[0]');
+        $img->readImage($tmpPdf.'[0]');
         $img->setImageBackgroundColor('white');
         $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
     
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-        $img->cropThumbnailImage(340, 340);                  // يملأ 340×340 بلا فراغ
+        $img->cropThumbnailImage(340, 340);   // يملأ 340×340
     
-        /* 5. حفظ في storage/public */
-        $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
+        /* حفظ */
+        $file = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'.jpg';
         Storage::disk('public')->put($file, $img);
     
         unlink($tmpPdf);
     
         return response()->json([
             'success'   => true,
-            'image_url' => asset('storage/' . $file),
+            'image_url' => asset('storage/'.$file),
         ]);
     }
     
