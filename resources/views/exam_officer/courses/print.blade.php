@@ -21,8 +21,21 @@ body{
 }
 
 .container{position:relative;width:100%;height:100%}
-.title   {position:absolute;top:18px;left:14px;width:306px;text-align:center;font:700 11px cairo}
-.table   {position:absolute;top:62px;left:0;width:100%}
+.title {                       /* العنوان أعلى البطاقة */
+    position:absolute;
+    top:10px;                  /* ← كان 18px */
+    left:14px;
+    width:306px;
+    text-align:center;
+    font:700 11px cairo;
+}
+
+.table {                       /* نُنزِّل الجدول تحت العنوان */
+    position:absolute;
+    top:48px;                  /* ← كان 62px */
+    left:0;
+    width:100%;
+}
 
 th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align:center}
 .today  {background:#900!important}        /* أحمر داكن للتمييز */
