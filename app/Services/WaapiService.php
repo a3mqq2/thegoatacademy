@@ -18,14 +18,20 @@ class WaapiService
         $this->base  = "https://waapi.app/api/v1/instances/{$id}/client/action/";
     }
 
+    // app/Services/WaapiService.php
     private function call(string $path, array $data = []): array
     {
         $resp = Http::withToken($this->token)
-                    ->acceptJson()
-                    // ->asForm()   // ✅ المهم جداً
-                    ->post($this->base . $path, $data);
+            ->withBody(json_encode($data, JSON_UNESCAPED_UNICODE), 'application/json')
+            ->acceptJson()                                // للحصول على JSON فى الاستجابة
+            ->post($this->base.$path);                   // لا نمرر $data هنا
 
-        Log::info('WaAPI', ['path' => $path, 'status' => $resp->status(), 'body' => $resp->json()]);
+        Log::info('WaAPI', [
+            'path'   => $path,
+            'status' => $resp->status(),
+            'body'   => $resp->json(),
+        ]);
+
         return $resp->json();
     }
 
