@@ -45,14 +45,14 @@ th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align
       {{ ucfirst($exam->exam_type) }} – Exam Results (#{{ $exam->id }})
   </h1>
 
-  <div class="examiner">👤
+  <div class="examiner">Examiner : 
       {{ optional($exam->examiner)->gender=='male'?'Mr.':'Mrs.' }}
       {{ optional($exam->examiner)->name ?? 'Unassigned' }}
   </div>
 
-  <div class="time">⏰ {{ \Carbon\Carbon::parse($exam->time)->format('h:i A') }}</div>
-  <div class="examiner date">📅 {{ $exam->course->days ?? '' }}</div>
-  <div class="time date">📆 {{ \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') }}</div>
+  <div class="time">Time: {{ \Carbon\Carbon::parse($exam->time)->format('h:i A') }}</div>
+  <div class="examiner date">Days : {{ $exam->course->days ?? '' }}</div>
+  <div class="time date">Date :  {{ \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') }}</div>
 
   @php
       $skills  = $exam->course->courseType->skills;
