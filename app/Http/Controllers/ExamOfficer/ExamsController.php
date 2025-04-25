@@ -6,11 +6,13 @@ use Carbon\Carbon;
 use App\Models\Exam;
 use App\Models\User;
 use App\Models\AuditLog;
-use App\Models\CourseType;
 use App\Models\GroupType;
+use App\Models\CourseType;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ExamsController extends Controller
 {
@@ -314,10 +316,55 @@ class ExamsController extends Controller
     }
 
 
-    public function print($id)
+    public function print(int $id)
     {
-        $exam = Exam::with(['examStudents.grades', 'course.courseType.skills'])->findOrFail($id);
-        return view('exam_officer.exams.print', compact('exam'));
+        /* 1. البيانات والخلفية */
+        $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
+        $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
+        $html   = view('exam_officer.exams.print', compact('exam','bgB64'))->render();
+    
+        /* 2. HTML → PDF (90 mm × 90 mm) */
+        $sidePt = 255.1;                                           // 90 mm بالـ point
+        $pdfBin = Pdf::loadHTML($html)
+                     ->setPaper([0,0,$sidePt,$sidePt])
+                     ->setOptions([
+                         'dpi'                  => 96,
+                         'isRemoteEnabled'      => true,
+                         'isHtml5ParserEnabled' => true,
+                         'isFontSubsettingEnabled' => true,
+                         'defaultFont'          => 'cairo',
+                     ])->output();
+    
+        $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
+        file_put_contents($tmpPdf,$pdfBin);
+    
+        /* 3. PDF → صورة */
+        $im = new \Imagick();
+        $im->setResolution(300,300);
+        $im->readImage($tmpPdf.'[0]');
+        $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        $im->setImageFormat('jpg');
+        $im->setImageCompressionQuality(95);
+        $im->unsharpMaskImage(0,0.6,1,0);
+    
+        /* 4. صورتان */
+        $lg  = clone $im; $lg->cropThumbnailImage(1020,1020);   // كبيرة
+        $sm  = clone $im; $sm->cropThumbnailImage(340,340);     // بطاقة
+    
+        $ts        = now()->format('Ymd_His');
+        $nameLg    = "prints/exam_{$id}_{$ts}_lg.jpg";
+        $nameSm    = "prints/exam_{$id}_{$ts}.jpg";
+    
+        Storage::disk('public')->put($nameLg,$lg);
+        Storage::disk('public')->put($nameSm,$sm);
+    
+        unlink($tmpPdf);
+    
+        /* 5. حمّل الصورة الصغيرة مباشرة */
+        return response()->download(
+            storage_path('app/public/'.$nameSm),
+            "exam_{$id}.jpg"
+        );
     }
     
 }

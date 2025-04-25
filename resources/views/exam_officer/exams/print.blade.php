@@ -9,6 +9,7 @@
 @php
     $fontRegular = 'file://' . storage_path('fonts/Cairo-Regular.ttf');
     $fontBold    = 'file://' . storage_path('fonts/Cairo-Bold.ttf');
+    $bgData = base64_encode(file_get_contents(public_path('images/exam.png')));
 @endphp
 
 <style>

@@ -1,110 +1,68 @@
+{{-- resources/views/exam_officer/courses/card.blade.php --}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>Courses – The Goat Academy</title>
+<title>Courses – {{ now()->format('Y-m-d') }}</title>
 
-{{-- Cairo محلي --}}
+@php
+    $fontRegular = 'file://'.storage_path('fonts/Cairo-Regular.ttf');
+    $fontBold    = 'file://'.storage_path('fonts/Cairo-Bold.ttf');
+    $bgData = base64_encode(file_get_contents(public_path('images/exam.png')));
+@endphp
+
 <style>
- @font-face{
-   font-family:'Cairo';
-   src:url("file://{{ public_path('fonts/Cairo-Regular.ttf') }}") format('truetype');
- }
- @font-face{
-   font-family:'Cairo';
-   src:url("file://{{ public_path('fonts/Cairo-Bold.ttf') }}") format('truetype');
-   font-weight:700;
- }
+@font-face{font-family:'cairo';src:url('{{ $fontRegular }}') format('truetype');font-weight:400}
+@font-face{font-family:'cairo';src:url('{{ $fontBold    }}') format('truetype');font-weight:700}
 
- /* صفحة A4 بلا هوامش */
- @page{size:210mm 297mm;margin:0}
- html,body{
-   width:210mm;height:297mm;margin:0;
-   font-family:'Cairo',sans-serif;font-size:14px;color:#333;
- }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:340px;height:340px;font-family:'cairo',sans-serif;color:#fff}
 
- /* حاوية */
- .wrap{display:flex;flex-direction:column;min-height:100%;
-       padding:12mm 10mm;box-sizing:border-box}
-
- .title{font-size:24pt;font-weight:700;margin:0}
- .subtitle{font-size:15pt;color:#666;margin:4px 0}
- .prep{font-size:12px;margin-top:4px;text-align:center}
-
- .section{font-size:17pt;border-bottom:2px solid #666;
-          margin:18px 0 6px;padding-bottom:4px}
-
- /* ===== جدول أعرض وخط أوضح ===== */
- table{
-    width:100%;               /* يملأ الصفحة عرضاً كاملاً */
-    max-width:none;
-    margin:6mm 0 0;
-    border-collapse:collapse;
-    font-size:14px;           /* أوضح */
+body{
+  background:url('data:image/png;base64,{{ $bgData }}') no-repeat center/100% 100%;
 }
-th,td{padding:10px 8px}
 
- th,td{
-   border:1px solid #444;
-   padding:8px 8px;
-   text-align:center
- }
- th{background:#f2f2f2}
+/* تخطيط البطاقة */
+.container{position:relative;width:100%;height:100%}
+.title{position:absolute;top:46px;left:14px;width:306px;text-align:center;
+       font-size:12px;font-weight:700}
 
- .footer{margin-top:auto;font-size:11px}
+.head{position:absolute;font-size:8px}
+.head.date{top:96px;left:28px}
+.head.time{top:80px;right:37px}
+
+table{position:absolute;top:114px;left:0;width:100%;border-collapse:collapse}
+th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align:center}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
 
-  {{-- Header --}}
-  <div style="text-align:center">
-      <img src="{{ $logo ?? asset('images/logo.svg') }}" style="width:140px">
-      <h1 class="title">The Goat Academy</h1>
-      <p  class="subtitle">Courses List</p>
-      <div class="prep">
-          Prepared by: {{ auth()->user()->name ?? 'N/A' }}<br>
-          Printed on: {{ now()->format('Y-m-d H:i:s') }}
-      </div>
-  </div>
+  {{-- عنوان --}}
+  <h1 class="title">COURSES SCHEDULE – {{ now()->format('d M Y') }}</h1>
 
-  <div class="section">Courses Schedule</div>
+  {{-- التاريخ والوقت --}}
+  <div class="head date">⌚ {{ now()->format('H:i') }} - 📅 {{ now()->format('Y-m-d') }}</div>
 
-  @if($courses->isEmpty())
-      <p style="text-align:center;margin-top:35mm;font-size:16pt;color:#d00">
-          لا توجد امتحانات مجدولة لهذا اليوم
-      </p>
-  @else
-      <table>
-         <thead>
-           <tr>
-             <th style="width:13mm">ID</th>
-             <th style="width:32mm">Time</th>
-             <th style="width:35mm">Days</th>
-             <th style="width:37mm">Pre</th>
-             <th style="width:37mm">Mid</th>
-             <th style="width:37mm">Final</th>
-           </tr>
-         </thead>
-         <tbody>
-         @foreach($courses as $course)
-           @php [$s,$e]=explode(' - ',$course->time);
-                $fs=Carbon\Carbon::createFromFormat('H:i',$s)->format('h:i A');
-                $fe=Carbon\Carbon::createFromFormat('H:i',$e)->format('h:i A'); @endphp
-           <tr>
-             <td>{{ $course->id }}</td>
-             <td>{{ $fs }} – {{ $fe }}</td>
-             <td>{{ $course->days }}</td>
-             <td>{{ $course->pre_test_date   ?? '-' }}</td>
-             <td>{{ $course->mid_exam_date   ?? '-' }}</td>
-             <td>{{ $course->final_exam_date ?? '-' }}</td>
-           </tr>
-         @endforeach
-         </tbody>
-      </table>
-  @endif
-
-  <div class="footer">© {{ date('Y') }} The Goat Academy. All rights reserved.</div>
+  {{-- جدول --}}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>ID</th><th>TIME</th><th>DAYS</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach($courses as $i=>$c)
+        @php [$s,$e]=explode(' - ',$c->time); @endphp
+        <tr>
+          <td>{{ $i+1 }}</td>
+          <td>{{ $c->id }}</td>
+          <td>{{ \Carbon\Carbon::createFromFormat('H:i',$s)->format('h:i A') }}-{{ \Carbon\Carbon::createFromFormat('H:i',$e)->format('h:i A') }}</td>
+          <td>{{ $c->days }}</td>
+        </tr>
+      @endforeach
+    </tbody>
+  </table>
 </div>
 </body>
 </html>
