@@ -318,47 +318,55 @@ class ExamsController extends Controller
     }
 
 
+    /*--------------  App\Http\Controllers\ExamController.php --------------*/
     public function print(int $id)
     {
-        /* 1. HTML → PDF (Dompdf) */
-        $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
-        $html   = view('exam_officer.exams.print', compact('exam'))->render();
-    
+        /* 1. البيانات + خلفيّة Base64 */
+        $exam    = Exam::with(['course.courseType.skills'])->findOrFail($id);
+        $bgData  = base64_encode(file_get_contents(public_path('images/exam.png')));
+
+        $html = view('exam_officer.exams.card', [
+                    'exam'   => $exam,
+                    'bgData' => $bgData,
+                ])->render();
+
+        /* 2. HTML → PDF */
         $pdfBin = Pdf::loadHTML($html)
-                     ->setPaper('90mm', 'portrait')
-                     ->setOptions([
-                         'isRemoteEnabled'      => true,
-                         'isHtml5ParserEnabled' => true,
-                         'dpi'                  => 96,
-                     ])
-                     ->output();
-    
-        /* 2. PDF مؤقت */
-        $tmpPdf = storage_path('app/tmp_exam_' . $id . '.pdf');
+                    ->setPaper('90mm', 'portrait')
+                    ->setOptions([
+                        'isRemoteEnabled'          => true,
+                        'isHtml5ParserEnabled'     => true,
+                        'isFontSubsettingEnabled'  => true,
+                        'defaultFont'              => 'Cairo',
+                        'dpi'                      => 96,
+                    ])->output();
+
+        /* 3. PDF مؤقت */
+        $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf, $pdfBin);
-    
-        /* 3. Imagick: الصفحة الأولى → JPG */
+
+        /* 4. Imagick → JPG */
         $img = new \Imagick();
-        $img->setResolution(300, 300);              // دقة عالية قبل القراءة
-        $img->readImage($tmpPdf . '[0]');           // الصفحة 0
-        $img->setImageBackgroundColor('white');     // خلفية بيضاء
-        $img  = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-    
-        /* 4. ضبط الصيغة والحجم */
+        $img->setResolution(300, 300);
+        $img->readImage($tmpPdf . '[0]');
+        $img->setImageBackgroundColor('white');
+        $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true); // ≈ 90 mm
-    
-        /* 5. حفظ في storage/public */
+        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true);
+
+        /* 5. حفظ */
         $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
         Storage::disk('public')->put($file, $img);
-    
-        unlink($tmpPdf);                            // تنظيف
-    
+
+        unlink($tmpPdf);
+
         return response()->json([
             'success'   => true,
             'image_url' => asset('storage/' . $file),
         ]);
     }
+
     
 }
