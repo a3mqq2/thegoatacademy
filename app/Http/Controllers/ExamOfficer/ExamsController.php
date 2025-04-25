@@ -320,73 +320,54 @@ class ExamsController extends Controller
 
     public function print(int $id)
     {
-        /*-------------------------------------------------
-        | 1) جلب البيانات وتجهيز الـ HTML
-        -------------------------------------------------*/
+        // 1. البيانات والخلفية
         $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
-
-        // خلفيّة البطاقة Base64 لضمان تضمينها في PDF
         $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
-
-        // تمرير البيانات إلى Blade
-        $html = view('exam_officer.exams.print', [
-                    'exam'   => $exam,
-                    'bgData' => $bgB64,
-                ])->render();
-
-        /*-------------------------------------------------
-        | 2) HTML → PDF مربّع (90mm × 90mm ≃ 255pt)
-        -------------------------------------------------*/
-        $mm90   = 255.1;                       // 1pt ≃ 0.3528 mm
+        $html   = view('exam_officer.exams.card', ['exam'=>$exam,'bgData'=>$bgB64])->render();
+    
+        // 2. HTML → PDF 90mm²
+        $sidePt = 255.1;
         $pdfBin = Pdf::loadHTML($html)
-                    ->setPaper([0, 0, $mm90, $mm90])
-                    ->setOptions([
-                        'dpi'                     => 96,
-                        'isRemoteEnabled'         => true,
-                        'isHtml5ParserEnabled'    => true,
-                        'isFontSubsettingEnabled' => true,
-                        'defaultFont'             => 'cairo',   // مُعرَّف في config/dompdf.php
-                    ])->output();
-
-        /*-------------------------------------------------
-        | 3) حفظ PDF مؤقّتاً
-        -------------------------------------------------*/
+                     ->setPaper([0,0,$sidePt,$sidePt])
+                     ->setOptions([
+                         'dpi'                     => 96,
+                         'isRemoteEnabled'         => true,
+                         'isHtml5ParserEnabled'    => true,
+                         'isFontSubsettingEnabled' => true,
+                         'defaultFont'             => 'cairo',
+                     ])->output();
+    
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
-        file_put_contents($tmpPdf, $pdfBin);
-
-        /*-------------------------------------------------
-        | 4) Imagick: الصفحة الأولى → JPG 340×340px
-        -------------------------------------------------*/
-        $img = new \Imagick();
-        $img->setResolution(300, 300);             // قراءة بدقّة عالية
-        $img->readImage($tmpPdf . '[0]');          // الصفحة الأولى
-        $img->setImageBackgroundColor('white');
-        $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-
-        $img->setImageFormat('jpg');
-        $img->setImageCompressionQuality(90);
-
-        // cropThumbnailImage يقتطع ويغيّر الحجم لملء الإطار تماماً
-        $img->cropThumbnailImage(340, 340);
-
-        /*-------------------------------------------------
-        | 5) تخزين الصورة في disk public
-        -------------------------------------------------*/
-        $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
-        Storage::disk('public')->put($file, $img);
-
-        // تنظيف الملفّ المؤقّت
+        file_put_contents($tmpPdf,$pdfBin);
+    
+        // 3. Imagick
+        $im = new \Imagick();
+        $im->setResolution(300,300);
+        $im->readImage($tmpPdf.'[0]');
+        $im->setImageBackgroundColor('white');
+        $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        $im->setImageFormat('jpg');
+        $im->setImageCompressionQuality(95);
+        $im->unsharpMaskImage(0,0.5,1,0);
+    
+        // 4. صورتان: كبيرة وصغيرة
+        $large = clone $im;   $large->cropThumbnailImage(1020,1020);          // ≈ 3×90mm
+        $small = clone $im;   $small->cropThumbnailImage(340,340);            // 90mm
+    
+        $nameLarge = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'_lg.jpg';
+        $nameSmall = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'.jpg';
+    
+        Storage::disk('public')->put($nameLarge,$large);
+        Storage::disk('public')->put($nameSmall,$small);
+    
         unlink($tmpPdf);
-
-        /*-------------------------------------------------
-        | 6) إرجاع الرابط كاستجابة JSON
-        -------------------------------------------------*/
+    
         return response()->json([
-            'success'   => true,
-            'image_url' => asset('storage/' . $file),
+            'success'      => true,
+            'image_large'  => asset('storage/'.$nameLarge),
+            'image_small'  => asset('storage/'.$nameSmall),
         ]);
     }
-
-
+    
     
 }
