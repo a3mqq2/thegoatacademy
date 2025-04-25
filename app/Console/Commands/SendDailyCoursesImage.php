@@ -63,7 +63,7 @@ class SendDailyCoursesImage extends Command
         $url = asset('storage/' . $fileName);
 
         /* 3) Send via WhatsApp */
-        $waapi->sendImage(env('EXAM_MANAGER_CHATID'), $url, '📋 جدول الامتحانات اليومي');
+        // $waapi->sendImage(env('EXAM_MANAGER_CHATID'), $url, '📋 جدول الامتحانات اليومي');
 
         unlink($tmpPdf);
 
