@@ -49,6 +49,14 @@ class CourseController extends Controller
                 ->orWhereDate('mid_exam_date', $afterTwo)
                 ->orWhereDate('final_exam_date', $afterTwo)
             );
+        } elseif ($schedule === "afterADay")
+        {
+            $afterOne = $today->copy()->addDay();
+            $coursesQuery->where(fn($q) => $q
+                ->whereDate('pre_test_date', $afterOne)
+                ->orWhereDate('mid_exam_date', $afterOne)
+                ->orWhereDate('final_exam_date', $afterOne)
+            );
         }
     
         // 3. Advanced Filters (unchanged)…
