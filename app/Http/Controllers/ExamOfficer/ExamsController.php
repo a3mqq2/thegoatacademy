@@ -325,7 +325,7 @@ class ExamsController extends Controller
         $exam  = Exam::with(['course.courseType.skills'])->findOrFail($id);
         $bgB64 = base64_encode(file_get_contents(public_path('images/exam.png')));
     
-        $html  = view('exam_officer.exams.card', [
+        $html  = view('exam_officer.exams.print', [
             'exam'   => $exam,
             'bgData' => $bgB64
         ])->render();
