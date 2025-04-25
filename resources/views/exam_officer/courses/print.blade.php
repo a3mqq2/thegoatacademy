@@ -5,40 +5,42 @@
     <meta charset="utf-8">
     <title>Courses List – The Goat Academy</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet"/>
-
+    {{-- خط Cairo محلـي حتى يعمل داخل Dompdf --}}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap');
+        @font-face{
+            font-family:'Cairo';
+            src:url("file://{{ storage_path('fonts/Cairo-Regular.ttf') }}") format('truetype');
+            font-weight:400;
+        }
+        @font-face{
+            font-family:'Cairo';
+            src:url("file://{{ storage_path('fonts/Cairo-Bold.ttf') }}") format('truetype');
+            font-weight:700;
+        }
 
-        /* ـــــ  ضبط الصفحة على مقاس A4 بالميليمتر  ـــــ */
-        @page  { size:210mm 297mm; margin:0 }
+        /* صفحة A4 بلا هوامش */
+        @page{size:210mm 297mm;margin:0}
 
         html,body{
-            width:210mm;        /*  عرض A4  */
-            height:297mm;       /*  طول A4  */
-            margin:0;padding:0;
-            background:#fff;    /* خلفية كاملة بيضاء */
-            font-family:'Poppins','Cairo',sans-serif;
-            font-size:14px; color:#333;
+            width:210mm;height:297mm;margin:0;padding:0;
+            background:#fff;
+            font-family:'Cairo',sans-serif;font-size:14px;color:#333;
         }
 
-        @media print{
-            *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-            body{font-size:12pt}
-        }
+        @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+                     body{font-size:12pt}}
 
-        /* الحاوية تمتد بطول الصفحة باستخدام Flex */
+        /* حاوية مرنة تملأ كامل الصفحة */
         .container{
             display:flex;flex-direction:column;
-            min-height:100%;         /* ملء الارتفاع */
-            width:100%;
+            min-height:100%;
             padding:11mm 10mm;
             box-sizing:border-box;
             position:relative;
         }
 
-        /* موجة الزخرفة */
-        .header-wave,.footer-wave{position:absolute;width:100%;z-index:-1}
+        /* موجات تزيينية */
+        .header-wave,.footer-wave{position:absolute;width:100%;z-index:-1;left:0}
         .header-wave{top:0;height:280px}
         .footer-wave{bottom:0;height:250px;transform:rotate(180deg)}
 
@@ -58,7 +60,7 @@
         th{background:#f2f2f2}
         .table-danger{background:#fbb4b4 !important}
 
-        /* ذيل الصفحة يدفع لأسفل بفضل flex-grow */
+        /* يجعل الفوتر يلتصق بالأسفل */
         .footer{margin-top:auto;text-align:left;font-size:12px}
     </style>
 </head>
@@ -83,7 +85,7 @@
       <div class="header">
           <div class="header-content">
               <div class="header-left">
-                  <img src="{{ asset('images/logo.svg') }}" alt="Logo">
+                  <img src="{{ public_path('images/logo.svg') }}" alt="Logo">
                   <div>
                       <h1 class="title">The Goat Academy</h1>
                       <p class="subtitle">Courses List</p>
@@ -97,58 +99,44 @@
           </div>
       </div>
 
-      {{-- TITLE --}}
+      {{-- SECTION TITLE --}}
       <div class="section-title">Courses Schedule</div>
 
-      {{-- TABLE --}}
-      <table>
-          <thead>
-              <tr>
-                  <th>ID</th><th>Time</th><th>Days</th>
-                  <th>Pre Test Date</th><th>Mid Test Date</th><th>Final Test Date</th>
-              </tr>
-          </thead>
-          <tbody>
-          @php
-              use Carbon\Carbon;
-              $today     = Carbon::today()->toDateString();
-              $startWeek = Carbon::today()->startOfWeek(Carbon::SATURDAY)->toDateString();
-              $endWeek   = Carbon::today()->endOfWeek(Carbon::FRIDAY)->toDateString();
-              $afterOne  = Carbon::today()->addDay()->toDateString();
-              $afterTwo  = Carbon::today()->addDays(2)->toDateString();
-              $schedule  = request('schedule','');
-          @endphp
-
-          @foreach($courses as $course)
+      {{-- CONTENT --}}
+      @if($courses->isEmpty())
+          <p style="text-align:center;margin-top:40mm;font-size:18pt;color:#d00">
+              لا توجد امتحانات مجدولة لهذا اليوم
+          </p>
+      @else
+          <table>
+              <thead>
+                  <tr>
+                      <th>ID</th><th>Time</th><th>Days</th>
+                      <th>Pre Test Date</th><th>Mid Test Date</th><th>Final Test Date</th>
+                  </tr>
+              </thead>
+              <tbody>
               @php
-                  [$start,$end] = explode(' - ', $course->time);
-                  $fs = Carbon::createFromFormat('H:i',$start)->format('h:i A');
-                  $fe = Carbon::createFromFormat('H:i',$end)->format('h:i A');
-
-                  $match = fn($d) => match($schedule) {
-                      'daily'        => $d === $today,
-                      'weekly'       => $d >= $startWeek && $d <= $endWeek,
-                      'afterADay'    => $d === $afterOne,
-                      'afterTwoDays' => $d === $afterTwo,
-                      default        => false,
-                  };
-
-                  $preCls   = $course->pre_test_date   && $match($course->pre_test_date)   ? 'table-danger':'';
-                  $midCls   = $course->mid_exam_date   && $match($course->mid_exam_date)   ? 'table-danger':'';
-                  $finalCls = $course->final_exam_date && $match($course->final_exam_date) ? 'table-danger':'';
+                  use Carbon\Carbon;
               @endphp
-
-              <tr>
-                  <td>{{ $course->id }}</td>
-                  <td>{{ $fs }} – {{ $fe }}</td>
-                  <td>{{ $course->days }}</td>
-                  <td class="{{ $preCls }}">{{ $course->pre_test_date ?? '-' }}</td>
-                  <td class="{{ $midCls }}">{{ $course->mid_exam_date ?? '-' }}</td>
-                  <td class="{{ $finalCls }}">{{ $course->final_exam_date ?? '-' }}</td>
-              </tr>
-          @endforeach
-          </tbody>
-      </table>
+              @foreach($courses as $course)
+                  @php
+                      [$start,$end] = explode(' - ', $course->time);
+                      $fs = Carbon::createFromFormat('H:i',$start)->format('h:i A');
+                      $fe = Carbon::createFromFormat('H:i',$end)->format('h:i A');
+                  @endphp
+                  <tr>
+                      <td>{{ $course->id }}</td>
+                      <td>{{ $fs }} – {{ $fe }}</td>
+                      <td>{{ $course->days }}</td>
+                      <td>{{ $course->pre_test_date   ?? '-' }}</td>
+                      <td>{{ $course->mid_exam_date   ?? '-' }}</td>
+                      <td>{{ $course->final_exam_date ?? '-' }}</td>
+                  </tr>
+              @endforeach
+              </tbody>
+          </table>
+      @endif
 
       {{-- FOOTER --}}
       <div class="footer">
