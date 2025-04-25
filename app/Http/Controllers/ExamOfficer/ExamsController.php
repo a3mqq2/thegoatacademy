@@ -321,52 +321,54 @@ class ExamsController extends Controller
     /*--------------  App\Http\Controllers\ExamController.php --------------*/
     public function print(int $id)
     {
-        /* 1. البيانات + خلفيّة Base64 */
-        $exam    = Exam::with(['course.courseType.skills'])->findOrFail($id);
-        $bgData  = base64_encode(file_get_contents(public_path('images/exam.png')));
-
-        $html = view('exam_officer.exams.print', [
-                    'exam'   => $exam,
-                    'bgData' => $bgData,
-                ])->render();
-
-        /* 2. HTML → PDF */
+        /* 1. البيانات تجميع الـ HTML */
+        $exam  = Exam::with(['course.courseType.skills'])->findOrFail($id);
+        $bgB64 = base64_encode(file_get_contents(public_path('images/exam.png')));
+    
+        $html  = view('exam_officer.exams.card', [
+            'exam'   => $exam,
+            'bgData' => $bgB64
+        ])->render();
+    
+        /* 2. HTML → PDF مربّع (90 mm × 90 mm ≈ 255pt) */
+        $sidePt = 255.1;                                     // 90 mm
         $pdfBin = Pdf::loadHTML($html)
-                    ->setPaper('90mm', 'portrait')
-                    ->setOptions([
-                        'isRemoteEnabled'          => true,
-                        'isHtml5ParserEnabled'     => true,
-                        'isFontSubsettingEnabled'  => true,
-                        'defaultFont'              => 'Cairo',
-                        'dpi'                      => 96,
-                    ])->output();
-
-        /* 3. PDF مؤقت */
+                     ->setPaper([0, 0, $sidePt, $sidePt])
+                     ->setOptions([
+                         'isRemoteEnabled'         => true,
+                         'isHtml5ParserEnabled'    => true,
+                         'isFontSubsettingEnabled' => true,
+                         'defaultFont'             => 'Cairo',
+                         'dpi'                     => 96,
+                     ])->output();
+    
+        /* 3. PDF مؤقّت */
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf, $pdfBin);
-
-        /* 4. Imagick → JPG */
+    
+        /* 4. Imagick → JPG مربّع ممتلئ */
         $img = new \Imagick();
         $img->setResolution(300, 300);
         $img->readImage($tmpPdf . '[0]');
         $img->setImageBackgroundColor('white');
         $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-
+    
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true);
-
-        /* 5. حفظ */
+        $img->cropThumbnailImage(340, 340);                  // يملأ 340×340 بلا فراغ
+    
+        /* 5. حفظ في storage/public */
         $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
         Storage::disk('public')->put($file, $img);
-
+    
         unlink($tmpPdf);
-
+    
         return response()->json([
             'success'   => true,
             'image_url' => asset('storage/' . $file),
         ]);
     }
+    
 
     
 }
