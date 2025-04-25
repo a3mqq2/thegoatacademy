@@ -1,5 +1,5 @@
 <?php
-/**  app/Console/Commands/SendDailyCoursesImage.php */
+// app/Console/Commands/SendDailyCoursesImage.php
 
 namespace App\Console\Commands;
 
@@ -15,87 +15,71 @@ use Illuminate\Support\Facades\View;
 
 class SendDailyCoursesImage extends Command
 {
-    /** artisan courses:send-daily-image */
     protected $signature   = 'courses:send-daily-image';
-    protected $description = 'Generate today’s course schedule (A4), convert it to an image, and send via WhatsApp';
+    protected $description = 'Generate today\'s A4 course schedule, convert to image, send via WhatsApp';
 
     public function handle(WaapiService $waapi): int
     {
-        /* ------------------------------------------------------------------
-         | 1. Collect today’s courses
-         | -----------------------------------------------------------------*/
-        $today   = Carbon::today()->addDays(2);
-        $courses = Course::with(['exams', 'courseType'])
-            ->where(fn($q) => $q
-                ->whereDate('pre_test_date',   $today)
-                ->orWhereDate('mid_exam_date', $today)
+        $today   = Carbon::today();
+        $courses = Course::with(['exams','courseType'])
+            ->where(fn($q)=>$q
+                ->whereDate('pre_test_date',$today)
+                ->orWhereDate('mid_exam_date',$today)
                 ->orWhereDate('final_exam_date',$today)
-            )
-            ->get();
+            )->get();
 
-    
+        if ($courses->isEmpty()) {
+            $this->warn('No exams today – nothing sent.');
+            return self::SUCCESS;
+        }
 
-        /* ------------------------------------------------------------------
-         | 2. Render Blade to HTML
-         | -----------------------------------------------------------------*/
+        /* ---- render Blade ---- */
         $html = View::make('exam_officer.courses.print', [
-            'courses'      => $courses,
-            'instructors'  => User::role('Instructor')->get(),
-            'examiners'    => User::role('Examiner')->get(),
-            'courseTypes'  => CourseType::all(),
-            'afterOne'     => $today->copy()->addDay(),
-            'today'        => $today,
+            'courses'     => $courses,
+            'instructors' => User::role('Instructor')->get(),
+            'examiners'   => User::role('Examiner')->get(),
+            'courseTypes' => CourseType::all(),
+            'afterOne'    => $today->copy()->addDay(),
+            'today'       => $today,
         ])->render();
 
-        /* ------------------------------------------------------------------
-         | 3. HTML → PDF  (A4 portrait, 150 DPI)
-         | -----------------------------------------------------------------*/
+        /* ---- HTML → PDF (A4) ---- */
         $pdfBin = Pdf::loadHTML($html)
                      ->setPaper('A4','portrait')
                      ->setOptions([
                          'dpi'                  => 150,
                          'isRemoteEnabled'      => true,
                          'isHtml5ParserEnabled' => true,
-                     ])
-                     ->output();
+                     ])->output();
 
         $tmpPdf = storage_path('app/daily_courses.pdf');
         file_put_contents($tmpPdf, $pdfBin);
 
-        /* ------------------------------------------------------------------
-         | 4. First PDF page → JPG, trimmed & resized
-         | -----------------------------------------------------------------*/
+        /* ---- PDF → JPG ---- */
         $im = new \Imagick();
-        $im->setResolution(300, 300);              // read high-res
-        $im->readImage($tmpPdf.'[0]');
+        $im->setResolution(300,300);
+        $im->readImage($tmpPdf.'[0]'); // صفحة كاملة
         $im->setImageBackgroundColor('white');
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
 
-        /* remove white margins around content */
-        $im->trimImage(5);
-        $im->setImagePage(0, 0, 0, 0);
-
-        /* sharpen slightly then resize thumbnail */
-        $im->sharpenImage(0, 1);
+        $im->sharpenImage(0,1);
         $im->setImageFormat('jpg');
         $im->setImageCompressionQuality(90);
 
-        // A4 aspect ratio thumbnail 1240×1754  (≈150 ppi)
-        $im->cropThumbnailImage(1240, 1754);
+        // تصغير متناسب بعرض 1080px (الارتفاع يُحسب تلقائياً)
+        $im->resizeImage(1080, 0, \Imagick::FILTER_LANCZOS, 1);
 
-        $fileName = 'prints/daily_courses_' . now()->format('Ymd_His') . '.jpg';
+        $fileName  = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
         Storage::disk('public')->put($fileName, $im);
-        $publicUrl = asset('storage/' . $fileName);
+        $publicUrl = asset('storage/'.$fileName);
 
-        unlink($tmpPdf); // tidy up
+        unlink($tmpPdf);                            // clean temp file
 
-        /* ------------------------------------------------------------------
-         | 5. Send via WhatsApp WAAPI
-         | -----------------------------------------------------------------*/
-        $caption = '📋 جدول الامتحانات – ' . $today->format('Y-m-d');
+        /* ---- send via WhatsApp ---- */
+        $caption = '📋 جدول الامتحانات – '.$today->format('Y-m-d');
         $waapi->sendImage(env('EXAM_MANAGER_CHATID'), $publicUrl, $caption);
 
-        $this->info('Daily course image created and sent successfully.');
+        $this->info('Daily course image sent successfully.');
         return self::SUCCESS;
     }
 }
