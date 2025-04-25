@@ -20,6 +20,8 @@ class SendDailyCoursesImage extends Command
     {
         $today = Carbon::today();
 
+
+        
         $courses = Course::with(['exams', 'courseType'])
             ->where(fn($q) => $q
                 ->whereDate('pre_test_date', $today)
@@ -33,9 +35,17 @@ class SendDailyCoursesImage extends Command
         $courseTypes = \App\Models\CourseType::all();
         $afterOne    = $today->copy()->addDay();
 
-        $html = View::make('exam_officer.courses.print', compact(
-            'courses', 'instructors', 'examiners', 'courseTypes', 'afterOne', 'today'
-        ))->render();
+
+            // ❶ حمّل محتوى الشعار وحوِّله إلى Base64
+            $logoPath = public_path('images/logo.svg');
+            $logoB64  = 'data:image/svg+xml;base64,' . base64_encode(file_get_contents($logoPath));
+
+            // ❷ مرِّر المتغيّر مع بقية البيانات إلى الـ Blade
+            $html = View::make('exam_officer.courses.print', [
+                'courses'     => $courses,
+                'today'       => $today,
+                'logo'        => $logoB64,          // << هنا
+            ])->render();
 
         /* 1) HTML → PDF */
         $pdf = Pdf::loadHTML($html)
