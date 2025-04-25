@@ -33,12 +33,6 @@ class SendDailyCoursesImage extends Command
                 ->orWhereDate('final_exam_date',$today)
             )
             ->get();
-
-        if ($courses->isEmpty()) {
-            $this->warn('No exams today – nothing sent.');
-            return self::SUCCESS;
-        }
-
         /* ------------------------------------------------------------------
          | 2. Render the Blade view to HTML
          | -----------------------------------------------------------------*/
