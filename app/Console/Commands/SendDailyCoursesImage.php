@@ -1,83 +1,74 @@
 <?php
-// app/Console/Commands/SendDailyCoursesImage.php
 
 namespace App\Console\Commands;
 
 use App\Models\Course;
 use App\Models\User;
-use App\Models\CourseType;
-use App\Services\WaapiService;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\WaapiService;
 
 class SendDailyCoursesImage extends Command
 {
-    protected $signature   = 'courses:send-daily-image';
-    protected $description = 'Generate today’s A4 course schedule, convert to image, send via WhatsApp';
+    protected \$signature = 'courses:send-daily-image';
+    protected \$description = 'Generate the daily course schedule and send it as an image via WhatsApp';
 
-    public function handle(WaapiService $waapi): int
+    public function handle(WaapiService \$waapi): int
     {
-        $today = Carbon::today()->addDays(2);              // ← غيّر التاريخ كما تريد
+        \$today = Carbon::today();
 
-        /* 1. gather courses */
-        $courses = Course::with(['exams','courseType'])
-            ->where(fn($q)=>$q
-                ->whereDate('pre_test_date',   $today)
-                ->orWhereDate('mid_exam_date', $today)
-                ->orWhereDate('final_exam_date',$today)
-            )->get();
+        \$courses = Course::with(['exams', 'courseType'])
+            ->where(fn(\$q) => \$q
+                ->whereDate('pre_test_date', \$today)
+                ->orWhereDate('mid_exam_date', \$today)
+                ->orWhereDate('final_exam_date', \$today)
+            )
+            ->get();
 
-        if ($courses->isEmpty()) {
-            $this->info('No courses for '.$today->toDateString().'; nothing sent.');
-            return self::SUCCESS;
-        }
+        \$instructors = User::role('Instructor')->get();
+        \$examiners   = User::role('Examiner')->get();
+        \$courseTypes = \App\Models\CourseType::all();
+        \$afterOne    = \$today->copy()->addDay();
 
-        /* 2. render Blade */
-        $html = View::make('exam_officer.courses.print', [
-            'courses'     => $courses,
-            'instructors' => User::role('Instructor')->get(),
-            'examiners'   => User::role('Examiner')->get(),
-            'courseTypes' => CourseType::all(),
-            'today'       => $today,
-        ])->render();
+        \$html = View::make('exam_officer.courses.print', compact(
+            'courses', 'instructors', 'examiners', 'courseTypes', 'afterOne', 'today'
+        ))->render();
 
-        /* 3. HTML → PDF */
-        $pdfBin = Pdf::loadHTML($html)
-                     ->setPaper('A4','portrait')
-                     ->setOptions([
-                         'dpi'               => 150,
-                         'isRemoteEnabled'   => true,
-                         'isHtml5ParserEnabled' => true,
-                     ])->output();
+        // 1. Generate PDF from HTML
+        \$pdf = Pdf::loadHTML(\$html)
+                    ->setPaper('A4', 'portrait')
+                    ->setOptions([
+                        'isRemoteEnabled'      => true,
+                        'isHtml5ParserEnabled' => true,
+                        'dpi'                  => 150,
+                    ]);
 
-        $tmpPdf = storage_path('app/daily_courses.pdf');
-        file_put_contents($tmpPdf, $pdfBin);
+        \$tmpPdf = storage_path('app/daily_courses.pdf');
+        file_put_contents(\$tmpPdf, \$pdf->output());
 
-        /* 4. PDF → JPG */
-        $im = new \Imagick();
-        $im->setResolution(300,300);
-        $im->readImage($tmpPdf.'[0]');
-        $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-        $im->setImageFormat('jpg');
-        $im->setImageCompressionQuality(90);
+        // 2. Convert to Image using Imagick
+        \$img = new \Imagick();
+        \$img->setResolution(300, 300);
+        \$img->readImage(\$tmpPdf.'[0]');
+        \$img->setImageBackgroundColor('white');
+        \$img = \$img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        \$img->setImageFormat('jpg');
+        \$img->setImageCompressionQuality(90);
 
-        // resize proportionally to width 1080px
-        $im->resizeImage(1080, 0, \Imagick::FILTER_LANCZOS, 1);
+        \$fileName = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
+        Storage::disk('public')->put(\$fileName, \$img);
+        \$url = asset('storage/'.$fileName);
 
-        $fileName = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
-        Storage::disk('public')->put($fileName, $im);
-        $publicUrl = asset('storage/'.$fileName);
+        // 3. Send via WAAPI
+        \$waapi->sendImage(env('EXAM_MANAGER_CHATID'), \$url, '📋 جدول الامتحانات اليومي');
 
-        unlink($tmpPdf);
+        unlink(\$tmpPdf);
 
-        /* 5. send via WhatsApp */
-        $caption = '📋 جدول الامتحانات – '.$today->format('Y-m-d');
-        $waapi->sendImage(env('EXAM_MANAGER_CHATID'), $publicUrl, $caption);
-
-        $this->info('Daily course image sent successfully.');
+        \$this->info('Daily course image sent successfully.');
         return self::SUCCESS;
     }
 }
