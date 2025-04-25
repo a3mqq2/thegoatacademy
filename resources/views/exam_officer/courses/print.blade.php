@@ -18,7 +18,7 @@
     }
     @page { size: A4; margin: 0; }
     body { font-family: "Poppins", Arial, sans-serif; font-size:14px; margin:0; padding:0; color:#333; }
-    .container { position:relative; width:100%; min-height:100vh; padding:11mm 10mm; box-sizing:border-box; }
+    .container { position:relative; width:100%; min-height:100vh; padding:11mm 20mm; box-sizing:border-box; }
     .header-wave, .footer-wave { position:absolute; width:100%; z-index:-1; }
     .header-wave { top:0; height:280px; }
     .footer-wave { bottom:0; height:250px; transform:rotate(180deg); }
@@ -57,7 +57,7 @@
     <div class="header">
       <div class="header-content">
         <div class="header-left">
-          <img src="{{ asset('images/logo.svg') }}" alt="Logo">
+          <img src="/images/logo.svg" alt="Logo">
           <div class="header-text">
             <h1 class="title">The Goat Academy</h1>
             <p class="subtitle">Courses List</p>
