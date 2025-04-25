@@ -105,7 +105,7 @@
     <div class="col-xl-3 col-md-6 mb-3">
       <div class="card gradient-card-3 h-100" style="border: 0!important;">
         <div class="card-body d-flex flex-column justify-content-center">
-          <h5 class="mb-2 text-light">Pending Exams</h5>
+          <h5 class="mb-2 text-light">Assigned Exams</h5>
           <h2 class="fw-bolder mb-1 text-light">
             {{ $pendingExams }}
           </h2>
@@ -186,7 +186,7 @@
                 </small>
               </div>
               <span class="badge
-                @if($exam->status === 'pending') bg-warning text-dark
+                @if($exam->status === 'assigned') bg-warning text-dark
                 @elseif($exam->status === 'new') bg-secondary
                 @elseif($exam->status === 'completed') bg-success
                 @endif
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
       type: 'donut',
       height: 320
     },
-    labels: ['New', 'Pending', 'Completed'],
+    labels: ['New', 'Assigned', 'Completed'],
     series: [newCount, pendingCount, completedCount],
     colors: ['#6c757d', '#ffc107', '#28a745'], // Gray, Warning, Success
     legend: {

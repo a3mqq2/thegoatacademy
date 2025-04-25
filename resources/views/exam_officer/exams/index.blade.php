@@ -98,7 +98,6 @@
     </div>
   </div>
 
-  {{-- EXAMS TABLE --}}
   <div class="card">
     <div class="card-header"><h5 class="mb-0">Exams</h5></div>
     <div class="card-body">
@@ -107,8 +106,8 @@
         <table class="table table-bordered align-middle">
           <thead class="table-light">
             <tr>
-              <th>ID</th><th>Course / Type</th><th>Instructor</th><th>Exam Type</th>
-              <th>Status</th><th>Examiner</th><th>Exam Date</th><th>Time</th><th>Actions</th>
+              <th>ID</th><th>Course / Type</th><th>Instructor</th><th>Exam Type</th>
+              <th>Status</th><th>Examiner</th><th>Exam Date</th><th>Time</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -130,21 +129,42 @@
                   <span @class([
                     'badge',
                     'bg-info text-dark'    => $exam->status=='new',
-                    'bg-warning text-dark' => $exam->status=='pending',
+                    'bg-warning text-dark' => $exam->status=='assigned',
                     'bg-success'           => $exam->status=='completed',
                     'bg-danger'            => $exam->status=='overdue',
                   ])>
                     {{ ucfirst($exam->status) }}
                   </span>
                 </td>
-                <td>{{ optional($exam->examiner)->name ?? '-' }}</td>
-                <td>{{ optional($exam->exam_date)->format('Y-m-d') }}</td>
+                <td>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span>{{ optional($exam->examiner)->name ?? '-' }}</span>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary ms-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#assignExaminerModal-{{ $exam->id }}">
+                      <i class="fas fa-user-edit"></i>
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <span>{{ optional($exam->exam_date)->format('Y-m-d') }}</span>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary ms-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editDateModal-{{ $exam->id }}">
+                      <i class="fas fa-calendar-alt"></i>
+                    </button>
+                  </div>
+                </td>
                 <td>{{ $exam->time ?? '-' }}</td>
                 <td>
                   <a href="{{ route('exam_officer.exams.show',$exam->id) }}" class="btn btn-sm btn-info">
                     Show
                   </a>
-
                   @if($exam->status=='new' && auth()->user()->permissions->contains('name','Exam Manager'))
                   <button
                     type="button"
@@ -160,6 +180,70 @@
           </tbody>
         </table>
       </div>
+  
+      {{-- ✅ جميع المودالات هنا خارج الجدول --}}
+      @foreach($exams as $exam)
+        {{-- Modal: Edit Exam Date --}}
+        <div class="modal fade" id="editDateModal-{{ $exam->id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="{{ route('exam_officer.exams.update_date') }}">
+              @csrf
+              <input type="hidden" name="exam_id" value="{{ $exam->id }}">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Date - Exam #{{ $exam->id }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">New Exam Date</label>
+                    <input type="text" name="exam_date" class="form-control datepicker"
+                      value="{{ optional($exam->exam_date)->format('Y-m-d') }}" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-primary" type="submit">Save</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+  
+        {{-- Modal: Assign Examiner --}}
+        <div class="modal fade" id="assignExaminerModal-{{ $exam->id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="{{ route('exam_officer.exams.assign_examiner') }}">
+              @csrf
+              <input type="hidden" name="exam_id" value="{{ $exam->id }}">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Assign Examiner - Exam #{{ $exam->id }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label">Select Examiner</label>
+                    <select name="examiner_id" class="form-select" required>
+                      <option value="">Choose...</option>
+                      @foreach($examiners as $ex)
+                        <option value="{{ $ex->id }}" @selected($exam->examiner_id==$ex->id)>
+                          {{ $ex->name }}
+                        </option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-primary" type="submit">Save</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      @endforeach
+  
       @else
         <div class="d-flex justify-content-center">
           <img src="{{ asset('images/empty-results.jpg') }}" width="400" alt="">
@@ -168,6 +252,7 @@
       @endif
     </div>
   </div>
+  
 </div>
 
 {{-- PER-EXAM PREPARE MODALS --}}

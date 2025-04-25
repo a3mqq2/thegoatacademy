@@ -14,7 +14,7 @@ class CreateExamsTable extends Migration
             $table->enum('exam_type', ['pre', 'mid', 'final']);
             $table->date('exam_date');
             $table->unsignedBigInteger('examiner_id')->nullable();
-            $table->enum('status', ['new', 'pending', 'completed','overdue'])->default('new');
+            $table->enum('status', ['new', 'assigned', 'completed','overdue'])->default('new');
             $table->time('time')->nullable();
             $table->timestamps();
             $table->foreign('course_id')

@@ -121,8 +121,8 @@
                          <td>
                              @if($exam->status == 'new')
                                  <span class="badge bg-info text-dark">New</span>
-                             @elseif($exam->status == 'pending')
-                                 <span class="badge bg-warning text-dark">Pending</span>
+                             @elseif($exam->status == 'assigned')
+                                 <span class="badge bg-warning text-dark">Assigned</span>
                              @elseif($exam->status == 'completed')
                                  <span class="badge bg-success">Completed</span>
                              @elseif($exam->status == "overdue")
@@ -144,7 +144,7 @@
                             @endphp
                     
                             <!-- Logic:
-                                 1) If exam is 'new'/'pending' but exam_date is NOT today => show "Prepare / Edit" 
+                                 1) If exam is 'new'/'assigned' but exam_date is NOT today => show "Prepare / Edit" 
                                  2) If exam_date is today AND the user is the assigned examiner => show "رصد الدرجات" 
                                  3) If exam_date is today but user is not examiner => do nothing
                             -->

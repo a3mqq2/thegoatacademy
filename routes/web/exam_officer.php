@@ -20,3 +20,7 @@ Route::post('/exams/{exam}/grades', [ExamsController::class, 'storeGrades'])
 Route::get('/logs', [DashboardController::class, 'logs'])->name('logs');
     Route::post('/update-exam-dates/{course}', [DashboardController::class, 'updateExamDates'])
         ->name('updateExamDates');
+
+        // web.php
+Route::post('/exams/update-date', [ExamsController::class, 'updateDate'])->name('exams.update_date');
+Route::post('/exams/assign-examiner', [ExamsController::class, 'assignExaminer'])->name('exams.assign_examiner');

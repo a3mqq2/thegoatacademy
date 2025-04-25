@@ -30,7 +30,7 @@ class ExamsController extends Controller
         $groupTypes   = GroupType::all();
         $examiners    = User::role('Examiner')->get();
         $instructors  = User::role('Instructor')->get();
-        $examStatuses = ['new', 'pending', 'completed'];
+        $examStatuses = ['new', 'assigned', 'completed'];
 
         // 1) Filter by Course Type
         if ($request->filled('course_type_id')) {
@@ -104,39 +104,60 @@ class ExamsController extends Controller
     }
     public function prepareExam(Request $request)
     {
-        // 1) Validate request fields
         $data = $request->validate([
             'exam_id'        => 'required|exists:exams,id',
             'examiner_id'    => 'required|exists:users,id',
             'time'           => 'required',
             'exam_date'      => 'required|date',
-            'current_status' => 'required|in:new,pending,completed',
+            'current_status' => 'required|in:new,assigned,completed',
         ]);
     
-        // 2) Load the exam
         $exam = Exam::findOrFail($data['exam_id']);
+        $course = $exam->course;
+        $newDate = Carbon::parse($data['exam_date'])->startOfDay();
     
-        // 3) Preserve originals for audit
+        if ($exam->exam_type === 'pre') {
+            $start = Carbon::parse($course->start_date)->startOfDay();
+            if ($newDate->gt($start)) {
+                return back()->withErrors(['exam_date' => 'Pre-test date cannot be after course start date.']);
+            }
+        }
+    
+        if ($exam->exam_type === 'mid') {
+            $halfIndex = intdiv($course->courseType->duration, 2) - 1;
+            $sortedSchedules = $course->schedules()->orderBy('date')->get();
+            if (isset($sortedSchedules[$halfIndex])) {
+                $expectedMid = Carbon::parse($sortedSchedules[$halfIndex]->date)->addDay();
+                if ($newDate->lt($expectedMid)) {
+                    return back()->withErrors(['exam_date' => 'Mid exam date cannot be earlier than suggested midpoint.']);
+                }
+            }
+        }
+    
+        if ($exam->exam_type === 'final') {
+            $lastClassDate = $course->schedules()->orderByDesc('date')->first();
+            if ($lastClassDate && $newDate->lte(Carbon::parse($lastClassDate->date))) {
+                return back()->withErrors(['exam_date' => 'Final exam must be after the last class date.']);
+            }
+        }
+    
         $origExaminer = $exam->examiner_id;
         $origTime     = $exam->time;
         $origDate     = $exam->exam_date;
         $origStatus   = $exam->status;
     
-        // 4) Apply incoming updates
         $exam->examiner_id = $data['examiner_id'];
         $exam->time        = $data['time'];
-        $exam->exam_date   = Carbon::parse($data['exam_date']);
+        $exam->exam_date   = $newDate;
     
-        // 5) Recompute status
         if ($exam->exam_date->lt(Carbon::today()->subDays(2))) {
             $exam->status = 'overdue';
         } else {
-            $exam->status = 'pending';
+            $exam->status = 'assigned';
         }
     
         $exam->save();
     
-        // 6) Collect audit changes
         $changes = [];
     
         if ($origExaminer != $exam->examiner_id) {
@@ -175,9 +196,7 @@ class ExamsController extends Controller
             ]);
         }
     
-        // 7) If this exam belongs to a course, sync course dates & regenerate its schedule
-        if ($course = $exam->course) {
-            // update the matching course date field
+        if ($course) {
             switch ($exam->exam_type) {
                 case 'pre':
                     $course->pre_test_date = $exam->exam_date->toDateString();
@@ -189,12 +208,10 @@ class ExamsController extends Controller
                     $course->final_exam_date = $exam->exam_date->toDateString();
                     break;
             }
-            $course->save();
     
-            // regenerate the course schedule (skip Fridays, week starts Saturday)
+            $course->save();
             $course->generateSchedule();
     
-            // 8) Propagate those three dates to all OTHER exams of that course
             $course->exams()
                 ->where('id', '!=', $exam->id)
                 ->get()
@@ -369,4 +386,127 @@ class ExamsController extends Controller
         );
     }
     
+
+    public function updateDate(Request $request)
+    {
+        $data = $request->validate([
+            'exam_id'    => 'required|exists:exams,id',
+            'exam_date'  => 'required|date',
+        ]);
+    
+        $exam = Exam::findOrFail($data['exam_id']);
+        $course = $exam->course;
+        $newDate = Carbon::parse($data['exam_date'])->startOfDay();
+        $origDate = $exam->exam_date;
+        $origStatus = $exam->status;
+    
+        // قواعد التواريخ بناءً على نوع الامتحان
+        if ($exam->exam_type === 'pre') {
+            $start = Carbon::parse($course->start_date)->startOfDay();
+            if ($newDate->gt($start)) {
+                return back()->withErrors(['exam_date' => 'Pre-test date cannot be after course start date.']);
+            }
+        }
+    
+        if ($exam->exam_type === 'mid') {
+            // نقوم بحساب الموعد المقترح (منتصف مدة الدورة)
+            $halfIndex = intdiv($course->courseType->duration, 2) - 1;
+            $sortedSchedules = $course->schedules()->orderBy('date')->get();
+            if (isset($sortedSchedules[$halfIndex])) {
+                $expectedMid = Carbon::parse($sortedSchedules[$halfIndex]->date)->addDay();
+                if ($newDate->lt($expectedMid)) {
+                    return back()->withErrors(['exam_date' => 'Mid exam date cannot be earlier than suggested midpoint.']);
+                }
+            }
+        }
+    
+        if ($exam->exam_type === 'final') {
+            // final لا يمكن تقديمه قبل آخر محاضرة
+            $lastClassDate = $course->schedules()->orderByDesc('date')->first();
+            if ($lastClassDate && $newDate->lte(Carbon::parse($lastClassDate->date))) {
+                return back()->withErrors(['exam_date' => 'Final exam must be after the last class date.']);
+            }
+        }
+    
+        // تحديث التاريخ والحالة
+        $exam->exam_date = $newDate;
+        $exam->status = $newDate->lt(Carbon::today()->subDays(2)) ? 'overdue' : 'assigned';
+        $exam->save();
+    
+        // Audit Log
+        $changes = [];
+        if ($origDate != $exam->exam_date) {
+            $changes[] = "Exam Date changed from [" . $origDate?->format('Y-m-d') . "] to [" . $exam->exam_date->format('Y-m-d') . "]";
+        }
+        if ($origStatus != $exam->status) {
+            $changes[] = "Status changed from [$origStatus] to [$exam->status]";
+        }
+        if ($changes) {
+            AuditLog::create([
+                'user_id'     => auth()->id(),
+                'description' => "Updated exam #{$exam->id}: " . implode(' | ', $changes),
+                'type'        => 'exams',
+                'entity_id'   => $exam->id,
+                'entity_type' => Exam::class,
+            ]);
+        }
+    
+        // تحديث تاريخ الامتحان في الكورس
+        if ($course) {
+            switch ($exam->exam_type) {
+                case 'pre':
+                    $course->pre_test_date = $exam->exam_date->toDateString();
+                    break;
+                case 'mid':
+                    $course->mid_exam_date = $exam->exam_date->toDateString();
+                    break;
+                case 'final':
+                    $course->final_exam_date = $exam->exam_date->toDateString();
+                    break;
+            }
+    
+            $course->save();
+            $course->generateSchedule();
+    
+            // تحديث تواريخ باقي الامتحانات لنفس الكورس
+            $course->exams()
+                ->where('id', '!=', $exam->id)
+                ->get()
+                ->each(function(Exam $other) use ($course) {
+                    switch ($other->exam_type) {
+                        case 'pre':
+                            $other->exam_date = $course->pre_test_date;
+                            break;
+                        case 'mid':
+                            $other->exam_date = $course->mid_exam_date;
+                            break;
+                        case 'final':
+                            $other->exam_date = $course->final_exam_date;
+                            break;
+                    }
+                    $other->save();
+                });
+        }
+    
+        return back()->with('success', 'Exam date updated and schedule regenerated.');
+    }
+    
+    
+
+    public function assignExaminer(Request $request)
+    {
+        $data = $request->validate([
+            'exam_id'     => 'required|exists:exams,id',
+            'examiner_id' => 'required|exists:users,id',
+        ]);
+    
+        $exam = Exam::findOrFail($data['exam_id']);
+        $exam->examiner_id = $data['examiner_id'];
+        $exam->status = $exam->status === 'new' ? 'assigned' : $exam->status;
+        $exam->save();
+    
+        return back()->with('success', 'Examiner assigned successfully');
+    }
+
+
 }

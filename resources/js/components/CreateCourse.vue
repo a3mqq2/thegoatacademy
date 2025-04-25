@@ -545,12 +545,76 @@ export default defineComponent({
     }
 
     watch(midExamDate, newVal => {
-      if (!newVal || !defaultMidExamDate.value) return
-      if (new Date(newVal) < new Date(defaultMidExamDate.value)) {
-        midExamDate.value = defaultMidExamDate.value
-        $toastr.error('Mid-exam date cannot be earlier than the suggested date')
+      if (!newVal || !selectedCourseType.value) return
+
+      const total = Number(selectedCourseType.value.duration || 0)
+      if (!total || !fromTime.value || !toTime.value || !storedSelectedDays.value.length) return
+
+      // امسح الجدول الحالي وأعد بناءه
+      const beforeMidCount = Math.floor(total / 2)
+      const afterMidCount = total - beforeMidCount
+
+      const occupied = new Set()
+      const newSchedule = []
+
+      // نبدأ من بداية الكورس
+      let cur = new Date(startDate.value)
+      cur.setDate(cur.getDate() + 1)
+      skipIfFriday(cur)
+
+      let count = 0
+      while (count < beforeMidCount) {
+        if (storedSelectedDays.value.includes(cur.getDay())) {
+          const d = formatDateLocal(cur)
+          if (d !== newVal) {
+            newSchedule.push({
+              day: days.value.find(x => x.value === cur.getDay()).label,
+              date: d,
+              fromTime: fromTime.value,
+              toTime: toTime.value
+            })
+            occupied.add(d)
+            count++
+          }
+        }
+        cur.setDate(cur.getDate() + 1)
       }
+
+      // نحفظ تاريخ الامتحان
+      defaultMidExamDate.value = newVal
+      occupied.add(newVal)
+
+      // نكمل المحاضرات بعد الامتحان مباشرة
+      cur = new Date(newVal)
+      cur.setDate(cur.getDate() + 1)
+      skipIfFriday(cur)
+
+      count = 0
+      while (count < afterMidCount) {
+        if (storedSelectedDays.value.includes(cur.getDay())) {
+          const d = formatDateLocal(cur)
+          newSchedule.push({
+            day: days.value.find(x => x.value === cur.getDay()).label,
+            date: d,
+            fromTime: fromTime.value,
+            toTime: toTime.value
+          })
+          occupied.add(d)
+          count++
+        }
+        cur.setDate(cur.getDate() + 1)
+      }
+
+      // احفظ الجدول الجديد
+      scheduleList.value = newSchedule
+
+      // اضبط تاريخ الاختبار النهائي بعد آخر محاضرة
+      const lastLecture = scheduleList.value.length ? new Date(scheduleList.value[scheduleList.value.length - 1].date) : cur
+      lastLecture.setDate(lastLecture.getDate() + 1)
+      skipIfFriday(lastLecture)
+      finalExamDate.value = formatDateLocal(lastLecture)
     })
+
 
     // enforce final exam after last lecture
     watch(finalExamDate, newVal => {

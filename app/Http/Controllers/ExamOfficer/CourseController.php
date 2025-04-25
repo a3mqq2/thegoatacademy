@@ -19,10 +19,10 @@ class CourseController extends Controller
         $coursesQuery = Course::query();
     
         // 1. Exam Status Filter (unchanged)…
-        if ($request->filled('status') && in_array($request->status, ['new','pending','completed','overdue'])) {
+        if ($request->filled('status') && in_array($request->status, ['new','assigned','completed','overdue'])) {
             $coursesQuery->whereHas('exams', fn($q) => $q->where('status', $request->status));
         } else {
-            $coursesQuery->whereHas('exams', fn($q) => $q->whereIn('status', ['new','pending']));
+            $coursesQuery->whereHas('exams', fn($q) => $q->whereIn('status', ['new','assigned']));
         }
     
         // 2. Schedule Filter (unchanged)…

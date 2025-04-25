@@ -104,7 +104,7 @@ function floatchart() {
       },
       series: [27, 23, 20, 17],
       colors: ['#e58a00', '#2ca87f', '#dc2626', '#151f42'],
-      labels: ['Pending', 'Paid', 'Overdue', 'Draft'],
+      labels: ['Assigned', 'Paid', 'Overdue', 'Draft'],
       fill: {
         opacity: [1, 1, 1, 0.3]
       },

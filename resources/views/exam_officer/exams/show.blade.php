@@ -51,8 +51,8 @@
                                 <td>
                                     @if($exam->status === 'new')
                                         <span class="badge bg-info text-dark">New</span>
-                                    @elseif($exam->status === 'pending')
-                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    @elseif($exam->status === 'assigned')
+                                        <span class="badge bg-warning text-dark">Assigned</span>
                                     @elseif($exam->status === 'completed')
                                         <span class="badge bg-success">Completed</span>
                                     @elseif($exam->status === 'overdue')

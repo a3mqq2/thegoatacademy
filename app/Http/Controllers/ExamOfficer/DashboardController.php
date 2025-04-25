@@ -23,7 +23,7 @@ class DashboardController extends Controller
         if ($isExamManager) {
             $totalExams      = Exam::count();
             $newExams        = Exam::where('status', 'new')->count();
-            $pendingExams    = Exam::where('status', 'pending')->count();
+            $pendingExams    = Exam::where('status', 'assigned')->count();
             $completedExams  = Exam::where('status', 'completed')->count();
             $overdueExams    = Exam::where('status', 'overdue')
             ->count();
@@ -38,7 +38,7 @@ class DashboardController extends Controller
             // Show only if user is assigned as examiner
             $totalExams      = Exam::where('examiner_id', $user->id)->count();
             $newExams        = Exam::where('examiner_id', $user->id)->where('status', 'new')->count();
-            $pendingExams    = Exam::where('examiner_id', $user->id)->where('status', 'pending')->count();
+            $pendingExams    = Exam::where('examiner_id', $user->id)->where('status', 'assigned')->count();
             $completedExams  = Exam::where('examiner_id', $user->id)->where('status', 'completed')->count();
             $overdueExams    = Exam::where('examiner_id', $user->id)
             ->where('status','overdue')
