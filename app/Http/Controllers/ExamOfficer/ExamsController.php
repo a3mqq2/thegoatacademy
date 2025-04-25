@@ -323,7 +323,7 @@ class ExamsController extends Controller
         // 1. البيانات والخلفية
         $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
         $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
-        $html   = view('exam_officer.exams.card', ['exam'=>$exam,'bgData'=>$bgB64])->render();
+        $html   = view('exam_officer.exams.print', ['exam'=>$exam,'bgData'=>$bgB64])->render();
     
         // 2. HTML → PDF 90mm²
         $sidePt = 255.1;
