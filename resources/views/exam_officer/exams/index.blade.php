@@ -174,7 +174,7 @@
                     Prepare
                   </button>
                   @endif
-                  @if(auth()->user()->permissions->contains('name','Exam Manager'))
+                  @if(auth()->user()->permissions->contains('name','Exam Manager') && $exam->status != 'completed')
                   <button
                     class="btn btn-sm btn-success"
                     data-bs-toggle="modal"
