@@ -318,44 +318,47 @@ class ExamsController extends Controller
     }
 
 
-
-    public function print($id)
+    public function print(int $id)
     {
-        /* البيانات وعرض Blade */
-        $exam = Exam::with(['course.courseType.skills'])->findOrFail($id);
-        $html = view('exam_officer.exams.print', compact('exam'))->render();
-
-        /* 1) HTML ⇢ PDF في الذاكرة */
+        /* 1. HTML → PDF (Dompdf) */
+        $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
+        $html   = view('exam_officer.exams.print', compact('exam'))->render();
+    
         $pdfBin = Pdf::loadHTML($html)
-                    ->setPaper('90mm', 'portrait')   // أو setPaper('A4') لا فرق
-                    ->setOptions([
-                        'isRemoteEnabled'      => true,
-                        'isHtml5ParserEnabled' => true,
-                        'dpi'                  => 96,
-                    ])
-                    ->output();
-
-        /* 2) احفظ PDF مؤقتًا */
-        $tmpPdf = storage_path('app/tmp_exam.pdf');
+                     ->setPaper('90mm', 'portrait')
+                     ->setOptions([
+                         'isRemoteEnabled'      => true,
+                         'isHtml5ParserEnabled' => true,
+                         'dpi'                  => 96,
+                     ])
+                     ->output();
+    
+        /* 2. PDF مؤقت */
+        $tmpPdf = storage_path('app/tmp_exam_' . $id . '.pdf');
         file_put_contents($tmpPdf, $pdfBin);
-
-        /* 3) Imagick: أول صفحة ⇢ JPG 340×340 px */
-        $img = new \Imagick($tmpPdf.'[0]');      // [0] = الصفحة الأولى
+    
+        /* 3. Imagick: الصفحة الأولى → JPG */
+        $img = new \Imagick();
+        $img->setResolution(300, 300);              // دقة عالية قبل القراءة
+        $img->readImage($tmpPdf . '[0]');           // الصفحة 0
+        $img->setImageBackgroundColor('white');     // خلفية بيضاء
+        $img  = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+    
+        /* 4. ضبط الصيغة والحجم */
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-
-        // تحجيم دقيق إلى 340 بكسل (≈ 90 mm على 96 DPI)
-        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true);
-
-        /* 4) حفظ داخل storage/public */
-        $name = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'.jpg';
-        Storage::disk('public')->put($name, $img);
-
-        unlink($tmpPdf);          // تنظيف الملف المؤقت
-
+        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true); // ≈ 90 mm
+    
+        /* 5. حفظ في storage/public */
+        $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
+        Storage::disk('public')->put($file, $img);
+    
+        unlink($tmpPdf);                            // تنظيف
+    
         return response()->json([
             'success'   => true,
-            'image_url' => asset('storage/'.$name),
+            'image_url' => asset('storage/' . $file),
         ]);
     }
+    
 }
