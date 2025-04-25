@@ -22,7 +22,7 @@ class WaapiService
     {
         $resp = Http::withToken($this->token)
                     ->acceptJson()
-                    ->asForm()   // ✅ المهم جداً
+                    // ->asForm()   // ✅ المهم جداً
                     ->post($this->base . $path, $data);
 
         Log::info('WaAPI', ['path' => $path, 'status' => $resp->status(), 'body' => $resp->json()]);
