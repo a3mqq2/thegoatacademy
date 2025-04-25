@@ -20,18 +20,13 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today   = Carbon::today();
+        $today   = Carbon::today()->addDays(2);
         $courses = Course::with(['exams','courseType'])
             ->where(fn($q)=>$q
                 ->whereDate('pre_test_date',$today)
                 ->orWhereDate('mid_exam_date',$today)
                 ->orWhereDate('final_exam_date',$today)
             )->get();
-
-        if ($courses->isEmpty()) {
-            $this->warn('No exams today – nothing sent.');
-            return self::SUCCESS;
-        }
 
         /* ---- render Blade ---- */
         $html = View::make('exam_officer.courses.print', [
