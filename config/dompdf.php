@@ -18,6 +18,23 @@ return [
     /*
      * Dejavu Sans font is missing glyphs for converted entities, turn it off if you need to show € and £.
      */
+
+
+     'fontDir'   => storage_path('fonts/'),
+     'fontCache' => storage_path('fonts/'),
+     
+     'font_data' => [
+         'cairo' => [
+             'R' => 'Cairo-Regular.ttf',
+             'B' => 'Cairo-Bold.ttf',
+             'useOTL' => 0xFF,   // دعم OpenType Layout
+             'useKashida' => 75,
+         ],
+     ],
+     'default_font' => 'cairo',
+     'isFontSubsettingEnabled' => true,
+
+     
     'convert_entities' => true,
 
     'options' => [

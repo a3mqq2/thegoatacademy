@@ -338,7 +338,7 @@ class ExamsController extends Controller
                          'isRemoteEnabled'         => true,
                          'isHtml5ParserEnabled'    => true,
                          'isFontSubsettingEnabled' => true,
-                         'defaultFont'             => 'Cairo',
+                         'defaultFont'              => 'cairo',   // ↙️
                          'dpi'                     => 96,
                      ])->output();
     
