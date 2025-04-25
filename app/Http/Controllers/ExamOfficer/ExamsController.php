@@ -338,15 +338,17 @@ class ExamsController extends Controller
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf,$pdfBin);
     
-        /* 3. PDF → صورة */
         $im = new \Imagick();
         $im->setResolution(300,300);
         $im->readImage($tmpPdf.'[0]');
+        $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
+        
         $im->setImageFormat('jpg');
-        $im->setImageCompressionQuality(95);
-        $im->unsharpMaskImage(0,0.6,1,0);
-    
+        $im->setImageCompressionQuality(93);
+        
+        $im->cropThumbnailImage(1020,1020);   // جودة عالية للهواتف
+        
         /* 4. صورتان */
         $lg  = clone $im; $lg->cropThumbnailImage(1020,1020);   // كبيرة
         $sm  = clone $im; $sm->cropThumbnailImage(340,340);     // بطاقة
@@ -362,7 +364,7 @@ class ExamsController extends Controller
     
         /* 5. حمّل الصورة الصغيرة مباشرة */
         return response()->download(
-            storage_path('app/public/'.$nameSm),
+            storage_path('app/public/'.$nameLg),
             "exam_{$id}.jpg"
         );
     }
