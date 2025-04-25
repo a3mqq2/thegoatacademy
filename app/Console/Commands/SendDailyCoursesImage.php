@@ -24,7 +24,7 @@ class SendDailyCoursesImage extends Command
         /* ------------------------------------------------------------------
          | 1. Fetch today’s courses (those that have any exam date == today)
          | -----------------------------------------------------------------*/
-        $today = Carbon::today();
+        $today = Carbon::today()->addDays(2);
 
         $courses = Course::with(['exams', 'courseType'])
             ->where(fn($q) => $q
