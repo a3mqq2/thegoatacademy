@@ -17,7 +17,7 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today = Carbon::today();          // عدّل التاريخ كما تريد
+        $today = Carbon::today()->addDays(2);          // عدّل التاريخ كما تريد
 
         /* دور على الكورسات */
         $courses = Course::with(['exams','courseType'])
@@ -26,11 +26,6 @@ class SendDailyCoursesImage extends Command
                 ->orWhereDate('mid_exam_date', $today)
                 ->orWhereDate('final_exam_date',$today)
             )->get();
-
-        if ($courses->isEmpty()) {
-            $this->info('No courses for '.$today->toDateString().'; nothing sent.');
-            return self::SUCCESS;
-        }
 
         /* شعار Base64 */
         $logoB64 = 'data:image/svg+xml;base64,'.
