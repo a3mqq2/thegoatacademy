@@ -27,7 +27,7 @@ body{
     left:14px;
     width:306px;
     text-align:center;
-    font:700 11px cairo;
+    font:700 15px cairo;
 }
 
 .table {                       /* نُنزِّل الجدول تحت العنوان */
