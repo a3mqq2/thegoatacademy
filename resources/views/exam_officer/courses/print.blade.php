@@ -10,16 +10,39 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap');
 
-        @page { size:A4; margin:0 }
-        @media print{ *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important} }
+        /* ـــــ  ضبط الصفحة على مقاس A4 بالميليمتر  ـــــ */
+        @page  { size:210mm 297mm; margin:0 }
 
-        body{font-family:'Poppins','Cairo',sans-serif;font-size:14px;margin:0;color:#333}
-        .container{position:relative;min-height:100vh;width:100%;padding:11mm 10mm;box-sizing:border-box}
+        html,body{
+            width:210mm;        /*  عرض A4  */
+            height:297mm;       /*  طول A4  */
+            margin:0;padding:0;
+            background:#fff;    /* خلفية كاملة بيضاء */
+            font-family:'Poppins','Cairo',sans-serif;
+            font-size:14px; color:#333;
+        }
 
+        @media print{
+            *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+            body{font-size:12pt}
+        }
+
+        /* الحاوية تمتد بطول الصفحة باستخدام Flex */
+        .container{
+            display:flex;flex-direction:column;
+            min-height:100%;         /* ملء الارتفاع */
+            width:100%;
+            padding:11mm 10mm;
+            box-sizing:border-box;
+            position:relative;
+        }
+
+        /* موجة الزخرفة */
         .header-wave,.footer-wave{position:absolute;width:100%;z-index:-1}
         .header-wave{top:0;height:280px}
         .footer-wave{bottom:0;height:250px;transform:rotate(180deg)}
 
+        /* رأس الصفحة */
         .header{text-align:center}
         .header-content{display:flex;align-items:center;margin-bottom:20px}
         .header-left img{width:200px;margin-right:20px}
@@ -29,15 +52,14 @@
 
         .section-title{font-size:18pt;margin:30px 0 10px;border-bottom:2px solid #666;padding-bottom:5px}
 
+        /* الجدول */
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{border:1px solid #444;padding:8px 10px;text-align:center}
         th{background:#f2f2f2}
         .table-danger{background:#fbb4b4 !important}
 
-        @media print{
-            body{font-size:12pt}
-            .container{padding:10mm}
-        }
+        /* ذيل الصفحة يدفع لأسفل بفضل flex-grow */
+        .footer{margin-top:auto;text-align:left;font-size:12px}
     </style>
 </head>
 <body>
