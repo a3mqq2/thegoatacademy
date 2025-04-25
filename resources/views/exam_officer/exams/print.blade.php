@@ -1,20 +1,19 @@
+{{-- resources/views/exam_officer/exams/card.blade.php --}}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <title>Exam #{{ $exam->id }}</title>
 
+{{-- الخط Cairo من storage/fonts --}}
+@php
+    $fontRegular = 'file://' . storage_path('fonts/Cairo-Regular.ttf');
+    $fontBold    = 'file://' . storage_path('fonts/Cairo-Bold.ttf');
+@endphp
+
 <style>
-@font-face{
-  font-family:'cairo';
-  src:url("file://{{ storage_path('fonts/Cairo-Regular.ttf') }}") format('truetype');
-  font-weight:400;
-}
-@font-face{
-  font-family:'cairo';
-  src:url("file://{{ storage_path('fonts/Cairo-Bold.ttf') }}") format('truetype');
-  font-weight:700;
-}
+@font-face{ font-family:'cairo'; src:url('{{ $fontRegular }}') format('truetype'); font-weight:400; }
+@font-face{ font-family:'cairo'; src:url('{{ $fontBold    }}') format('truetype'); font-weight:700; }
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:340px;height:340px;font-family:'cairo',sans-serif;color:#fff}
@@ -23,15 +22,16 @@ body{
   background:url('data:image/png;base64,{{ $bgData }}') no-repeat center/100% 100%;
 }
 
-/* تخطيط */
+/* تخطيط البطاقة */
 .container{position:relative;width:100%;height:100%}
-.title{position:absolute;top:50px;left:14px;width:306px;text-align:center;font-size:12px;font-weight:700;text-transform:uppercase}
+.title   {position:absolute;top:50px;left:14px;width:306px;text-align:center;
+          font-size:12px;font-weight:700;text-transform:uppercase}
 
 .examiner,.time{position:absolute;font-size:8px}
-.examiner{top:83px;left:28px;width:160px}
-.time{top:81px;right:37px}
-.examiner.date{top:97px;left:28px}
-.time.date{top:95px;right:37px}
+.examiner      {top:83px;left:28px;width:160px}
+.time          {top:81px;right:37px}
+.examiner.date {top:97px;left:28px}
+.time.date     {top:95px;right:37px}
 
 table{position:absolute;top:114px;left:0;width:100%;border-collapse:collapse}
 th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align:center}
@@ -63,27 +63,27 @@ th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align
     <thead>
       <tr>
         <th>NO</th><th>NAME</th>
-        @foreach($skills as $s) <th>{{ mb_substr($s->name,0,1,'UTF-8') }}</th> @endforeach
+        @foreach($skills as $s)<th>{{ mb_substr($s->name,0,1,'UTF-8') }}</th>@endforeach
         <th>PER</th>
       </tr>
     </thead>
     <tbody>
       @foreach($ongoing as $i=>$student)
         @php
-          $es   = $exam->examStudents->firstWhere('student_id',$student->id);
-          $gs   = []; $ms = [];
+          $es = $exam->examStudents->firstWhere('student_id',$student->id);
+          $grades=[];$maxes=[];
           foreach($skills as $sk){
-             $g = optional($es?->grades->firstWhere('course_type_skill_id',$sk->id))->grade ?: 0;
-             $m = $exam->exam_type=='pre'  ? $sk->pivot->pre_max :
-                  ($exam->exam_type=='mid' ? $sk->pivot->mid_max : $sk->pivot->final_max);
-             $gs[]=$g; $ms[]=$m;
+             $g=optional($es?->grades->firstWhere('course_type_skill_id',$sk->id))->grade?:0;
+             $m=$exam->exam_type=='pre'?$sk->pivot->pre_max:
+                ($exam->exam_type=='mid'?$sk->pivot->mid_max:$sk->pivot->final_max);
+             $grades[]=$g;$maxes[]=$m;
           }
-          $per = array_sum($ms) ? round(array_sum($gs)/array_sum($ms)*100,1) : 0;
+          $per=array_sum($maxes)?round(array_sum($grades)/array_sum($maxes)*100,1):0;
         @endphp
         <tr>
           <td>{{ $i+1 }}</td>
           <td>{{ $student->name }}</td>
-          @foreach($gs as $g)<td>{{ $g }}</td>@endforeach
+          @foreach($grades as $g)<td>{{ $g }}</td>@endforeach
           <td style="color:{{ $per>=50?'#0f0':'#f00' }}">{{ $per }}%</td>
         </tr>
       @endforeach

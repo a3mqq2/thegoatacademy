@@ -318,57 +318,75 @@ class ExamsController extends Controller
     }
 
 
-    /*--------------  App\Http\Controllers\ExamController.php --------------*/
     public function print(int $id)
     {
-        /* البيانات + خلفية Base64 */
-        $exam  = Exam::with(['course.courseType.skills'])->findOrFail($id);
-        $bgB64 = base64_encode(file_get_contents(public_path('images/exam.png')));
-    
-        $html  = view('exam_officer.exams.print', [
-            'exam'   => $exam,
-            'bgData' => $bgB64,
-        ])->render();
-    
-        /* HTML → PDF (مربّع = 90 mm ≈ 255 pt) */
-        $sidePt = 255.1;
+        /*-------------------------------------------------
+        | 1) جلب البيانات وتجهيز الـ HTML
+        -------------------------------------------------*/
+        $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
+
+        // خلفيّة البطاقة Base64 لضمان تضمينها في PDF
+        $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
+
+        // تمرير البيانات إلى Blade
+        $html = view('exam_officer.exams.print', [
+                    'exam'   => $exam,
+                    'bgData' => $bgB64,
+                ])->render();
+
+        /*-------------------------------------------------
+        | 2) HTML → PDF مربّع (90mm × 90mm ≃ 255pt)
+        -------------------------------------------------*/
+        $mm90   = 255.1;                       // 1pt ≃ 0.3528 mm
         $pdfBin = Pdf::loadHTML($html)
-                     ->setPaper([0, 0, $sidePt, $sidePt])
-                     ->setOptions([
-                         'dpi'                     => 96,
-                         'isRemoteEnabled'         => true,
-                         'isHtml5ParserEnabled'    => true,
-                         'isFontSubsettingEnabled' => true,
-                         'defaultFont'             => 'cairo',   // 👈
-                     ])->output();
-    
-        /* PDF مؤقّت */
+                    ->setPaper([0, 0, $mm90, $mm90])
+                    ->setOptions([
+                        'dpi'                     => 96,
+                        'isRemoteEnabled'         => true,
+                        'isHtml5ParserEnabled'    => true,
+                        'isFontSubsettingEnabled' => true,
+                        'defaultFont'             => 'cairo',   // مُعرَّف في config/dompdf.php
+                    ])->output();
+
+        /*-------------------------------------------------
+        | 3) حفظ PDF مؤقّتاً
+        -------------------------------------------------*/
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf, $pdfBin);
-    
-        /* Imagick → JPG */
+
+        /*-------------------------------------------------
+        | 4) Imagick: الصفحة الأولى → JPG 340×340px
+        -------------------------------------------------*/
         $img = new \Imagick();
-        $img->setResolution(300, 300);
-        $img->readImage($tmpPdf.'[0]');
+        $img->setResolution(300, 300);             // قراءة بدقّة عالية
+        $img->readImage($tmpPdf . '[0]');          // الصفحة الأولى
         $img->setImageBackgroundColor('white');
         $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-    
+
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-        $img->cropThumbnailImage(340, 340);   // يملأ 340×340
-    
-        /* حفظ */
-        $file = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'.jpg';
+
+        // cropThumbnailImage يقتطع ويغيّر الحجم لملء الإطار تماماً
+        $img->cropThumbnailImage(340, 340);
+
+        /*-------------------------------------------------
+        | 5) تخزين الصورة في disk public
+        -------------------------------------------------*/
+        $file = 'prints/exam_' . $id . '_' . now()->format('Ymd_His') . '.jpg';
         Storage::disk('public')->put($file, $img);
-    
+
+        // تنظيف الملفّ المؤقّت
         unlink($tmpPdf);
-    
+
+        /*-------------------------------------------------
+        | 6) إرجاع الرابط كاستجابة JSON
+        -------------------------------------------------*/
         return response()->json([
             'success'   => true,
-            'image_url' => asset('storage/'.$file),
+            'image_url' => asset('storage/' . $file),
         ]);
     }
-    
+
 
     
 }
