@@ -20,7 +20,7 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today = Carbon::today();              // ← غيّر التاريخ كما تريد
+        $today = Carbon::today()->addDays(2);              // ← غيّر التاريخ كما تريد
 
         /* 1. gather courses */
         $courses = Course::with(['exams','courseType'])
