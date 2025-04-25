@@ -53,24 +53,6 @@
   </div>
 
   <div class="container">
-    {{-- HEADER --}}
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <img src="/images/logo.svg" alt="Logo">
-          <div class="header-text">
-            <h1 class="title">The Goat Academy</h1>
-            <p class="subtitle">Courses List</p>
-          </div>
-        </div>
-      </div>
-      <div class="prepared-info">
-        Prepared by: {{ auth()->user()->name ?? 'N/A' }}<br>
-        Printed on: {{ now()->format('Y-m-d H:i:s') }}
-      </div>
-    </div>
-
-    {{-- TITLE --}}
     <div class="section-title">Courses Schedule</div>
 
     {{-- TABLE --}}
