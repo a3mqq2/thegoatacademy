@@ -18,7 +18,7 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today = Carbon::today();
+        $today = Carbon::today()->addDays(2);
 
 
         
