@@ -37,7 +37,7 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
     <thead>
       <tr>
         <th>#</th><th>ID</th><th>TIME</th><th>DAYS</th>
-        <th>PRE</th><th>MID</th><th>FINAL</th>
+        <th>P</th><th>M</th><th>F</th>
       </tr>
     </thead>
     <tbody>
@@ -54,13 +54,13 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
           <td>{{ $c->days }}</td>
 
           <td class="{{ $isToday($c->pre_test_date)   ? 'today' : '' }}">
-              {{ $c->pre_test_date   ?? '-' }}
+              {{ date('m-d', strtotime($c->pre_test_date))   ?? '-' }}
           </td>
           <td class="{{ $isToday($c->mid_exam_date)   ? 'today' : '' }}">
-              {{ $c->mid_exam_date   ?? '-' }}
+              {{ date('m-d', strtotime($c->mid_exam_date ))  ?? '-' }}
           </td>
           <td class="{{ $isToday($c->final_exam_date) ? 'today' : '' }}">
-              {{ $c->final_exam_date ?? '-' }}
+              {{ date('m-d', strtotime($c->final_exam_date)) ?? '-' }}
           </td>
         </tr>
     @endforeach
