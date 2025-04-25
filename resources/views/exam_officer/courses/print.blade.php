@@ -52,7 +52,7 @@
     </svg>
   </div>
 
-  <div class="container">
+  <div class="container" style="max-width: 400px!important;">
     <div class="section-title">Courses Schedule</div>
 
     {{-- TABLE --}}
