@@ -57,7 +57,7 @@ class SendDailyCoursesImage extends Command
         Storage::disk('public')->put($file,$im);
         unlink($tmp);
     
-        $waapi->sendImage(env('EXAM_MANAGER_CHATID'), asset('storage/'.$file));
+        $waapi->sendImage("218912922162@c.us", asset('storage/'.$file));
         $this->info('Image ready → '.asset('storage/'.$file));
         return self::SUCCESS;
     }
