@@ -1,140 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Courses List - The Goat Academy</title>
-  <!-- Google Fonts for English (Poppins) and Arabic (Cairo) -->
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
-  <style>
-    /* Remove default page margins for A4 printing */
+<meta charset="utf-8">
+<title>Courses {{ $today->format('d-m-Y') }}</title>
 
-    /* 2. Force color printing */
-    @media print {
-      * {
-        -webkit-print-color-adjust: exact !important;
-        -moz-print-colors: exact !important;
-        print-color-adjust: exact !important;
-      }
-    }
-    @page { size: A4; margin: 0; }
-    body { font-family: "Poppins", Arial, sans-serif; font-size:14px; margin:0; padding:0; color:#333; }
-    .container { position:relative; width:100%; min-height:100vh; padding:11mm 10mm; box-sizing:border-box; }
-    .header-wave, .footer-wave { position:absolute; width:100%; z-index:-1; }
-    .header-wave { top:0; height:280px; }
-    .footer-wave { bottom:0; height:250px; transform:rotate(180deg); }
-    .header, .footer { text-align:center; }
-    .header-content { display:flex; align-items:center; margin-bottom:20px; }
-    .header-left img { width:200px; margin-right:20px; }
-    .title { font-size:26pt; margin:0; font-weight:bold; }
-    .subtitle { font-size:16pt; color:#666; margin:5px 0 0; }
-    .prepared-info { font-size:14px; margin-top:10px; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    table th, table td { border:1px solid #444; padding:8px 10px; text-align:center; }
-    table th { background:#f2f2f2; }
-    .table-danger { background-color: #fbb4b4 !important; } /* bootstrapdanger */
-    .section-title { font-size:18pt; margin:30px 0 10px; border-bottom:2px solid #666; padding-bottom:5px; }
-    @media print { body{font-size:12pt;} .container{padding:10mm;} }
-  </style>
+@php
+    $fR = 'file://'.storage_path('fonts/Cairo-Regular.ttf');
+    $fB = 'file://'.storage_path('fonts/Cairo-Bold.ttf');
+@endphp
+
+<style>
+@font-face{font-family:cairo;src:url('{{ $fR }}') format('truetype');font-weight:400}
+@font-face{font-family:cairo;src:url('{{ $fB }}') format('truetype');font-weight:700}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:340px;height:340px;font:10px/1.3 cairo,sans-serif;color:#fff}
+
+body{
+  background:url('data:image/png;base64,{{ $bgData }}') no-repeat center/100% 100%;
+}
+
+.container{position:relative;width:100%;height:100%}
+.title {                       /* العنوان أعلى البطاقة */
+    position:absolute;
+    top:10px;                  /* ← كان 18px */
+    left:14px;
+    width:306px;
+    text-align:center;
+    font:700 15px cairo;
+}
+
+.table {                       /* نُنزِّل الجدول تحت العنوان */
+    position:absolute;
+    top:48px;                  /* ← كان 62px */
+    left:0;
+    width:100%;
+}
+
+th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align:center}
+.today  {background:#900!important}        /* أحمر داكن للتمييز */
+</style>
 </head>
-<body onload="window.print()">
+<body>
+<div class="container">
 
-  {{-- TOP WAVE --}}
-  <div class="header-wave">
-    <svg viewBox="0 0 500 280" preserveAspectRatio="none">
-      <path d="M0,100 C150,280 350,-80 500,100 L500,0 L0,0 Z" fill="#efefef" stroke="none"/>
-    </svg>
-  </div>
+  <h1 class="title">COURSES&nbsp;SCHEDULE&nbsp;·&nbsp;{{ $today->format('d M Y') }}</h1>
 
-  {{-- BOTTOM WAVE --}}
-  <div class="footer-wave">
-    <svg viewBox="0 0 500 250" preserveAspectRatio="none">
-      <path d="M0,80 C150,220 350,-100 500,80 L500,0 L0,0 Z" fill="#efefef" stroke="none"/>
-    </svg>
-  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th><th>ID</th><th>TIME</th><th>DAYS</th>
+        <th>P</th><th>M</th><th>F</th>
+      </tr>
+    </thead>
+    <tbody>
+    @foreach($courses as $i => $c)
+        @php
+            [$s,$e] = explode(' - ',$c->time);
+            $fmt    = fn($t)=>\Carbon\Carbon::createFromFormat('H:i',$t)->format('h:i A');
+            $isToday = fn($d)=>$d && \Carbon\Carbon::parse($d)->isSameDay($today);
+        @endphp
+        <tr>
+          <td>{{ $i+1 }}</td>
+          <td>{{ $c->id }}</td>
+          <td>{{ $fmt($s) }}-{{ $fmt($e) }}</td>
+          <td>{{ $c->days }}</td>
 
-  <div class="container">
-    {{-- HEADER --}}
-    <div class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <img src="{{ asset('images/logo.svg') }}" alt="Logo">
-          <div class="header-text">
-            <h1 class="title">The Goat Academy</h1>
-            <p class="subtitle">Courses List</p>
-          </div>
-        </div>
-      </div>
-      <div class="prepared-info">
-        Prepared by: {{ auth()->user()->name ?? 'N/A' }}<br>
-        Printed on: {{ now()->format('Y-m-d H:i:s') }}
-      </div>
-    </div>
+          <td class="{{ $isToday($c->pre_test_date)   ? 'today' : '' }}">
+              {{ date('m-d', strtotime($c->pre_test_date))   ?? '-' }}
+          </td>
+          <td class="{{ $isToday($c->mid_exam_date)   ? 'today' : '' }}">
+              {{ date('m-d', strtotime($c->mid_exam_date ))  ?? '-' }}
+          </td>
+          <td class="{{ $isToday($c->final_exam_date) ? 'today' : '' }}">
+              {{ date('m-d', strtotime($c->final_exam_date)) ?? '-' }}
+          </td>
+        </tr>
+    @endforeach
+    </tbody>
+  </table>
 
-    {{-- TITLE --}}
-    <div class="section-title">Courses Schedule</div>
-
-    {{-- TABLE --}}
-    <div class="table-responsive">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Time</th>
-            <th>Days</th>
-            <th>Pre Test Date</th>
-            <th>Mid Test Date</th>
-            <th>Final Test Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          @php
-            use Carbon\Carbon;
-            $today     = Carbon::today()->toDateString();
-            $startWeek = Carbon::today()->startOfWeek(Carbon::SATURDAY)->toDateString();
-            $endWeek   = Carbon::today()->endOfWeek(Carbon::FRIDAY)->toDateString();
-            $afterOne  = Carbon::today()->addDay()->toDateString();
-            $afterTwo  = Carbon::today()->addDays(2)->toDateString();
-            $schedule  = request('schedule','');
-          @endphp
-
-          @foreach($courses as $course)
-            @php
-              [$start,$end] = explode(' - ', $course->time);
-              $fs = Carbon::createFromFormat('H:i',$start)->format('h:i A');
-              $fe = Carbon::createFromFormat('H:i',$end  )->format('h:i A');
-
-              // helper to decide if a given date matches the schedule
-              $match = fn($d) => match($schedule) {
-                'daily'      => $d === $today,
-                'weekly'     => $d >= $startWeek && $d <= $endWeek,
-                'afterADay'  => $d === $afterOne,
-                'afterTwoDays' => $d === $afterTwo,
-                default      => false,
-              };
-
-              // compute classes
-              $preCls   = $course->pre_test_date   && $match($course->pre_test_date)   ? 'table-danger' : '';
-              $midCls   = $course->mid_exam_date   && $match($course->mid_exam_date)   ? 'table-danger' : '';
-              $finalCls = $course->final_exam_date && $match($course->final_exam_date) ? 'table-danger' : '';
-            @endphp
-
-            <tr>
-              <td>{{ $course->id }}</td>
-              <td>{{ $fs }} – {{ $fe }}</td>
-              <td>{{ $course->days }}</td>
-              <td class="{{ $preCls   }}">{{ $course->pre_test_date   ?? '-' }}</td>
-              <td class="{{ $midCls   }}">{{ $course->mid_exam_date   ?? '-' }}</td>
-              <td class="{{ $finalCls }}">{{ $course->final_exam_date ?? '-' }}</td>
-            </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
-
-    {{-- FOOTER --}}
-    <div class="footer">
-      © {{ date('Y') }} The Goat Academy. All rights reserved.
-    </div>
-  </div>
+</div>
 </body>
 </html>
