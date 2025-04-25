@@ -67,7 +67,7 @@ class SendDailyCoursesImage extends Command
         $img = $img->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
         $img->setImageFormat('jpg');
         $img->setImageCompressionQuality(90);
-
+        $img->resizeImage(1600, 0, \Imagick::FILTER_LANCZOS, 1);
         $fileName = 'prints/daily_courses_' . now()->format('Ymd_His') . '.jpg';
         Storage::disk('public')->put($fileName, $img);
         $url = asset('storage/' . $fileName);
