@@ -36,12 +36,14 @@
 
  /* ===== جدول أعرض وخط أوضح ===== */
  table{
-   width:auto;
-   max-width:230mm;          /* يقارب 85% من عرض الصفحة */
-   margin:8mm auto 0;
-   border-collapse:collapse;
-   font-size:13px;
- }
+    width:100%;               /* يملأ الصفحة عرضاً كاملاً */
+    max-width:none;
+    margin:6mm 0 0;
+    border-collapse:collapse;
+    font-size:14px;           /* أوضح */
+}
+th,td{padding:10px 8px}
+
  th,td{
    border:1px solid #444;
    padding:8px 8px;
