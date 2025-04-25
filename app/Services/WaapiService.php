@@ -41,7 +41,7 @@ class WaapiService
     {
         return $this->call('send-media', [
             'chatId'  => $chatId,
-            'url'     => $url,
+            'mediaUrl'     => $url,
             'caption' => $caption,
             'type'    => 'image',
         ]);
