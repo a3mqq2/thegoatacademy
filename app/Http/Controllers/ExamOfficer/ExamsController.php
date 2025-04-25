@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\ExamOfficer;
 
+use Imagick;
 use Carbon\Carbon;
 use App\Models\Exam;
 use App\Models\User;
 use App\Models\AuditLog;
-use App\Models\CourseType;
 use App\Models\GroupType;
+use App\Models\CourseType;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class ExamsController extends Controller
 {
@@ -314,10 +318,44 @@ class ExamsController extends Controller
     }
 
 
+
     public function print($id)
     {
-        $exam = Exam::with(['examStudents.grades', 'course.courseType.skills'])->findOrFail($id);
-        return view('exam_officer.exams.print', compact('exam'));
+        /* البيانات وعرض Blade */
+        $exam = Exam::with(['course.courseType.skills'])->findOrFail($id);
+        $html = view('exam_officer.exams.print', compact('exam'))->render();
+
+        /* 1) HTML ⇢ PDF في الذاكرة */
+        $pdfBin = Pdf::loadHTML($html)
+                    ->setPaper('90mm', 'portrait')   // أو setPaper('A4') لا فرق
+                    ->setOptions([
+                        'isRemoteEnabled'      => true,
+                        'isHtml5ParserEnabled' => true,
+                        'dpi'                  => 96,
+                    ])
+                    ->output();
+
+        /* 2) احفظ PDF مؤقتًا */
+        $tmpPdf = storage_path('app/tmp_exam.pdf');
+        file_put_contents($tmpPdf, $pdfBin);
+
+        /* 3) Imagick: أول صفحة ⇢ JPG 340×340 px */
+        $img = new \Imagick($tmpPdf.'[0]');      // [0] = الصفحة الأولى
+        $img->setImageFormat('jpg');
+        $img->setImageCompressionQuality(90);
+
+        // تحجيم دقيق إلى 340 بكسل (≈ 90 mm على 96 DPI)
+        $img->resizeImage(340, 340, \Imagick::FILTER_LANCZOS, 1, true);
+
+        /* 4) حفظ داخل storage/public */
+        $name = 'prints/exam_'.$id.'_'.now()->format('Ymd_His').'.jpg';
+        Storage::disk('public')->put($name, $img);
+
+        unlink($tmpPdf);          // تنظيف الملف المؤقت
+
+        return response()->json([
+            'success'   => true,
+            'image_url' => asset('storage/'.$name),
+        ]);
     }
-    
 }

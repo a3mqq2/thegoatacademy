@@ -16,7 +16,7 @@ class Exam extends Model
         'exam_type',
         'exam_date',
         'status',
-        // other fields...
+        'time'
     ];
 
 
