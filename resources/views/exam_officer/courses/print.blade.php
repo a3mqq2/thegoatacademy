@@ -18,7 +18,7 @@
     }
     @page { size: A4; margin: 0; }
     body { font-family: "Poppins", Arial, sans-serif; font-size:14px; margin:0; padding:0; color:#333; }
-    .container { position:relative; width:100%; min-height:100vh; padding:11mm 20mm; box-sizing:border-box; }
+    .container { position:relative; width:100%; min-height:100vh; padding:20mm 10mm; box-sizing:border-box; }
     .header-wave, .footer-wave { position:absolute; width:100%; z-index:-1; }
     .header-wave { top:0; height:280px; }
     .footer-wave { bottom:0; height:250px; transform:rotate(180deg); }
