@@ -57,8 +57,8 @@ class SendDailyCoursesImage extends Command
         Storage::disk('public')->put($file,$im);
         unlink($tmp);
     
-        $waapi->sendImage("218912922162@c.us",  "https://tgatest.rc-store.ly'storage/'.$file");
-        $this->info('Image ready → '. "https://tgatest.rc-store.ly/storage/'.$file");
+        $waapi->sendImage("218912922162@c.us", asset('storage/'.$file));
+        $this->info('Image ready → '.asset('storage/'.$file));
         return self::SUCCESS;
     }
     
