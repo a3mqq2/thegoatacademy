@@ -13,25 +13,28 @@ class WaapiService
 
     public function __construct()
     {
-        $this->instanceId = env('WAAPI_INSTANCE_ID');
-        $this->token      = env('WAAPI_TOKEN');
-        $this->base       = "https://waapi.app/api/v1/instances/{$this->instanceId}/client/action/";
+        $id          = "62050";
+        $this->token = "JF1wtM5asTKUd5hV4PBLxPkbcdmOyVowWjCj5uNn6706ce55";
+        $this->base  = "https://waapi.app/api/v1/instances/{$id}/client/action/";
     }
 
     private function call(string $path, array $data = []): array
     {
         $resp = Http::withToken($this->token)
-                    ->acceptJson()->asJson()
-                    ->post($this->base.$path, $data);
+                    ->acceptJson()
+                    ->asForm()   // ✅ المهم جداً
+                    ->post($this->base . $path, $data);
 
-        Log::info('WaAPI', ['path'=>$path,'status'=>$resp->status(),'body'=>$resp->json()]);
+        Log::info('WaAPI', ['path' => $path, 'status' => $resp->status(), 'body' => $resp->json()]);
         return $resp->json();
     }
 
-    /* =========== عمليات متكرّرة =========== */
     public function sendText(string $chatId, string $text)
     {
-        return $this->call('send-message', compact('chatId','text'));
+        return $this->call('send-message', [
+            'chatId'  => $chatId,
+            'message' => $text,
+        ]);
     }
 
     public function sendImage(string $chatId, string $url, string $caption = '')
