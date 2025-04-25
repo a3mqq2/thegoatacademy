@@ -10,6 +10,7 @@ Route::get('/courses', [CourseController::class, 'index'])->name('courses.index'
 Route::get('/courses/{course}/show', [CourseController::class, 'show'])->name('courses.show');
 Route::get('/exams', [ExamsController::class, 'index'])->name('exams.index');
 Route::get('/exams/{exam}', [ExamsController::class, 'show'])->name('exams.show');
+Route::post('/exams/complete', [ExamsController::class, 'markAsComplete'])->name('exams.complete');
 Route::get('/exams/{exam}/print', [ExamsController::class, 'print'])->name('exams.print');
 Route::post('/exams/prepare', [ExamsController::class, 'prepareExam'])
      ->name('exams.prepare');

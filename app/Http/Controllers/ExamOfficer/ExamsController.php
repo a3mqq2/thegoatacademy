@@ -508,5 +508,23 @@ class ExamsController extends Controller
         return back()->with('success', 'Examiner assigned successfully');
     }
 
+    public function markAsComplete()
+    {
+        $exam = Exam::findOrFail(request('exam_id'));
+        $exam->status = 'completed';
+        $exam->save();
+
+
+        // if type is final update course status to completed
+
+        if ($exam->exam_type == 'final') {
+            $course = $exam->course;
+            $course->status = 'completed';
+            $course->save();
+        }
+
+        return back()->with('success', 'Exam marked as complete');
+    }
+
 
 }

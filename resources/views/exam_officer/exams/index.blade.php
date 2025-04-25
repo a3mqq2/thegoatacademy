@@ -174,6 +174,15 @@
                     Prepare
                   </button>
                   @endif
+                  @if(auth()->user()->permissions->contains('name','Exam Manager'))
+                  <button
+                    class="btn btn-sm btn-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#completeExamModal-{{ $exam->id }}">
+                    Mark as Complete
+                  </button>
+                @endif
+                
                 </td>
               </tr>
             @endforeach
@@ -210,6 +219,30 @@
           </div>
         </div>
   
+
+        {{-- Modal: Mark as Complete --}}
+        <div class="modal fade" id="completeExamModal-{{ $exam->id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <form method="POST" action="{{ route('exam_officer.exams.complete') }}">
+              @csrf
+              <input type="hidden" name="exam_id" value="{{ $exam->id }}">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title text-success">Mark Exam #{{ $exam->id }} as Complete</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p>Are you sure you want to mark this exam as <strong>completed</strong>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-success" type="submit">Yes, Mark as Complete</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
         {{-- Modal: Assign Examiner --}}
         <div class="modal fade" id="assignExaminerModal-{{ $exam->id }}" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog">
