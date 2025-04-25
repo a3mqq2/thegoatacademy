@@ -115,12 +115,11 @@
                 </tr>
               </thead>
               <tbody>
-              @php use Carbon\Carbon; @endphp
               @foreach($courses as $course)
                   @php
                       [$start,$end] = explode(' - ', $course->time);
-                      $fs = Carbon::createFromFormat('H:i',$start)->format('h:i A');
-                      $fe = Carbon::createFromFormat('H:i',$end)->format('h:i A');
+                      $fs = Carbon\Carbon::createFromFormat('H:i',$start)->format('h:i A');
+                      $fe = Carbon\Carbon::createFromFormat('H:i',$end)->format('h:i A');
                   @endphp
                   <tr>
                       <td>{{ $course->id }}</td>
