@@ -17,59 +17,49 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today = Carbon::today()->addDays(2);          // عدّل التاريخ كما تريد
-
-        /* دور على الكورسات */
-        $courses = Course::with(['exams','courseType'])
-            ->where(fn($q)=>$q
-                ->whereDate('pre_test_date',   $today)
-                ->orWhereDate('mid_exam_date', $today)
-                ->orWhereDate('final_exam_date',$today)
-            )->get();
-
-        /* شعار Base64 */
-        $logoB64 = 'data:image/svg+xml;base64,'.
-                   base64_encode(file_get_contents(public_path('images/logo.svg')));
-
-        /* render Blade */
-        $html = View::make('exam_officer.courses.print', [
-            'courses' => $courses,
-            'today'   => $today,
-            'logo'    => $logoB64,
+        $today   = Carbon::today();                    // أو +2 أيام كما تريد
+        $courses = Course::query()
+                  ->whereDate('pre_test_date',   $today)
+                  ->orWhereDate('mid_exam_date', $today)
+                  ->orWhereDate('final_exam_date',$today)
+                  ->get();
+    
+        /* خلفية البطاقة */
+        $bgB64 = base64_encode(file_get_contents(public_path('images/exam.png')));
+    
+        /* HTML بطاقة 90 مم */
+        $html  = View::make('exam_officer.courses.card', [
+            'courses'=> $courses,
+            'today'  => $today,
+            'bgData' => $bgB64,
         ])->render();
-
-        /* HTML → PDF */
-        $pdfBin = Pdf::loadHTML($html)
-                     ->setPaper('A4','portrait')
-                     ->setOptions([
-                         'dpi'               => 150,
-                         'isRemoteEnabled'   => true,
-                         'isHtml5ParserEnabled' => true,
-                     ])->output();
-
-        $tmpPdf = storage_path('app/daily_courses.pdf');
-        file_put_contents($tmpPdf, $pdfBin);
-
-        /* PDF → JPG */
+    
+        /* PDF مربع 90 mm */
+        $pt   = 255.1;                                  // 90 mm بالبوينت
+        $pdf  = Pdf::loadHTML($html)
+                   ->setPaper([0,0,$pt,$pt])
+                   ->setOptions([
+                       'dpi'=>96,'isRemoteEnabled'=>true,'isHtml5ParserEnabled'=>true
+                   ])->output();
+        $tmp  = storage_path('app/tmp_card.pdf');
+        file_put_contents($tmp,$pdf);
+    
+        /* Imagick → JPG واضح */
         $im = new \Imagick();
         $im->setResolution(300,300);
-        $im->readImage($tmpPdf.'[0]');
+        $im->readImage($tmp.'[0]');
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
         $im->setImageFormat('jpg');
         $im->setImageCompressionQuality(92);
-        $im->resizeImage(2000, 0, \Imagick::FILTER_LANCZOS, 1); // أوسع وأوضح
-
-        $file   = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
-        Storage::disk('public')->put($file, $im);
-        $url    = asset('storage/'.$file);
-
-        unlink($tmpPdf);
-
-        /* إرسال */
-        // $waapi->sendImage(env('EXAM_MANAGER_CHATID'), $url,
-        //                   '📋 جدول الامتحانات – '.$today->format('Y-m-d'));
-
-        $this->info('Daily course image generated: '.$url);
+        $im->cropThumbnailImage(1020,1020);             // أو 512، 2040 حسب الحاجة
+    
+        $file = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
+        Storage::disk('public')->put($file,$im);
+        unlink($tmp);
+    
+        // $waapi->sendImage(env('EXAM_MANAGER_CHATID'), asset('storage/'.$file));
+        $this->info('Image ready → '.asset('storage/'.$file));
         return self::SUCCESS;
     }
+    
 }
