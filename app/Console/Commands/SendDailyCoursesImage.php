@@ -58,7 +58,7 @@ class SendDailyCoursesImage extends Command
         unlink($tmp);
     
         $waapi->sendImage("218912922162@c.us", asset('storage/'.$file));
-        $this->info('Image ready → '.asset('storage/'.$file));
+        
         return self::SUCCESS;
     }
     

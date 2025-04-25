@@ -9,6 +9,7 @@ class Kernel extends BaseKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('exams:whatsapp-notify')->everyMinute();
+        $schedule->command('courses:send-daily-image')->dailyAt('08:00');
     }
 
     protected function commands(): void
