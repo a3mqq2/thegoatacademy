@@ -5,8 +5,8 @@
 <title>Courses {{ $today->format('d-m-Y') }}</title>
 
 @php
-  $fR = 'file://'.storage_path('fonts/Cairo-Regular.ttf');
-  $fB = 'file://'.storage_path('fonts/Cairo-Bold.ttf');
+    $fR = 'file://'.storage_path('fonts/Cairo-Regular.ttf');
+    $fB = 'file://'.storage_path('fonts/Cairo-Bold.ttf');
 @endphp
 
 <style>
@@ -21,28 +21,48 @@ body{
 }
 
 .container{position:relative;width:100%;height:100%}
-.title{position:absolute;top:18px;left:14px;width:306px;text-align:center;
-       font-size:11px;font-weight:700}
-.table{position:absolute;top:62px;left:0;width:100%}
+.title   {position:absolute;top:18px;left:14px;width:306px;text-align:center;font:700 11px cairo}
+.table   {position:absolute;top:62px;left:0;width:100%}
+
 th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align:center}
+.today  {background:#900!important}        /* أحمر داكن للتمييز */
 </style>
 </head>
 <body>
 <div class="container">
 
-  <h1 class="title">COURSES SCHEDULE · {{ $today->format('d M y') }}</h1>
+  <h1 class="title">COURSES&nbsp;SCHEDULE&nbsp;·&nbsp;{{ $today->format('d M Y') }}</h1>
 
   <table class="table">
-    <thead><tr><th>#</th><th>ID</th><th>TIME</th><th>DAYS</th></tr></thead>
+    <thead>
+      <tr>
+        <th>#</th><th>ID</th><th>TIME</th><th>DAYS</th>
+        <th>PRE</th><th>MID</th><th>FINAL</th>
+      </tr>
+    </thead>
     <tbody>
-    @foreach($courses as $i=>$c)
-       @php [$s,$e]=explode(' - ',$c->time); @endphp
-       <tr>
-         <td>{{ $i+1 }}</td>
-         <td>{{ $c->id }}</td>
-         <td>{{ \Carbon\Carbon::createFromFormat('H:i',$s)->format('h:i A') }}-{{ \Carbon\Carbon::createFromFormat('H:i',$e)->format('h:i A') }}</td>
-         <td>{{ $c->days }}</td>
-       </tr>
+    @foreach($courses as $i => $c)
+        @php
+            [$s,$e] = explode(' - ',$c->time);
+            $fmt    = fn($t)=>\Carbon\Carbon::createFromFormat('H:i',$t)->format('h:i A');
+            $isToday = fn($d)=>$d && \Carbon\Carbon::parse($d)->isSameDay($today);
+        @endphp
+        <tr>
+          <td>{{ $i+1 }}</td>
+          <td>{{ $c->id }}</td>
+          <td>{{ $fmt($s) }}-{{ $fmt($e) }}</td>
+          <td>{{ $c->days }}</td>
+
+          <td class="{{ $isToday($c->pre_test_date)   ? 'today' : '' }}">
+              {{ $c->pre_test_date   ?? '-' }}
+          </td>
+          <td class="{{ $isToday($c->mid_exam_date)   ? 'today' : '' }}">
+              {{ $c->mid_exam_date   ?? '-' }}
+          </td>
+          <td class="{{ $isToday($c->final_exam_date) ? 'today' : '' }}">
+              {{ $c->final_exam_date ?? '-' }}
+          </td>
+        </tr>
     @endforeach
     </tbody>
   </table>
