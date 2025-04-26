@@ -25,3 +25,4 @@ Route::get('/logs', [DashboardController::class, 'logs'])->name('logs');
         // web.php
 Route::post('/exams/update-date', [ExamsController::class, 'updateDate'])->name('exams.update_date');
 Route::post('/exams/assign-examiner', [ExamsController::class, 'assignExaminer'])->name('exams.assign_examiner');
+Route::post('/exams/update_time', [ExamsController::class, 'updateTime'])->name('exams.update_time');

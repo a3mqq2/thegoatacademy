@@ -62,8 +62,10 @@ class ExamsController extends Controller
         // 5) Filter by Status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            $query->where('status', '!=', 'completed');
         }
-
+        
         // 6) Custom filter for exam_date (daily, weekly, afterTwoDays)
         if ($request->filled('exam_date_filter')) {
             $dateFilter = $request->exam_date_filter;
@@ -527,4 +529,18 @@ class ExamsController extends Controller
     }
 
 
+    public function updateTime(Request $request)
+    {
+        $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+            'time'    => 'required|date_format:H:i',
+        ]);
+    
+        $exam = Exam::findOrFail($request->exam_id);
+        $exam->time = $request->time;
+        $exam->save();
+    
+        return redirect()->back()->with('success', 'Exam time updated successfully.');
+    }
+    
 }
