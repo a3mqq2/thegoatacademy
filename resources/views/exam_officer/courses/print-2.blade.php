@@ -21,24 +21,24 @@ body{
 }
 
 .container{position:relative;width:100%;height:100%}
-.title {                       /* العنوان أعلى البطاقة */
+.title {
     position:absolute;
-    top:10px;                  /* ← كان 18px */
+    top:10px;
     left:14px;
     width:306px;
     text-align:center;
     font:700 15px cairo;
 }
 
-.table {                       /* نُنزِّل الجدول تحت العنوان */
+.table {
     position:absolute;
-    top:48px;                  /* ← كان 62px */
+    top:48px;
     left:0;
     width:100%;
 }
 
 th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align:center}
-.today  {background:#900!important}        /* أحمر داكن للتمييز */
+.today  {background:#900!important}
 </style>
 </head>
 <body>
@@ -54,7 +54,12 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
       </tr>
     </thead>
     <tbody>
-    @foreach($courses as $i => $c)
+    @if($courses->isEmpty())
+        <tr>
+          <td colspan="8" style="background:#000; color:#fff; font-size:12px; padding:20px;">No exams for today</td>
+        </tr>
+    @else
+      @foreach($courses as $i => $c)
         @php
             [$s,$e] = explode(' - ',$c->time);
             $fmt    = fn($t)=>\Carbon\Carbon::createFromFormat('H:i',$t)->format('h:i A');
@@ -66,18 +71,18 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
           <td>{{ $c->courseType->name }}</td>
           <td>{{ $fmt($s) }}-{{ $fmt($e) }}</td>
           <td>{{ $c->days }}</td>
-
           <td class="{{ $isToday($c->pre_test_date)   ? 'today' : '' }}">
-              {{ date('m-d', strtotime($c->pre_test_date))   ?? '-' }}
+              {{ $c->pre_test_date ? date('m-d', strtotime($c->pre_test_date)) : '-' }}
           </td>
           <td class="{{ $isToday($c->mid_exam_date)   ? 'today' : '' }}">
-              {{ date('m-d', strtotime($c->mid_exam_date ))  ?? '-' }}
+              {{ $c->mid_exam_date ? date('m-d', strtotime($c->mid_exam_date)) : '-' }}
           </td>
           <td class="{{ $isToday($c->final_exam_date) ? 'today' : '' }}">
-              {{ date('m-d', strtotime($c->final_exam_date)) ?? '-' }}
+              {{ $c->final_exam_date ? date('m-d', strtotime($c->final_exam_date)) : '-' }}
           </td>
         </tr>
-    @endforeach
+      @endforeach
+    @endif
     </tbody>
   </table>
 

@@ -223,8 +223,8 @@
                     <input type="time" id="to_time" class="form-control">
                   </div>
                 </div>
-                <button type="button" class="btn btn-primary mb-3" id="generateScheduleBtn">
-                  <i class="fa fa-calendar-plus"></i> Generate Schedule
+                <button type="button" class="btn btn-success mb-3" id="generateScheduleBtn">
+                  <i class="fa fa-calendar-plus"></i> Add 
                 </button>
 
                 {{-- Table of Shifts --}}
