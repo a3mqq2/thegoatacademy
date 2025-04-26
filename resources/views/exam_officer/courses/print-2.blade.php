@@ -49,7 +49,7 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
   <table class="table">
     <thead>
       <tr>
-        <th>#</th><th>ID</th><th>TIME</th><th>DAYS</th>
+        <th>#</th><th>ID</th><th>Course</th><th>TIME</th><th>DAYS</th>
         <th>P</th><th>M</th><th>F</th>
       </tr>
     </thead>
@@ -63,6 +63,7 @@ th,td{font-size:8px;padding:4px;background:#000;border:1px solid #333;text-align
         <tr>
           <td>{{ $i+1 }}</td>
           <td>{{ $c->id }}</td>
+          <td>{{ $c->courseType->name }}</td>
           <td>{{ $fmt($s) }}-{{ $fmt($e) }}</td>
           <td>{{ $c->days }}</td>
 
