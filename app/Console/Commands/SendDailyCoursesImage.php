@@ -28,7 +28,7 @@ class SendDailyCoursesImage extends Command
         $bgB64 = base64_encode(file_get_contents(public_path('images/cource.png')));
     
         /* HTML بطاقة 90 مم */
-        $html  = View::make('exam_officer.courses.print', [
+        $html  = View::make('exam_officer.courses.print-2', [
             'courses'=> $courses,
             'today'  => $today,
             'bgData' => $bgB64,
