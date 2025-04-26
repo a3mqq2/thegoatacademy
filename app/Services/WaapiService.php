@@ -1,5 +1,4 @@
 <?php
-// app/Services/WaapiService.php
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
@@ -13,9 +12,8 @@ class WaapiService
 
     public function __construct()
     {
-        $id          = "62050";
-        $this->token = "JF1wtM5asTKUd5hV4PBLxPkbcdmOyVowWjCj5uNn6706ce55";
-        $this->base  = "https://waapi.app/api/v1/instances/{$id}/client/action/";
+        $this->token = env('WAAPI_TOKEN');
+        $this->base  = env('WAAPI_URL');
     }
 
     // app/Services/WaapiService.php
