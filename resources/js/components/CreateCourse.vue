@@ -465,67 +465,89 @@ export default defineComponent({
     }
 
     function generateSchedule () {
-      if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return
-      const total = Number(selectedCourseType.value.duration || 0)
-      if (!total) return
-      scheduleList.value = []
-      storedSelectedDays.value = selectedDays.value.map(d => d.value)
-      const occupied = new Set()
+  if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return;
 
-      if (showPreTest.value) {
-        if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
-          preTestDate.value = startDate.value
-        }
-        occupied.add(preTestDate.value)
-      } else {
-        preTestDate.value = ''
-      }
+  const totalLessons = Number(selectedCourseType.value.duration || 0);
+  if (!totalLessons) return;
 
-      let cur = new Date(`${startDate.value}T00:00:00`)
-      cur.setDate(cur.getDate() + 1)
-      skipIfFriday(cur)
+  scheduleList.value = [];
+  storedSelectedDays.value = selectedDays.value.map(d => d.value);
+  const occupied = new Set();
 
-      const half = Math.floor(total / 2)
-      let count = 0
-      while (count < half) {
-        if (storedSelectedDays.value.includes(cur.getDay()) && !occupied.has(formatDateLocal(cur))) {
-          pushClass(cur)
-          occupied.add(formatDateLocal(cur))
-          count++
-        }
-        cur.setDate(cur.getDate() + 1)
-      }
-
-      if (showMidExam.value) {
-        if (!midExamDate.value) midExamDate.value = nextFreeDay(cur, occupied)
-        defaultMidExamDate.value = midExamDate.value
-        occupied.add(midExamDate.value)
-        cur = new Date(`${midExamDate.value}T00:00:00`)
-        cur.setDate(cur.getDate() + 1)
-        skipIfFriday(cur)
-      } else {
-        midExamDate.value = ''
-      }
-
-      count = 0
-      const needed = total - half
-      while (count < needed) {
-        if (storedSelectedDays.value.includes(cur.getDay()) && !occupied.has(formatDateLocal(cur))) {
-          pushClass(cur)
-          occupied.add(formatDateLocal(cur))
-          count++
-        }
-        cur.setDate(cur.getDate() + 1)
-      }
-
-      const lastLectureDate = scheduleList.value.length ? new Date(scheduleList.value[scheduleList.value.length - 1].date) : cur
-      lastLectureDate.setDate(lastLectureDate.getDate() + 1)
-      skipIfFriday(lastLectureDate)
-
-      if (showFinalExam.value) {
-        if (!finalExamDate.value || new Date(finalExamDate.value) < lastLectureDate) finalExamDate.value = formatDateLocal(lastLectureDate)
-      } else finalExamDate.value = ''
+  if (showPreTest.value) {
+    if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
+      preTestDate.value = startDate.value;
     }
+    occupied.add(preTestDate.value);
+  } else {
+    preTestDate.value = '';
+  }
+
+  let current = new Date(`${startDate.value}T00:00:00`);
+  current.setDate(current.getDate() + 1);
+  skipIfFriday(current);
+
+  const half = Math.floor(totalLessons / 2);
+  let addedBeforeMid = 0;
+
+  // إضافة أول نصف من المحاضرات
+  while (addedBeforeMid < half) {
+    if (storedSelectedDays.value.includes(current.getDay())) {
+      const dateStr = formatDateLocal(current);
+      if (!occupied.has(dateStr)) {
+        pushClass(current);
+        occupied.add(dateStr);
+        addedBeforeMid++;
+      }
+    }
+    current.setDate(current.getDate() + 1);
+    skipIfFriday(current);
+  }
+
+  // تحديد تاريخ امتحان النصفي مباشرة بعد منتصف المحاضرات
+  if (showMidExam.value) {
+    midExamDate.value = nextFreeDay(current, occupied);
+    defaultMidExamDate.value = midExamDate.value;
+    occupied.add(midExamDate.value);
+    current = new Date(`${midExamDate.value}T00:00:00`);
+    current.setDate(current.getDate() + 1);
+    skipIfFriday(current);
+  } else {
+    midExamDate.value = '';
+  }
+
+  // إضافة باقي المحاضرات بعد النصفي
+  let addedAfterMid = 0;
+  const remainingLessons = totalLessons - half;
+
+  while (addedAfterMid < remainingLessons) {
+    if (storedSelectedDays.value.includes(current.getDay())) {
+      const dateStr = formatDateLocal(current);
+      if (!occupied.has(dateStr)) {
+        pushClass(current);
+        occupied.add(dateStr);
+        addedAfterMid++;
+      }
+    }
+    current.setDate(current.getDate() + 1);
+    skipIfFriday(current);
+  }
+
+  // تحديد النهائي بعد آخر محاضرة
+  const lastLectureDate = scheduleList.value.length
+    ? new Date(scheduleList.value[scheduleList.value.length - 1].date)
+    : current;
+
+  lastLectureDate.setDate(lastLectureDate.getDate() + 1);
+  skipIfFriday(lastLectureDate);
+
+  if (showFinalExam.value) {
+    finalExamDate.value = formatDateLocal(lastLectureDate);
+  } else {
+    finalExamDate.value = '';
+  }
+}
+
 
     function deletePreTest () {
       showPreTest.value = false
