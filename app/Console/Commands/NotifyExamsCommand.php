@@ -16,27 +16,37 @@ class NotifyExamsCommand extends Command
     public function handle(WaapiService $waapi): int
     {
         $targetTime = Carbon::now()->addMinutes(5);
+        $targetHour = $targetTime->format('H');
+        $targetMinute = $targetTime->format('i');
 
         Log::info('Exam Notification', [
-            'target_time' => $targetTime->format('H:i'),
+            'target_time' => $targetHour . ':' . $targetMinute,
             'date' => $targetTime->toDateString(),
         ]);
 
-        Exam::with(['course.courseType', 'examiner'])
+        $exams = Exam::with(['course.courseType', 'examiner'])
             ->whereDate('exam_date', $targetTime->toDateString())
-            ->whereRaw('TIME_FORMAT(time, "%H:%i") = ?', [$targetTime->format('H:i')])
-            ->each(function ($exam) use ($waapi) {
-                $msg = "🔔 *تنبيه إداري مهم*\n"
-                    . "تم جدولة امتحان سيبدأ خلال *5 دقائق*.\n\n"
-                    . "🆔 *رقم الامتحان:* {$exam->id}\n"
-                    . "👤 *الممتحِن:* " . ($exam->examiner->name ?? 'غير محدد') . "\n"
-                    . "🎯 *المستوى الدراسي:* {$exam->course->courseType->name}\n"
-                    . "📚 *نوع الامتحان:* {$exam->exam_type}\n"
-                    . "🔗 *رابط القروب:* {$exam->course->group_link}\n\n"
-                    . "يرجى متابعة الانطلاق والتأكد من الحضور في الوقت المحدد. ✅";
+            ->whereRaw('HOUR(time) = ?', [$targetHour])
+            ->whereRaw('MINUTE(time) = ?', [$targetMinute])
+            ->get();
 
-                $waapi->sendText(env('EXAM_MANAGER_CHATID'), $msg);
-            });
+        Log::info('Exams found', [
+            'count' => $exams->count(),
+            'exam_ids' => $exams->pluck('id')->toArray(),
+        ]);
+
+        foreach ($exams as $exam) {
+            $msg = "🔔 *تنبيه إداري مهم*\n"
+                . "تم جدولة امتحان سيبدأ خلال *5 دقائق*.\n\n"
+                . "🆔 *رقم الامتحان:* {$exam->id}\n"
+                . "👤 *الممتحِن:* " . ($exam->examiner->name ?? 'غير محدد') . "\n"
+                . "🎯 *المستوى الدراسي:* {$exam->course->courseType->name}\n"
+                . "📚 *نوع الامتحان:* {$exam->exam_type}\n"
+                . "🔗 *رابط القروب:* {$exam->course->group_link}\n\n"
+                . "يرجى متابعة الانطلاق والتأكد من الحضور في الوقت المحدد. ✅";
+
+            $waapi->sendText(env('EXAM_MANAGER_CHATID'), $msg);
+        }
 
         return self::SUCCESS;
     }
