@@ -35,7 +35,7 @@ class NotifyExamsCommand extends Command
                 . "يرجى متابعة الانطلاق والتأكد من الحضور في الوقت المحدد. ✅";
            
 
-                $waapi->sendText("218912922162@c.us", $msg);
+                $waapi->sendText(env('EXAM_MANAGER_CHATID'), $msg);
             });
 
         return self::SUCCESS;

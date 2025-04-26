@@ -17,7 +17,7 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today   = Carbon::today()->addDays(2);                    // أو +2 أيام كما تريد
+        $today   = Carbon::today()->addDays(1);                    // أو +2 أيام كما تريد
         $courses = Course::query()
                   ->whereDate('pre_test_date',   $today)
                   ->orWhereDate('mid_exam_date', $today)
@@ -57,7 +57,7 @@ class SendDailyCoursesImage extends Command
         Storage::disk('public')->put($file,$im);
         unlink($tmp);
     
-        $waapi->sendImage("218912922162@c.us", asset('storage/'.$file));
+        $waapi->sendImage(env('EXAM_MANAGER_CHATID'), asset('storage/'.$file));
         
         return self::SUCCESS;
     }
