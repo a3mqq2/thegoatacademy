@@ -162,7 +162,7 @@
                 </td>
                 <td>
                   <div class="d-flex align-items-center justify-content-between">
-                    <span>{{ $exam->time ?? '-' }}</span>
+                    <span>{{ date('h:i A')  ?? '-' }}</span>
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-secondary ms-2"
