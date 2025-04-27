@@ -6,7 +6,6 @@ use App\Models\Course;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use App\Services\WaapiService;
 
@@ -53,12 +52,14 @@ class SendDailyCoursesImage extends Command
         $im->setImageCompressionQuality(75);
         $im->cropThumbnailImage(512, 512);
 
-        $fileName = 'prints/daily_courses_' . now()->format('Ymd_His') . '.jpg';
-        Storage::disk('public')->put($fileName, $im);
+        // تخزين مباشر داخل public/prints/
+        $fileName = 'daily_courses_' . now()->format('Ymd_His') . '.jpg';
+        $publicPath = public_path('prints/'.$fileName);
+        $im->writeImage($publicPath);
 
         unlink($tmpPath);
 
-        $imageUrl = asset('storage/' . $fileName);
+        $imageUrl = url('prints/'.$fileName);
 
         $waapi->sendImage("120363302662559905@g.us", $imageUrl, 'جدول الكورسات اليوم');
 
