@@ -164,7 +164,7 @@
                 </td>
                 <td>
                   <div class="d-flex align-items-center justify-content-between">
-                    <span>{{ date('h:i A')  ?? '-' }}</span>
+                    <span>{{ date('h:i A', strtotime($exam->time))  ?? '-' }}</span>
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-secondary ms-2"
@@ -251,7 +251,7 @@
                       type="time"
                       name="time"
                       class="form-control"
-                      value="{{ old('time', $exam->time) }}"
+                      value="{{$exam->time}}"
                       required
                     >
                   </div>

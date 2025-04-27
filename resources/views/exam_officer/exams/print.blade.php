@@ -20,7 +20,9 @@
 html,body{width:340px;height:340px;font-family:'cairo',sans-serif;color:#fff}
 
 body{
-  background:url('data:image/png;base64,{{ $bgData }}') no-repeat center/100% 100%;
+  background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
+  background-size: cover;
+
 }
 
 /* تخطيط البطاقة */

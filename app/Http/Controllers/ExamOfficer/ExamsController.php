@@ -358,7 +358,7 @@ class ExamsController extends Controller
         file_put_contents($tmpPdf,$pdfBin);
     
         $im = new \Imagick();
-        $im->setResolution(300,300);
+        $im->setResolution(600,600);
         $im->readImage($tmpPdf.'[0]');
         $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
