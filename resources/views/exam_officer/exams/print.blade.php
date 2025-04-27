@@ -47,7 +47,6 @@ th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align
   </h1>
 
   <div class="examiner">Examiner : 
-      {{ optional($exam->examiner)->gender=='male'?'Mr.':'Mrs.' }}
       {{ optional($exam->examiner)->name ?? 'Unassigned' }}
   </div>
 

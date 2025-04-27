@@ -132,6 +132,8 @@
                     'bg-warning text-dark' => $exam->status=='assigned',
                     'bg-success'           => $exam->status=='completed',
                     'bg-danger'            => $exam->status=='overdue',
+                    'bg-secondary'         => $exam->status=="paused",
+                    'bg-danger'            => $exam->status=="canceled"
                   ])>
                     {{ ucfirst($exam->status) }}
                   </span>

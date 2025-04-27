@@ -168,7 +168,7 @@
 
                      
 
-                    @if($course->status === 'ongoing')
+                    @if($course->status === 'ongoing' || $course->status == "upcoming")
                       <a href="{{ route('admin.courses.edit', $course->id) }}"
                        class="btn btn-warning btn-sm"
                       >

@@ -683,4 +683,28 @@ class CourseController extends Controller
     }
     
     
+    public function updateStatus(Request $request, Course $course)
+    {
+        $request->validate([
+            'status' => 'required|in:upcoming,ongoing,paused,canceled',
+        ]);
+    
+        $today = now()->toDateString();
+    
+        if (in_array($request->status, ['paused', 'canceled'])) {
+            $course->update(['status' => $request->status]);
+            $course->exams()->update(['status' => $request->status]);
+        } else {
+            if ($course->start_date <= $today && $course->final_exam_date >= $today) {
+                $course->update(['status' => 'ongoing']);
+                $course->exams()->update(['status' => 'new']);
+            } elseif ($course->start_date > $today) {
+                $course->update(['status' => 'upcoming']);
+                $course->exams()->update(['status' => 'new']);
+            }
+        }
+        return redirect()->route('admin.courses.show', $course->id)->with('success', 'Course status updated successfully.');
+    }
+    
+    
 }

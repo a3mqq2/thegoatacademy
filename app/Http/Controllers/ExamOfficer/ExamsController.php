@@ -63,7 +63,7 @@ class ExamsController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
-            $query->where('status', '!=', 'completed');
+            $query->whereNotIn('status', ['completed','canceled','paused']);
         }
         
         // 6) Custom filter for exam_date (daily, weekly, afterTwoDays)

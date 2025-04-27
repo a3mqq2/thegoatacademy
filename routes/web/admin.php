@@ -33,6 +33,8 @@ Route::put('students/{student}/exclude', [StudentController::class, 'exclude'])-
 Route::put('students/{student}/withdraw', [StudentController::class, 'withdraw'])->name('students.withdraw');
 Route::get('/courses/{id}/restore', [CourseController::class, 'restore'])->name('courses.restore');
 Route::put('/courses/{id}/cancel', [CourseController::class, 'cancel'])->name('courses.cancel');
+Route::put('/courses/{course}/update-status', [CourseController::class, 'updateStatus'])->name('courses.update-status');
+
 Route::post('/courses/{id}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
 Route::get('/courses/{id}/print', [CourseController::class, 'print'])->name('courses.print');
 Route::put('/courses/{id}/reactive', [CourseController::class, 'reactive'])->name('courses.reactive');

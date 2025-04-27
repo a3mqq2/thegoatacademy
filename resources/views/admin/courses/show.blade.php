@@ -34,12 +34,12 @@
           <i class="fa fa-edit"></i> Edit
         </a>
 
-
+{{-- 
         @if (in_array($course->status,['canceled','completed','cancelled','paused']))
           <a href="{{ route('admin.courses.restore', $course->id) }}"   class="btn btn-success btn-sm me-2">
             <i class="fa fa-redo"></i> Restore The Course
           </a>
-        @endif
+        @endif --}}
 
 
         <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-dark btn-sm me-2">
@@ -79,14 +79,21 @@
           <!-- Status -->
           <div class="col-md-3 d-flex flex-column justify-content-start">
             <div class="text-uppercase fw-semibold text-primary mb-1">Status:</div>
-            <span class="align-self-start badge rounded-pill bg-{{ 
-              $course->status === 'upcoming'  ? 'warning' : (
-              $course->status === 'ongoing'   ? 'info'    : (
-              $course->status === 'completed' ? 'success' : (
-              $course->status === 'cancelled' ? 'danger'  : 'secondary')))
-            }} px-3 py-2">
+            <span 
+              class="align-self-start badge rounded-pill bg-{{ 
+                $course->status === 'upcoming'  ? 'warning' : (
+                $course->status === 'ongoing'   ? 'info'    : (
+                $course->status === 'completed' ? 'success' : (
+                $course->status === 'canceled' ? 'danger'  : 'secondary')))
+              }} px-3 py-2"
+              style="cursor: pointer;"
+              data-bs-toggle="modal" 
+              data-bs-target="#updateStatusModal"
+              data-course-id="{{ $course->id }}"
+            >
               {{ ucfirst($course->status) }}
             </span>
+
           </div>
         </div>
       
@@ -653,6 +660,53 @@
   </div>
 </div>
 
+
+<!-- Update Course Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="updateStatusForm" method="POST">
+      @csrf
+      @method('PUT')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-sync"></i> Update Course Status</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Select New Status:</label>
+            <select name="status" class="form-select" required>
+              <option value="">-- Choose Status --</option>
+              
+              @php
+                $today = now()->toDateString();
+              @endphp
+
+              @if ($course->start_date <= $today && $course->final_exam_date >= $today)
+              <option value="ongoing">Ongoing</option>
+                @elseif($course->start_date > $today)
+                <option value="upcoming">Upcoming</option>
+              @endif
+
+
+
+              <option value="paused">Paused</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Status</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
 <!-- Scripts for modals, Select2, and FilePond -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -700,6 +754,8 @@
       });
     });
 
+
+    
     // Initialize Select2 for skills and levels multiselects
     $('#skills').select2({
       placeholder: 'Select skills',
@@ -754,4 +810,15 @@
     });
   });
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(button => {
+      button.addEventListener("click", function () {
+        const courseId = this.dataset.courseId;
+        document.getElementById("updateStatusForm").setAttribute("action", `/admin/courses/${courseId}/update-status`);
+      });
+    });
+  });
+</script>
+
 @endsection

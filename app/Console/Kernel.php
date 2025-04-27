@@ -10,6 +10,7 @@ class Kernel extends BaseKernel
     {
         $schedule->command('exams:whatsapp-notify')->everyMinute();
         $schedule->command('courses:send-daily-image')->dailyAt('11:00');
+        $schedule->command('exams:update-overdue')->dailyAt('02:00');
     }
 
     protected function commands(): void
