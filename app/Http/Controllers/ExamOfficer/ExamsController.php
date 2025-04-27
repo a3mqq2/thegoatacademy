@@ -91,7 +91,7 @@ class ExamsController extends Controller
         }
 
 
-        $exams = $query->orderByDesc('id')->get();
+        $exams = $query->orderByDesc('exam_date')->get();
 
 
 
