@@ -27,16 +27,16 @@ body{
 
 /* تخطيط البطاقة */
 .container{position:relative;width:100%;height:100%}
-.title   {position:absolute;top:50px;left:14px;width:306px;text-align:center;
+.title   {position:absolute;top:20px;left:14px;width:306px;text-align:center;
           font-size:12px;font-weight:700;text-transform:uppercase}
 
 .examiner,.time{position:absolute;font-size:8px}
-.examiner      {top:83px;left:28px;width:160px}
-.time          {top:81px;right:37px}
-.examiner.date {top:97px;left:28px}
-.time.date     {top:95px;right:37px}
+.examiner      {top:63px;left:28px;width:160px}
+.time          {top:61px;right:37px}
+.examiner.date {top:77px;left:28px}
+.time.date     {top:75px;right:37px}
 
-table{position:absolute;top:114px;left:0;width:100%;border-collapse:collapse}
+table{position:absolute;top:84px;left:0;width:100%;border-collapse:collapse}
 th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align:center}
 </style>
 </head>
