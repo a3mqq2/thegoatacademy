@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
@@ -16,13 +17,12 @@ class WaapiService
         $this->base  = env('WAAPI_URL');
     }
 
-    // app/Services/WaapiService.php
     private function call(string $path, array $data = []): array
     {
         $resp = Http::withToken($this->token)
             ->withBody(json_encode($data, JSON_UNESCAPED_UNICODE), 'application/json')
-            ->acceptJson()                                // للحصول على JSON فى الاستجابة
-            ->post($this->base.$path);                   // لا نمرر $data هنا
+            ->acceptJson()
+            ->post($this->base.$path);
 
         Log::info('WaAPI', [
             'path'   => $path,
@@ -44,10 +44,20 @@ class WaapiService
     public function sendImage(string $chatId, string $url, string $caption = '')
     {
         return $this->call('send-media', [
-            'chatId'  => $chatId,
-            'mediaUrl'     => $url,
-            'caption' => $caption,
-            'type'    => 'image',
+            'chatId'    => $chatId,
+            'mediaUrl'  => $url,
+            'caption'   => $caption,
+            'type'      => 'image',
+        ]);
+    }
+
+    public function sendBase64Image(string $chatId, string $base64Image, string $mimeType = 'image/jpeg', string $caption = '')
+    {
+        return $this->call('send-media', [
+            'chatId'       => $chatId,
+            'type'         => 'image',
+            'media'        => 'data:'.$mimeType.';base64,'.$base64Image,
+            'caption'      => $caption,
         ]);
     }
 

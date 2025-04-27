@@ -17,49 +17,45 @@ class SendDailyCoursesImage extends Command
 
     public function handle(WaapiService $waapi): int
     {
-        $today   = Carbon::today();                    // أو +2 أيام كما تريد
+        $today   = Carbon::today();
         $courses = Course::query()
                   ->whereDate('pre_test_date',   $today)
                   ->orWhereDate('mid_exam_date', $today)
                   ->orWhereDate('final_exam_date',$today)
                   ->get();
-    
-        /* خلفية البطاقة */
+
         $bgB64 = base64_encode(file_get_contents(public_path('images/cource.png')));
-    
-        /* HTML بطاقة 90 مم */
+
         $html  = View::make('exam_officer.courses.print-2', [
             'courses'=> $courses,
             'today'  => $today,
             'bgData' => $bgB64,
         ])->render();
-    
-        /* PDF مربع 90 mm */
-        $pt   = 255.1;                                  // 90 mm بالبوينت
+
+        $pt   = 255.1;
         $pdf  = Pdf::loadHTML($html)
                    ->setPaper([0,0,$pt,$pt])
                    ->setOptions([
                        'dpi'=>96,'isRemoteEnabled'=>true,'isHtml5ParserEnabled'=>true
                    ])->output();
         $tmp  = storage_path('app/tmp_card.pdf');
-        file_put_contents($tmp,$pdf);
-    
-        /* Imagick → JPG واضح */
+        file_put_contents($tmp, $pdf);
+
         $im = new \Imagick();
         $im->setResolution(300,300);
         $im->readImage($tmp.'[0]');
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
         $im->setImageFormat('jpg');
         $im->setImageCompressionQuality(92);
-        $im->cropThumbnailImage(1020,1020);             // أو 512، 2040 حسب الحاجة
-    
-        $file = 'prints/daily_courses_'.now()->format('Ymd_His').'.jpg';
-        Storage::disk('public')->put($file,$im);
+        $im->cropThumbnailImage(1020,1020);
+
+        $filePath = storage_path('app/public/prints/daily_courses_'.now()->format('Ymd_His').'.jpg');
+        $im->writeImage($filePath);
         unlink($tmp);
-    
-        $waapi->sendImage("120363302662559905@g.us", asset('storage/'.$file));
-        
+
+        $base64 = base64_encode(file_get_contents($filePath));
+        $waapi->sendBase64Image("120363302662559905@g.us", $base64, 'image/jpeg', 'جدول الكورسات اليوم');
+
         return self::SUCCESS;
     }
-    
 }
