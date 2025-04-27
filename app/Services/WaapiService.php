@@ -19,10 +19,12 @@ class WaapiService
 
     private function call(string $path, array $data = []): array
     {
-        $resp = Http::withToken($this->token)
-            ->withBody(json_encode($data, JSON_UNESCAPED_UNICODE), 'application/json')
-            ->acceptJson()
-            ->post($this->base.$path);
+        $resp = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+                'Accept'        => 'application/json',
+                'Content-Type'  => 'application/json',
+            ])
+            ->post($this->base . $path, $data);  // انتبه هنا: أرسل $data طبيعي بدون withBody()
 
         Log::info('WaAPI', [
             'path'   => $path,
@@ -48,16 +50,6 @@ class WaapiService
             'mediaUrl'  => $url,
             'caption'   => $caption,
             'type'      => 'image',
-        ]);
-    }
-
-    public function sendBase64Image(string $chatId, string $base64Image, string $mimeType = 'image/jpeg', string $caption = '')
-    {
-        return $this->call('send-media', [
-            'chatId'       => $chatId,
-            'type'         => 'image',
-            'media'        => 'data:'.$mimeType.';base64,'.$base64Image,
-            'caption'      => $caption,
         ]);
     }
 

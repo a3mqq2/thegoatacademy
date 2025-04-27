@@ -6,6 +6,7 @@ use App\Models\Course;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
 use App\Services\WaapiService;
 
@@ -52,7 +53,6 @@ class SendDailyCoursesImage extends Command
         $im->setImageCompressionQuality(75);
         $im->cropThumbnailImage(512, 512);
 
-        // تخزين مباشر داخل public/prints/
         $fileName = 'daily_courses_' . now()->format('Ymd_His') . '.jpg';
         $publicPath = public_path('prints/'.$fileName);
         $im->writeImage($publicPath);
@@ -63,6 +63,20 @@ class SendDailyCoursesImage extends Command
 
         $waapi->sendImage("120363302662559905@g.us", $imageUrl, 'جدول الكورسات اليوم');
 
+        $this->cleanOldPrints();
+
         return self::SUCCESS;
+    }
+
+    private function cleanOldPrints()
+    {
+        $path = public_path('prints');
+        $files = File::files($path);
+
+        foreach ($files as $file) {
+            if (now()->diffInHours(\Carbon\Carbon::createFromTimestamp($file->getMTime())) >= 24) {
+                File::delete($file->getRealPath());
+            }
+        }
     }
 }
