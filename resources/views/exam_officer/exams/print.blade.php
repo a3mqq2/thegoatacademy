@@ -9,71 +9,76 @@
     $fontBold    = 'file://' . storage_path('fonts/Cairo-Bold.ttf');
     $bgData      = base64_encode(file_get_contents(public_path('images/exam.png')));
 @endphp
-
 <style>
-@font-face {
-    font-family: 'cairo';
-    src: url('{{ $fontRegular }}') format('truetype');
-    font-weight: 400;
-}
-@font-face {
-    font-family: 'cairo';
-    src: url('{{ $fontBold }}') format('truetype');
-    font-weight: 700;
-}
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-html, body {
-    width: 1024px;
-    height: 1024px;
-    font-family: 'cairo', sans-serif;
-    color: #fff;
-}
-body {
-    background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
-    background-size: cover;
-}
-.container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    padding: 50px;
-}
-.title {
-    text-align: center;
-    font-size: 36px;
-    font-weight: bold;
-    margin-bottom: 40px;
-}
-.details {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 40px;
-    font-size: 20px;
-}
-.details div {
-    width: 48%;
-}
-.table-container {
-    width: 100%;
-    height: 60%;
-}
-table {
-    width: 100%;
-    height: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    font-size: 22px;
-    padding: 10px;
-    background: #000;
-    border: 1px solid #333;
-    text-align: center;
-}
-</style>
+  @font-face {
+      font-family: 'cairo';
+      src: url('{{ $fontRegular }}') format('truetype');
+      font-weight: 400;
+  }
+  @font-face {
+      font-family: 'cairo';
+      src: url('{{ $fontBold }}') format('truetype');
+      font-weight: 700;
+  }
+  * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+  }
+  html, body {
+      width: 1024px;
+      height: 1024px;
+      font-family: 'cairo', sans-serif;
+      color: #fff;
+  }
+  body {
+      background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
+      background-size: cover;
+  }
+  .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+  }
+  .title {
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 20px;
+  }
+  .details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 20px;
+      margin-bottom: 20px;
+  }
+  .details div {
+      width: 48%;
+  }
+  .table-container {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  table {
+      width: 90%;
+      height: 90%;
+      border-collapse: collapse;
+  }
+  th, td {
+      font-size: 22px;
+      padding: 10px;
+      background: #000;
+      border: 1px solid #333;
+      text-align: center;
+  }
+  </style>
+  
 </head>
 <body>
 <div class="container">
