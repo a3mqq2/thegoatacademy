@@ -55,6 +55,11 @@ class SendDailyCoursesImage extends Command
 
         $fileName = 'daily_courses_' . now()->format('Ymd_His') . '.jpg';
         $publicPath = public_path('prints/'.$fileName);
+
+        if (!File::exists(public_path('prints'))) {
+            File::makeDirectory(public_path('prints'), 0755, true);
+        }
+
         $im->writeImage($publicPath);
 
         unlink($tmpPath);
