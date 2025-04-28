@@ -50,24 +50,26 @@ body {
 .title {
     font-size: 36px;
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 .sub-details {
     display: flex;
     justify-content: space-between;
     font-size: 18px;
-    margin-top: 10px;
+    margin-bottom: 30px;
 }
 .sub-details div {
     width: 48%;
 }
 .table-container {
-    margin-top: 20px;
+    flex: 1;
     display: flex;
-    justify-content: center; /* ✅ مهم */
+    align-items: center;
+    justify-content: center;
 }
 table {
-    width: 80%; /* ✅ خليه وسط و مرتب */
+    width: 85%; /* ✅ هنا نزود شوي عشان يجي مرتب */
+    margin: auto; /* ✅ أهم نقطة يخليه بالنص */
     border-collapse: collapse;
 }
 th, td {
