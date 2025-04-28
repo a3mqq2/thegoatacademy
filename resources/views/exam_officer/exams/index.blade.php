@@ -164,7 +164,9 @@
                 </td>
                 <td>
                   <div class="d-flex align-items-center justify-content-between">
-                    <span>{{ date('h:i A', strtotime($exam->time))  ?? '-' }}</span>
+                    <span>
+                      {{ $exam->time ? date('h:i A', strtotime($exam->time)) : '' }}
+                    </span>
                     <button
                       type="button"
                       class="btn btn-sm btn-outline-secondary ms-2"
