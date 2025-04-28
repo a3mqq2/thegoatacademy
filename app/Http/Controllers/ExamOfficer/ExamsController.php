@@ -25,42 +25,42 @@ class ExamsController extends Controller
                 $q->with(['courseType', 'groupType', 'instructor', 'students']);
             }
         ]);
-    
+
         $courseTypes  = CourseType::all();
         $groupTypes   = GroupType::all();
         $examiners    = User::role('Examiner')->get();
         $instructors  = User::role('Instructor')->get();
         $examStatuses = ['new', 'assigned', 'completed'];
-    
+
         if ($request->filled('course_type_id')) {
             $query->whereHas('course.courseType', function($subQuery) use ($request) {
                 $subQuery->where('id', $request->course_type_id);
             });
         }
-    
+
         if ($request->filled('group_type_id')) {
             $query->whereHas('course.groupType', function($subQuery) use ($request) {
                 $subQuery->where('id', $request->group_type_id);
             });
         }
-    
+
         if ($request->filled('instructor_id')) {
             $instructorId = $request->instructor_id;
             $query->whereHas('course.instructor', function($subQuery) use ($instructorId) {
                 $subQuery->where('id', $instructorId);
             });
         }
-    
+
         if ($request->filled('examiner_id')) {
             $query->where('examiner_id', $request->examiner_id);
         }
-    
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
             $query->whereNotIn('status', ['completed', 'canceled', 'paused']);
         }
-    
+
         if ($request->filled('exam_date_filter')) {
             $dateFilter = $request->exam_date_filter;
             $today      = Carbon::today();
@@ -75,18 +75,16 @@ class ExamsController extends Controller
                 $query->whereDate('exam_date', $targetDate);
             }
         }
-    
+
         if (Auth::user()->hasRole('Examiner') && auth()->user()->permissions->where('name', 'Exam Manager')->count() == 0) {
             $query->where('examiner_id', Auth::id());
         }
-    
-        $today = Carbon::today();
-    
+
         $exams = $query
-            ->orderByRaw("CASE WHEN exam_date >= ? THEN 0 ELSE 1 END", [$today])
             ->orderBy('exam_date', 'asc')
+            ->orderBy('time', 'asc') // لو حابب كمان ترتيب بالوقت داخل نفس اليوم
             ->get();
-    
+
         return view('exam_officer.exams.index', compact(
             'exams',
             'courseTypes',
@@ -96,6 +94,7 @@ class ExamsController extends Controller
             'examStatuses'
         ));
     }
+
     
     public function prepareExam(Request $request)
     {
