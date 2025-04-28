@@ -78,6 +78,12 @@ th, td {
     border: 1px solid #333;
     text-align: center;
 }
+
+.title
+{
+  position: absolute;
+  top: 60px;
+}
 </style>
 </head>
 <body>
