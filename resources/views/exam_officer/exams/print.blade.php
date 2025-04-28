@@ -68,7 +68,7 @@ body {
     justify-content: center;
 }
 table {
-    width: 85%; /* ✅ هنا نزود شوي عشان يجي مرتب */
+    width: 90%; /* ✅ هنا نزود شوي عشان يجي مرتب */
     margin: auto; /* ✅ أهم نقطة يخليه بالنص */
     border-collapse: collapse;
 }
