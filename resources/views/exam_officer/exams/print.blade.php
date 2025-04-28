@@ -63,9 +63,11 @@ body {
 }
 .table-container {
     margin-top: 20px;
+    display: flex;
+    justify-content: center; /* ✅ مهم */
 }
 table {
-    width: 100%;
+    width: 80%; /* ✅ خليه وسط و مرتب */
     border-collapse: collapse;
 }
 th, td {
