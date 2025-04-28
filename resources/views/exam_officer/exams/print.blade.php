@@ -85,7 +85,7 @@ th, td {
 {
   position: absolute;
   top: 160px;
-  left: 20px;
+  left: 30px;
 }
 </style>
 </head>
