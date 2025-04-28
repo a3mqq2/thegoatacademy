@@ -98,7 +98,7 @@ th, td {
         </h1>
         <div class="sub-details">
             <div 
-              style="position: absolute;top:180px;"
+              style="position: absolute;top:310px;"
             >
                 Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}
