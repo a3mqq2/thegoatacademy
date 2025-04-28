@@ -329,56 +329,54 @@ class ExamsController extends Controller
 
     public function print(int $id)
     {
-        /* 1. البيانات والخلفية */
         $exam   = Exam::with(['course.courseType.skills'])->findOrFail($id);
         $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
         $html   = view('exam_officer.exams.print', compact('exam','bgB64'))->render();
-    
-        /* 2. HTML → PDF (90 mm × 90 mm) */
-        $sidePt = 612; // = 8.5 inch (A4 small section)
+
+        $sidePt = 612;
         $pdfBin = Pdf::loadHTML($html)
-                     ->setPaper([0,0,$sidePt,$sidePt])
-                     ->setOptions([
-                         'dpi'                  => 600,
-                         'isRemoteEnabled'      => true,
-                         'isHtml5ParserEnabled' => true,
-                         'isFontSubsettingEnabled' => true,
-                         'defaultFont'          => 'cairo',
-                     ])->output();
-    
+                    ->setPaper([0, 0, $sidePt, $sidePt])
+                    ->setOptions([
+                        'dpi'                  => 600,
+                        'isRemoteEnabled'      => true,
+                        'isHtml5ParserEnabled' => true,
+                        'isFontSubsettingEnabled' => true,
+                        'defaultFont'          => 'cairo',
+                    ])->output();
+
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
-        file_put_contents($tmpPdf,$pdfBin);
-    
+        file_put_contents($tmpPdf, $pdfBin);
+
         $im = new \Imagick();
-        $im->setResolution(600,600);
-        $im->readImage($tmpPdf.'[0]');
+        $im->setResolution(600, 600);
+        $im->readImage($tmpPdf);
+        $im->setIteratorIndex(0);
         $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-        
+
         $im->setImageFormat('jpg');
         $im->setImageCompressionQuality(93);
-        
-        $im->cropThumbnailImage(1020,1020);   // جودة عالية للهواتف
-        
-        /* 4. صورتان */
-        $lg  = clone $im; $lg->cropThumbnailImage(1020,1020);   // كبيرة
-        $sm  = clone $im; $sm->cropThumbnailImage(340,340);     // بطاقة
-    
+
+        $im->cropThumbnailImage(1020, 1020);
+
+        $lg  = clone $im; $lg->cropThumbnailImage(1020, 1020);
+        $sm  = clone $im; $sm->cropThumbnailImage(340, 340);
+
         $ts        = now()->format('Ymd_His');
         $nameLg    = "prints/exam_{$id}_{$ts}_lg.jpg";
         $nameSm    = "prints/exam_{$id}_{$ts}.jpg";
-    
-        Storage::disk('public')->put($nameLg,$lg);
-        Storage::disk('public')->put($nameSm,$sm);
-    
+
+        Storage::disk('public')->put($nameLg, $lg);
+        Storage::disk('public')->put($nameSm, $sm);
+
         unlink($tmpPdf);
-    
-        /* 5. حمّل الصورة الصغيرة مباشرة */
+
         return response()->download(
-            storage_path('app/public/'.$nameLg),
+            storage_path('app/public/' . $nameLg),
             "exam_{$id}.jpg"
         );
     }
+
     
 
     public function updateDate(Request $request)
