@@ -9,16 +9,23 @@ use Carbon\Carbon;
 class UpdateOverdueExams extends Command
 {
     protected $signature = 'exams:update-overdue';
-    protected $description = 'Update exams to overdue if their date is within the next two days and still assigned.';
+    protected $description = 'Update exams to overdue or revert back to assigned based on their exam dates.';
 
     public function handle()
     {
-        $updated = Exam::where('status', 'assigned')
-            ->whereDate('exam_date', '<=', Carbon::now()->addDays(2))
+        // ✅ 1. اجعل أي امتحان assigned وتأخر يومين أو أكثر → overdue
+        $overdueUpdated = Exam::where('status', 'assigned')
+            ->whereDate('exam_date', '<=', Carbon::now()->subDays(2))
             ->update(['status' => 'overdue']);
 
-        $this->info("Exam statuses updated successfully. Total: {$updated}");
-        
+        // ✅ 2. ولو أي امتحان overdue وتاريخه قادم → رجعه assigned
+        $revertedAssigned = Exam::where('status', 'overdue')
+            ->whereDate('exam_date', '>', Carbon::now())
+            ->update(['status' => 'assigned']);
+
+        $this->info("Overdue exams updated: {$overdueUpdated}");
+        $this->info("Exams reverted to assigned: {$revertedAssigned}");
+
         return 0;
     }
 }
