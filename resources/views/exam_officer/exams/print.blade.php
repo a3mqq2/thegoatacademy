@@ -71,7 +71,7 @@ table {
     margin: auto; /* ✅ أهم نقطة يخليه بالنص */
     border-collapse: collapse;
     position: absolute;
-    top: 100px;
+    top: 200px;
 }
 th, td {
     font-size: 20px;
