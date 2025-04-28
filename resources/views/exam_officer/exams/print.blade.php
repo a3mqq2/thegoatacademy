@@ -70,6 +70,8 @@ table {
     width: 90%; /* ✅ هنا نزود شوي عشان يجي مرتب */
     margin: auto; /* ✅ أهم نقطة يخليه بالنص */
     border-collapse: collapse;
+    position: absolute;
+    top: 100px;
 }
 th, td {
     font-size: 20px;
