@@ -97,7 +97,9 @@ th, td {
             {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->id }})
         </h1>
         <div class="sub-details">
-            <div>
+            <div 
+              style="position: absolute;top:180px;"
+            >
                 Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}
             </div>
