@@ -11,83 +11,84 @@
 @endphp
 
 <style>
-@font-face {
-    font-family: 'cairo';
-    src: url('{{ $fontRegular }}') format('truetype');
-    font-weight: 400;
-}
-@font-face {
-    font-family: 'cairo';
-    src: url('{{ $fontBold }}') format('truetype');
-    font-weight: 700;
-}
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-html, body {
-    width: 1024px;
-    height: 1024px;
-    font-family: 'cairo', sans-serif;
-    color: #fff;
-}
-body {
-    background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
-    background-size: cover;
-    background-position: center center;
-}
-.container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-.title {
-    position: absolute;
-    top: 10px;
-    left: 14px;
-    width: 996px;
-    text-align: center;
-    font-size: 24px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-.examiner, .time {
-    position: absolute;
-    font-size: 16px;
-}
-.examiner {
-    top: 60px;
-    left: 28px;
-    width: 400px;
-}
-.time {
-    top: 60px;
-    right: 37px;
-}
-.examiner.date {
-    top: 100px;
-    left: 28px;
-}
-.time.date {
-    top: 100px;
-    right: 37px;
-}
-table {
-    position: absolute;
-    top: 150px;
-    left: 0;
-    width: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    font-size: 14px;
-    padding: 8px;
-    background: #000;
-    border: 1px solid #333;
-    text-align: center;
-}
-</style>
+  @font-face {
+      font-family: 'cairo';
+      src: url('{{ $fontRegular }}') format('truetype');
+      font-weight: 400;
+  }
+  @font-face {
+      font-family: 'cairo';
+      src: url('{{ $fontBold }}') format('truetype');
+      font-weight: 700;
+  }
+  * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+  }
+  html, body {
+      width: 1024px;
+      height: 1024px;
+      font-family: 'cairo', sans-serif;
+      color: #fff;
+  }
+  body {
+      background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
+      background-size: cover;
+  }
+  .container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+  }
+  .title {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      text-align: center;
+      font-size: 32px;
+      font-weight: 700;
+  }
+  .examiner, .time, .examiner.date, .time.date {
+      position: absolute;
+      font-size: 20px;
+  }
+  .examiner {
+      top: 90px;
+      left: 50px;
+      width: 400px;
+  }
+  .time {
+      top: 90px;
+      right: 50px;
+  }
+  .examiner.date {
+      top: 140px;
+      left: 50px;
+  }
+  .time.date {
+      top: 140px;
+      right: 50px;
+  }
+  table {
+      position: absolute;
+      top: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      border-collapse: collapse;
+  }
+  th, td {
+      font-size: 18px;
+      padding: 10px;
+      background: #000;
+      border: 1px solid #333;
+      text-align: center;
+  }
+  </style>
+  
 </head>
 <body>
 <div class="container">
