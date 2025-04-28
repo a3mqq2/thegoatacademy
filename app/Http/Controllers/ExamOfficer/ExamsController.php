@@ -333,28 +333,27 @@ class ExamsController extends Controller
         $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
         $html   = view('exam_officer.exams.print', compact('exam','bgB64'))->render();
     
-        $sidePt = 1024 * 0.75; // تحويل 1024px إلى pt
+        $sidePt = 768; // لازم 768 pt عشان بالضبط 1024px بعد التحويل
+    
         $pdfBin = Pdf::loadHTML($html)
                     ->setPaper([0, 0, $sidePt, $sidePt])
                     ->setOptions([
-                        'dpi'                     => 300,
-                        'isRemoteEnabled'         => true,
-                        'isHtml5ParserEnabled'    => true,
+                        'dpi' => 96,
+                        'isRemoteEnabled' => true,
+                        'isHtml5ParserEnabled' => true,
                         'isFontSubsettingEnabled' => true,
-                        'defaultFont'             => 'cairo',
+                        'defaultFont' => 'cairo',
                     ])->output();
     
         $tmpPdf = storage_path("app/tmp_exam_$id.pdf");
         file_put_contents($tmpPdf, $pdfBin);
     
         $im = new \Imagick();
-        $im->setResolution(300, 300);
-        $im->readImage($tmpPdf);
-        $im->setIteratorIndex(0);
+        $im->setResolution(96, 96);
+        $im->readImage($tmpPdf.'[0]');
         $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
         $im->setImageFormat('jpg');
         $im->setImageCompressionQuality(90);
-    
         $im->resizeImage(1024, 1024, \Imagick::FILTER_LANCZOS, 1);
     
         $ts     = now()->format('Ymd_His');
@@ -369,6 +368,7 @@ class ExamsController extends Controller
             "exam_{$id}.jpg"
         );
     }
+    
     
 
     

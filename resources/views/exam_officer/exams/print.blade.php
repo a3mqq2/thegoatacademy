@@ -40,35 +40,33 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    padding: 50px;
+    padding: 40px;
 }
 .title {
     text-align: center;
-    font-size: 40px;
+    font-size: 36px;
     font-weight: bold;
     margin-bottom: 30px;
 }
 .details {
     display: flex;
     justify-content: space-between;
-    font-size: 22px;
-    margin-bottom: 30px;
+    font-size: 20px;
+    margin-bottom: 20px;
 }
 .details div {
     width: 48%;
 }
 .table-container {
-    width: 100%;
-    height: 60%;
+    margin-top: 20px;
 }
 table {
     width: 100%;
-    height: 100%;
     border-collapse: collapse;
 }
 th, td {
-    font-size: 24px;
-    padding: 12px;
+    font-size: 18px;
+    padding: 10px;
     background: #000;
     border: 1px solid #333;
     text-align: center;
