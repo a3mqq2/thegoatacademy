@@ -71,7 +71,7 @@ table {
     margin: auto; /* ✅ أهم نقطة يخليه بالنص */
     border-collapse: collapse;
     position: absolute;
-    top: 250px;
+    top: 300px;
 }
 th, td {
     font-size: 20px;
@@ -85,7 +85,7 @@ th, td {
 {
   position: absolute;
   top: 160px;
-  left: 30px;
+  left: 40px;
 }
 </style>
 </head>
