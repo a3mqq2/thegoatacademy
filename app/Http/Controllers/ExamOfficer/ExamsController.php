@@ -337,7 +337,7 @@ class ExamsController extends Controller
         $pdfBin = Pdf::loadHTML($html)
                     ->setPaper([0, 0, $sidePt, $sidePt])
                     ->setOptions([
-                        'dpi'                     => 600,
+                        'dpi'                     => 300,
                         'isRemoteEnabled'         => true,
                         'isHtml5ParserEnabled'    => true,
                         'isFontSubsettingEnabled' => true,
@@ -348,26 +348,25 @@ class ExamsController extends Controller
         file_put_contents($tmpPdf, $pdfBin);
 
         $im = new \Imagick();
-        $im->setResolution(600, 600);
+        $im->setResolution(300, 300);
         $im->readImage($tmpPdf);
         $im->setIteratorIndex(0);
         $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
         $im = $im->mergeImageLayers(\Imagick::LAYERMETHOD_FLATTEN);
-
+        
         $im->setImageFormat('jpg');
-        $im->setImageCompressionQuality(93);
-
+        $im->setImageCompressionQuality(90);
+        
         $im->cropThumbnailImage(1024, 1024);
+        
 
-        $lg  = clone $im; $lg->cropThumbnailImage(1024, 1024);
-        $sm  = clone $im; $sm->cropThumbnailImage(340, 340);
+        $lg  = clone $im; $lg->cropThumbnailImage(768, 768);
 
         $ts        = now()->format('Ymd_His');
         $nameLg    = "prints/exam_{$id}_{$ts}_lg.jpg";
         $nameSm    = "prints/exam_{$id}_{$ts}.jpg";
 
         Storage::disk('public')->put($nameLg, $lg);
-        Storage::disk('public')->put($nameSm, $sm);
 
         unlink($tmpPdf);
 
