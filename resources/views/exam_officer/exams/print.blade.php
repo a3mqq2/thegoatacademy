@@ -124,45 +124,69 @@ th, td {
         </div>
     </div>
 
-    <div class="table-container">
-      <table>
-          <thead>
-              <tr>
-                  <th>NO</th><th>NAME</th>
-                  @foreach($skills as $s)
-                      <th>{{ mb_substr($s->name, 0, 1, 'UTF-8') }}</th>
-                  @endforeach
-                  <th>PER</th>
-              </tr>
-          </thead>
-          <tbody>
-              @foreach($ongoing as $i => $student)
-                  @php
-                      $es = $exam->examStudents->firstWhere('student_id', $student->id);
-                      $grades = [];
-                      $maxes = [];
-                      foreach($skills as $sk) {
-                          $g = optional($es?->grades->firstWhere('course_type_skill_id', $sk->id))->grade ?: 0;
-                          $m = $exam->exam_type == 'pre' ? $sk->pivot->pre_max :
-                              ($exam->exam_type == 'mid' ? $sk->pivot->mid_max : $sk->pivot->final_max);
-                          $grades[] = $g;
-                          $maxes[] = $m;
-                      }
-                      $per = array_sum($maxes) ? round(array_sum($grades) / array_sum($maxes) * 100, 1) : 0;
-                  @endphp
-                  <tr>
-                      <td>{{ $i + 1 }}</td>
-                      <td>{{ $student->name }}</td>
-                      @foreach($grades as $g)
-                          <td>{{ $g }}</td>
-                      @endforeach
-                      <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}">{{ $per }}%</td>
-                  </tr>
-              @endforeach
-          </tbody>
-      </table>
-  </div>
+    <div class="container">
 
+      <h1 class="title">
+          {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->id }})
+      </h1>
+  
+      <div class="details">
+          <div>
+              Examiner : {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
+              Days : {{ $exam->course->days ?? '-' }}
+          </div>
+          <div style="text-align: right;">
+              Time : {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
+              Date : {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}
+          </div>
+      </div>
+  
+      @php
+          $skills = $exam->course->courseType->skills;
+          $ongoing = $exam->course->students()->wherePivot('status', 'ongoing')->get();
+      @endphp
+  
+      <div class="table-container">
+          <table>
+              <thead>
+                  <tr>
+                      <th>NO</th><th>NAME</th>
+                      @foreach($skills as $s)
+                          <th>{{ mb_substr($s->name, 0, 1, 'UTF-8') }}</th>
+                      @endforeach
+                      <th>PER</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @foreach($ongoing as $i => $student)
+                      @php
+                          $es = $exam->examStudents->firstWhere('student_id', $student->id);
+                          $grades = [];
+                          $maxes = [];
+                          foreach($skills as $sk) {
+                              $g = optional($es?->grades->firstWhere('course_type_skill_id', $sk->id))->grade ?: 0;
+                              $m = $exam->exam_type == 'pre' ? $sk->pivot->pre_max :
+                                  ($exam->exam_type == 'mid' ? $sk->pivot->mid_max : $sk->pivot->final_max);
+                              $grades[] = $g;
+                              $maxes[] = $m;
+                          }
+                          $per = array_sum($maxes) ? round(array_sum($grades) / array_sum($maxes) * 100, 1) : 0;
+                      @endphp
+                      <tr>
+                          <td>{{ $i + 1 }}</td>
+                          <td>{{ $student->name }}</td>
+                          @foreach($grades as $g)
+                              <td>{{ $g }}</td>
+                          @endforeach
+                          <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}">{{ $per }}%</td>
+                      </tr>
+                  @endforeach
+              </tbody>
+          </table>
+      </div>
+  
+  </div>
+  
 
 </div>
 </body>
