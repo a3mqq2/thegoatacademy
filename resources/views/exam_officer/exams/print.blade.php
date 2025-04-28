@@ -37,24 +37,28 @@ body {
     background-size: cover;
 }
 .container {
-    position: relative;
     width: 100%;
     height: 100%;
     padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.header {
+    text-align: center;
 }
 .title {
-    text-align: center;
     font-size: 36px;
     font-weight: bold;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
 }
-.details {
+.sub-details {
     display: flex;
     justify-content: space-between;
-    font-size: 20px;
-    margin-bottom: 20px;
+    font-size: 18px;
+    margin-top: 10px;
 }
-.details div {
+.sub-details div {
     width: 48%;
 }
 .table-container {
@@ -65,7 +69,7 @@ table {
     border-collapse: collapse;
 }
 th, td {
-    font-size: 18px;
+    font-size: 20px;
     padding: 10px;
     background: #000;
     border: 1px solid #333;
@@ -76,18 +80,19 @@ th, td {
 <body>
 <div class="container">
 
-    <h1 class="title">
-        {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->id }})
-    </h1>
-
-    <div class="details">
-        <div>
-            Examiner : {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
-            Days : {{ $exam->course->days ?? '-' }}
-        </div>
-        <div style="text-align: right;">
-            Time : {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
-            Date : {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}
+    <div class="header">
+        <h1 class="title">
+            {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->id }})
+        </h1>
+        <div class="sub-details">
+            <div>
+                Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
+                Days: {{ $exam->course->days ?? '-' }}
+            </div>
+            <div style="text-align: right;">
+                Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
+                Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}
+            </div>
         </div>
     </div>
 
