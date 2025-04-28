@@ -45,7 +45,7 @@ th,td{font-size:8px;padding:5px;background:#000;border:1px solid #333;text-align
 
   <h1 class="title">
       {{ ucfirst($exam->course->courseType->name) }}
-      {{ ucfirst($exam->exam_type) }} – Exam Results (#{{ $exam->course_id }})
+      {{ ucfirst($exam->exam_type) }} – Exam Results (#{{ $exam->id }})
   </h1>
 
   <div class="examiner">Examiner : 
