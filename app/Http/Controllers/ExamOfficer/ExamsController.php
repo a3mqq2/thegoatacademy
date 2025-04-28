@@ -335,11 +335,11 @@ class ExamsController extends Controller
         $html   = view('exam_officer.exams.print', compact('exam','bgB64'))->render();
     
         /* 2. HTML → PDF (90 mm × 90 mm) */
-        $sidePt = 255.1;                                           // 90 mm بالـ point
+        $sidePt = 612; // = 8.5 inch (A4 small section)
         $pdfBin = Pdf::loadHTML($html)
                      ->setPaper([0,0,$sidePt,$sidePt])
                      ->setOptions([
-                         'dpi'                  => 96,
+                         'dpi'                  => 600,
                          'isRemoteEnabled'      => true,
                          'isHtml5ParserEnabled' => true,
                          'isFontSubsettingEnabled' => true,

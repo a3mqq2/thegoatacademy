@@ -17,12 +17,11 @@
 @font-face{ font-family:'cairo'; src:url('{{ $fontBold    }}') format('truetype'); font-weight:700; }
 
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:340px;height:340px;font-family:'cairo',sans-serif;color:#fff}
+html,body{width:768px;height:768px;font-family:'cairo',sans-serif;color:#fff}
 
 body{
   background: url('data:image/png;base64,{{ $bgData }}') no-repeat center center;
-  background-size: cover;
-
+  background-size: contain;
 }
 
 /* تخطيط البطاقة */
