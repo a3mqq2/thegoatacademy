@@ -427,7 +427,7 @@
       searching: false,
       info: false,
       ordering: true,
-      order: [[0, 'desc']] // ترتيب أول عمود (ID) تنازلي
+      order: [[6, 'asc']] 
     });
   });
 </script>
