@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ExamsController extends Controller
 {
+   
     public function index(Request $request)
     {
         $query = Exam::with([
@@ -24,77 +25,68 @@ class ExamsController extends Controller
                 $q->with(['courseType', 'groupType', 'instructor', 'students']);
             }
         ]);
-
-        // Data for filters
+    
         $courseTypes  = CourseType::all();
         $groupTypes   = GroupType::all();
         $examiners    = User::role('Examiner')->get();
         $instructors  = User::role('Instructor')->get();
         $examStatuses = ['new', 'assigned', 'completed'];
-
-        // 1) Filter by Course Type
+    
         if ($request->filled('course_type_id')) {
             $query->whereHas('course.courseType', function($subQuery) use ($request) {
                 $subQuery->where('id', $request->course_type_id);
             });
         }
-
-        // 2) Filter by Group Type
+    
         if ($request->filled('group_type_id')) {
             $query->whereHas('course.groupType', function($subQuery) use ($request) {
                 $subQuery->where('id', $request->group_type_id);
             });
         }
-
-        // 3) Filter by Instructor
+    
         if ($request->filled('instructor_id')) {
             $instructorId = $request->instructor_id;
             $query->whereHas('course.instructor', function($subQuery) use ($instructorId) {
                 $subQuery->where('id', $instructorId);
             });
         }
-
-        // 4) Filter by Examiner
+    
         if ($request->filled('examiner_id')) {
             $query->where('examiner_id', $request->examiner_id);
         }
-
-        // 5) Filter by Status
+    
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         } else {
-            $query->whereNotIn('status', ['completed','canceled','paused']);
+            $query->whereNotIn('status', ['completed', 'canceled', 'paused']);
         }
-        
-        // 6) Custom filter for exam_date (daily, weekly, afterTwoDays)
+    
         if ($request->filled('exam_date_filter')) {
             $dateFilter = $request->exam_date_filter;
             $today      = Carbon::today();
             if ($dateFilter === 'daily') {
                 $query->whereDate('exam_date', $today);
             } elseif ($dateFilter === 'weekly') {
-                $startOfWeek = $today->copy()->startOfWeek(); // Monday
-                $endOfWeek   = $today->copy()->endOfWeek();   // Sunday
+                $startOfWeek = $today->copy()->startOfWeek();
+                $endOfWeek   = $today->copy()->endOfWeek();
                 $query->whereBetween('exam_date', [$startOfWeek, $endOfWeek]);
             } elseif ($dateFilter === 'afterTwoDays') {
                 $targetDate = $today->copy()->addDays(2);
                 $query->whereDate('exam_date', $targetDate);
             }
         }
-
-
-
-        // if i'm examiner, show only my exams check permission Exam Manager
-       
-        if (Auth::user()->hasRole('Examiner') && auth()->user()->permissions->where('name','Exam Manager')->count() == 0) {
+    
+        if (Auth::user()->hasRole('Examiner') && auth()->user()->permissions->where('name', 'Exam Manager')->count() == 0) {
             $query->where('examiner_id', Auth::id());
         }
-
-
-        $exams = $query->orderBy('exam_date','asc')->get();
-
-
-
+    
+        $today = Carbon::today();
+    
+        $exams = $query
+            ->orderByRaw("CASE WHEN exam_date >= ? THEN 0 ELSE 1 END", [$today])
+            ->orderBy('exam_date', 'asc')
+            ->get();
+    
         return view('exam_officer.exams.index', compact(
             'exams',
             'courseTypes',
@@ -104,6 +96,7 @@ class ExamsController extends Controller
             'examStatuses'
         ));
     }
+    
     public function prepareExam(Request $request)
     {
         $data = $request->validate([
