@@ -38,6 +38,7 @@ return [
     'waapi' => [
         'instance_id' => env('WAAPI_INSTANCE_ID'),
         'token'       => env('WAAPI_TOKEN'),
+        'exam_manager_chatid' => env('EXAM_MANAGER_CHATID'),  
     ],
 
 ];

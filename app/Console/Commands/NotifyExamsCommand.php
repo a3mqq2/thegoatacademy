@@ -42,11 +42,11 @@ class NotifyExamsCommand extends Command
                 . "👤 *الممتحِن:* " . ($exam->examiner->name ?? 'غير محدد') . "\n"
                 . "🎯 *المستوى الدراسي:* {$exam->course->courseType->name}\n"
                 . "📚 *نوع الامتحان:* {$exam->exam_type}\n"
-                . "🔗 *رابط القروب:* {$exam->course->group_link}\n\n"
+                . "🔗 *رابط القروب:* {$exam->course->whatsapp_group_link}\n\n"
                 . "يرجى متابعة الانطلاق والتأكد من الحضور في الوقت المحدد. ✅";
 
-            $waapi->sendText(formatLibyanPhone(env('EXAM_MANAGER_CHATID')), $msg);
-            $waapi->sendText(formatLibyanPhone($exam->examiner->phone), $msg);
+            $waapi->sendText(env('EXAM_MANAGER_CHATID'), $msg);
+            $waapi->sendText(config('services.waapi.exam_manager_chatid'), $msg);
         }
 
         return self::SUCCESS;
