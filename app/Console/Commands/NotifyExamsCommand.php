@@ -45,8 +45,8 @@ class NotifyExamsCommand extends Command
                 . "🔗 *رابط القروب:* {$exam->course->whatsapp_group_link}\n\n"
                 . "يرجى متابعة الانطلاق والتأكد من الحضور في الوقت المحدد. ✅";
 
-            $waapi->sendText(env('EXAM_MANAGER_CHATID'), $msg);
-            $waapi->sendText(config('services.waapi.exam_manager_chatid'), $msg);
+                $waapi->sendText(config('services.waapi.exam_manager_chatid'), $msg);
+            $waapi->sendText(formatLibyanPhone($exam->examiner->phone), $msg);
         }
 
         return self::SUCCESS;
