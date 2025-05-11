@@ -1,4 +1,5 @@
 <?php
+// app/Models/CourseType.php
 
 namespace App\Models;
 
@@ -13,7 +14,7 @@ class CourseType extends Model
     protected $fillable = ['name', 'status', 'duration'];
 
     protected $casts = [
-        'status' => 'string',
+        'status'   => 'string',
         'duration' => 'string',
     ];
 
@@ -29,29 +30,14 @@ class CourseType extends Model
         );
     }
 
-    /**
-     * Relationship with skills, including pivot grade data.
-     */
     public function skills()
     {
         return $this->belongsToMany(Skill::class, 'course_type_skill', 'course_type_id', 'skill_id')
-                    ->withPivot(['mid_max', 'final_max']);
+                    ->withPivot(['id', 'mid_max', 'final_max']);
     }
 
-    public static function boot()
+    protected static function boot()
     {
         parent::boot();
-
-        static::creating(function ($courseType) {
-            // Additional logic before creating a course type
-        });
-
-        static::updating(function ($courseType) {
-            // Additional logic before updating a course type
-        });
-
-        static::deleting(function ($courseType) {
-            // Prevent deletion if necessary
-        });
     }
 }

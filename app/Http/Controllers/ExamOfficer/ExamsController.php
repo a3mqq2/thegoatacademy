@@ -244,77 +244,62 @@ class ExamsController extends Controller
 
 
  
+    
+    
     public function storeGrades(Request $request, $examId)
     {
-        // 0) Prevent entering grades before the exam start
         $exam = Exam::findOrFail($examId);
         [$startTime] = explode(' - ', $exam->time);
-        $examStartsAt = $exam->exam_date
-            ->copy()
-            ->setTimeFromTimeString($startTime);
-    
+        $examStartsAt = $exam->exam_date->copy()->setTimeFromTimeString($startTime);
+
         if (Carbon::now()->lt($examStartsAt)) {
-            return redirect()
-                ->back()
-                ->with('error', 'You cannot submit grades before the exam start time.');
+            return back()->with('error', 'You cannot submit grades before the exam start time.');
         }
-    
-        // 1) Validate input
+
         $validatedData = $request->validate([
-           'grades' => 'required|array',
+            'grades' => 'required|array',
         ]);
-    
-        $courseType = $exam->course->courseType;
-        $skills     = $courseType->skills;
-    
-        // 2) Determine max grades per skill based on exam_type
-        $max_grades = [];
+
+        $skills = $exam->course->courseType->skills;
+
+        $maxGrades = [];
         foreach ($skills as $skill) {
-            if ($exam->exam_type == 'pre') {
-                $max_grades[$skill->id] = $skill->pivot->pre_max;
-            } elseif ($exam->exam_type == 'mid') {
-                $max_grades[$skill->id] = $skill->pivot->mid_max;
-            } else { // final
-                $max_grades[$skill->id] = $skill->pivot->final_max;
-            }
+            $pivotId = $skill->pivot->id;
+            $maxGrades[$pivotId] = match ($exam->exam_type) {
+                'mid'   => $skill->pivot->mid_max,
+                default => $skill->pivot->final_max,  // pre & final use final_max
+            };
         }
-    
-        // 3) Save each student's grades
+
         foreach ($validatedData['grades'] as $studentId => $gradeData) {
             $examStudent = \App\Models\ExamStudent::firstOrCreate([
                 'exam_id'    => $exam->id,
                 'student_id' => $studentId,
             ]);
-    
-            foreach ($gradeData as $skillId => $gradeValue) {
-                if (isset($max_grades[$skillId]) && $gradeValue > $max_grades[$skillId]) {
-                    $gradeValue = $max_grades[$skillId];
+
+            foreach ($gradeData as $pivotId => $gradeValue) {
+                if (isset($maxGrades[$pivotId]) && $gradeValue > $maxGrades[$pivotId]) {
+                    $gradeValue = $maxGrades[$pivotId];
                 }
-    
+
                 \App\Models\ExamStudentGrade::updateOrCreate(
                     [
                         'exam_student_id'      => $examStudent->id,
-                        'course_type_skill_id' => $skillId,
+                        'course_type_skill_id' => $pivotId,
                     ],
                     ['grade' => $gradeValue]
                 );
             }
         }
-    
-        // 4) Mark exam as completed
-        $exam->status = 'completed';
-        $exam->save();
-    
-        // 5) If final exam, mark course completed
-        if ($exam->exam_type == 'final') {
-            $course = $exam->course;
-            $course->status = 'completed';
-            $course->save();
+
+        $exam->update(['status' => 'completed']);
+
+        if ($exam->exam_type === 'final') {
+            $exam->course->update(['status' => 'completed']);
         }
-    
-        return redirect()
-            ->route('exam_officer.exams.index')
-            ->with('success', 'Grades recorded successfully!');
+
+        return redirect()->route('exam_officer.exams.index')
+                        ->with('success', 'Grades recorded successfully!');
     }
     
     

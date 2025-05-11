@@ -147,12 +147,11 @@
                                 <th>Student ID</th>
                                 <th>Student Name</th>
                                 @foreach($skills as $skill)
+                                    @php $pivotId = $skill->pivot->id; @endphp
                                     <th class="text-center">
                                         {{ $skill->name }}<br>
                                         <small>
-                                            @if($exam->exam_type==='pre')
-                                                (Max: {{ $skill->pivot->pre_max }})
-                                            @elseif($exam->exam_type==='mid')
+                                            @if($exam->exam_type === 'mid')
                                                 (Max: {{ $skill->pivot->mid_max }})
                                             @else
                                                 (Max: {{ $skill->pivot->final_max }})
@@ -163,46 +162,45 @@
                                 <th class="text-center">Percentage</th>
                             </tr>
                         </thead>
+            
                         <tbody>
                             @foreach($ongoing as $student)
                                 @php
-                                    $es = $exam->examStudents->firstWhere('student_id', $student->id);
+                                    $es        = $exam->examStudents->firstWhere('student_id', $student->id);
                                     $sumGrades = 0;
                                     $sumMax    = 0;
                                 @endphp
                                 <tr>
                                     <td>{{ $student->id }}</td>
                                     <td>{{ $student->name }}</td>
-
+            
                                     @foreach($skills as $skill)
                                         @php
-                                            $gradeValue = optional($es?->grades
-                                                ->firstWhere('course_type_skill_id', $skill->id)
+                                            $pivotId    = $skill->pivot->id;
+                                            $gradeValue = optional(
+                                                $es?->grades->firstWhere('course_type_skill_id', $pivotId)
                                             )->grade ?: 0;
-
-                                            if ($exam->exam_type === 'pre') {
-                                                $maxValue = $skill->pivot->pre_max;
-                                            } elseif ($exam->exam_type === 'mid') {
-                                                $maxValue = $skill->pivot->mid_max;
-                                            } else {
-                                                $maxValue = $skill->pivot->final_max;
-                                            }
-
+            
+                                            $maxValue   = $exam->exam_type === 'mid'
+                                                ? $skill->pivot->mid_max
+                                                : $skill->pivot->final_max;
+            
                                             $sumGrades += $gradeValue;
                                             $sumMax    += $maxValue;
                                         @endphp
+            
                                         <td>
                                             <input
                                                 type="number"
                                                 step="0.01"
-                                                name="grades[{{ $student->id }}][{{ $skill->id }}]"
-                                                value="{{ old("grades.{$student->id}.{$skill->id}", $gradeValue) }}"
+                                                name="grades[{{ $student->id }}][{{ $pivotId }}]"
+                                                value="{{ old("grades.{$student->id}.{$pivotId}", $gradeValue) }}"
                                                 class="form-control text-center"
                                                 @if(! $canEnter) disabled @endif
                                             >
                                         </td>
                                     @endforeach
-
+            
                                     @php
                                         $percentage = $sumMax > 0
                                             ? round($sumGrades / $sumMax * 100, 1)
@@ -216,7 +214,7 @@
                         </tbody>
                     </table>
                 </div>
-
+            
                 <div class="mt-3">
                     <button
                         type="submit"
@@ -227,6 +225,7 @@
                     </button>
                 </div>
             </form>
+            
 
         </div>
     </div>

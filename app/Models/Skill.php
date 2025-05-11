@@ -1,4 +1,5 @@
 <?php
+// app/Models/Skill.php
 
 namespace App\Models;
 
@@ -13,12 +14,9 @@ class Skill extends Model
         return $this->belongsToMany(Student::class)->withTimestamps();
     }
 
-    /**
-     * Relationship with CourseTypes using the same pivot table.
-     */
     public function courseTypes()
     {
         return $this->belongsToMany(CourseType::class, 'course_type_skill', 'skill_id', 'course_type_id')
-                    ->withPivot(['mid_max', 'final_max']);
+                    ->withPivot(['id', 'mid_max', 'final_max']);
     }
 }
