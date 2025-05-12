@@ -6,14 +6,17 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Level;
 use App\Models\Course;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\AuditLog;
 use App\Models\GroupType;
 use App\Models\CourseType;
+use App\Models\ProgressTest;
 use Illuminate\Http\Request;
 use App\Models\CourseStudent;
 use App\Models\ExcludeReason;
 use App\Models\CourseSchedule;
+use App\Services\WaapiService;
 use App\Models\MeetingPlatform;
 use App\Models\WithdrawnReason;
 use App\Models\CourseAttendance;
@@ -64,6 +67,7 @@ class CourseController extends Controller
   
         public function store(Request $request)
         {
+
             /* 1. validate -------------------------------------------------- */
             $validator = Validator::make($request->all(), [
                 'course_type_id'        => 'required|exists:course_types,id',
@@ -85,7 +89,10 @@ class CourseController extends Controller
                 'whatsapp_group_link'   => 'nullable',
                 'levels'                => 'nullable|array',
                 'levels.*'              => 'exists:levels,id',
+                'progress_tests'       => 'nullable|array',
             ]);
+
+
 
             if ($validator->fails()) {
                 return response()->json([
@@ -107,6 +114,9 @@ class CourseController extends Controller
             $levels     = $data['levels']     ?? [];
             $rawSchedule= $data['schedule']   ?? [];
             $selected   = $request->input('selected_days', []);
+
+
+         
 
             /* guard: capacity */
             if (count($students) > $data['student_capacity']) {
@@ -156,7 +166,18 @@ class CourseController extends Controller
                     'student_count'        => count($students),
                     'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
                     'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
+                    'progress_test_day'    => $request->progress_test_day,
                 ]);
+
+
+                    foreach($request->progress_tests as $progress_test)
+                    {
+                        ProgressTest::create([
+                            'date' => $progress_test['date'],
+                            'course_id' => $course->id,
+                            'week' => $progress_test['week'],
+                        ]);
+                    }
 
                 foreach ($schedule as $row) {
                     $course->schedules()->create([
@@ -245,6 +266,8 @@ class CourseController extends Controller
             'levels.*'              => 'exists:levels,id',
         ]);
     
+
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
@@ -308,9 +331,23 @@ class CourseController extends Controller
                 'student_count'        => count($students),
                 'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
                 'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
+                'progress_test_day'     => $request->progress_test_day,
             ]);
     
             $course->schedules()->delete();
+
+
+            foreach($request->progress_tests as $progress_test)
+            {
+                ProgressTest::updateOrCreate([
+                    'course_id' => $course->id,
+                    'week' => $progress_test['week'],
+                ], [
+                    'date' => $progress_test['date'],
+                ]);
+            }
+            
+
             foreach ($schedule as $row) {
                 $course->schedules()->create([
                     'day'       => $row['day'],
@@ -390,7 +427,7 @@ class CourseController extends Controller
     {
 
 
-        $course = Course::with(['students'])->findOrFail($id);
+        $course = Course::with(['students','progressTests','courseType','groupType','courseType.skills'])->findOrFail($id);
         
         if (request()->wantsJson()) {
             $schedule = CourseSchedule::with('attendances')->whereId(request()->schedule_id)->first();
@@ -576,80 +613,138 @@ class CourseController extends Controller
     }
 
 
-    public function store_attendance(Request $request)
+    public function store_attendance(Request $request, WaapiService $waapi)
     {
+        /* ---------- 1. التحقق من البيانات الأساسية ---------- */
         $data = $request->validate([
-            'course_schedule_id' => 'required|exists:course_schedules,id',
-            'students' => 'required|array',
-            'students.*.student_id' => 'required|exists:students,id',
-            'students.*.attendance' => 'required|in:present,absent',
-            'students.*.notes' => 'nullable|string',
-            'students.*.homework_submitted' => 'required|boolean',
+            'course_schedule_id'          => 'required|exists:course_schedules,id',
+            'students'                    => 'required|array',
+            'students.*.student_id'       => 'required|exists:students,id',
+            'students.*.attendance'       => 'required|in:present,absent',
+            'students.*.notes'            => 'nullable|string',
+            'students.*.homework_submitted'=> 'required|boolean',
         ]);
-    
-        $course = auth()->user()->courses()
-            ->whereHas('schedules', function ($q) use ($data) {
-                $q->where('id', $data['course_schedule_id']);
-            })->first();
-    
-        if (!$course) {
-            return response()->json(['message' => 'Course not found for this schedule.'], 404);
+
+        /* ---------- 2. التحقق من ملكية الكورس ومعرفة الجدول ---------- */
+        $schedule = CourseSchedule::with('course')        // نحتاج الكورس لاحقاً
+                    ->findOrFail($data['course_schedule_id']);
+
+        $course = $schedule->course;
+
+        if ($course->instructor_id !== Auth::id()) {
+            return response()->json(['message' => 'Access denied.'], 403);
         }
-    
+
+        /* ---------- 3. التحقق من نافذة الوقت المسموح بها ---------- */
+        $lectureEnd = Carbon::parse($schedule->date.' '.$schedule->to_time);
+
+        $limitHrs   = (int) Setting::where('key',
+                    'Instructors Can Update Attendance Before Hours')->value('value');
+
+        if (now()->lessThan($lectureEnd) ||
+            now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
+            return response()->json([
+                'message' => 'Attendance cannot be modified at this time.'
+            ], 403);
+        }
+
+        /* ---------- 4. حفظ / تحديث سجلات الحضور للطلبة المُرسَلة ---------- */
         foreach ($data['students'] as $student) {
-            // Save attendance
+
             CourseAttendance::updateOrCreate(
                 [
-                    'course_id' => $course->id,
-                    'student_id' => $student['student_id'],
-                    'course_schedule_id' => $data['course_schedule_id'],
+                    'course_id'         => $course->id,
+                    'student_id'        => $student['student_id'],
+                    'course_schedule_id'=> $schedule->id,
                 ],
                 [
-                    'attendance' => $student['attendance'],
-                    'notes' => $student['notes'] ?? null,
-                    'homework_submitted' => $student['homework_submitted'],
-                    'notes' => $student['notes'] ?? null,
+                    'attendance'        => $student['attendance'],
+                    'homework_submitted'=> $student['homework_submitted'],
+                    'notes'             => $student['notes'] ?? null,
                 ]
             );
-    
-            // Count total absences and unsubmitted homework for this course
+        }
+
+        /* ---------- 5. وسم الجدول بأنه تم أخذ الحضور ---------- */
+        $schedule->update(['attendance_taken_at' => now()]);
+
+        /* ---------- 6. جلب حدود الإنذار / الفصل من الإعدادات ---------- */
+        $warnAbsent      = (int) Setting::where('key','Alter Student Absent For Days')->value('value');
+        $warnHomework    = (int) Setting::where('key','Alter Student Missing Homework For Days')->value('value');
+        $stopAbsent      = (int) Setting::where('key','Stop Student Absent For Days')->value('value');
+        $stopHomework    = (int) Setting::where('key','Stop Student Missing Homework For Days')->value('value');
+
+        /* ---------- 7. فحص كلّ طالب في هذا الكورس ---------- */
+        foreach ($course->students as $stu) {
+
             $absences = CourseAttendance::where([
-                ['course_id', '=', $course->id],
-                ['student_id', '=', $student['student_id']],
-                ['attendance', '=', 'absent'],
-            ])->count();
-    
-            $unsubmittedHomeworks = CourseAttendance::where([
-                ['course_id', '=', $course->id],
-                ['student_id', '=', $student['student_id']],
-                ['homework_submitted', '=', false],
-            ])->count();
-    
-            // If exceeded limit, exclude student
-            if ($absences >= 6 || $unsubmittedHomeworks >= 6) {
-                $course->students()->updateExistingPivot($student['student_id'], [
-                    'status' => 'excluded'
-                ]);
+                            ['course_id',   '=', $course->id],
+                            ['student_id',  '=', $stu->id],
+                            ['attendance',  '=', 'absent'],
+                        ])->count();
+
+            $missHw   = CourseAttendance::where([
+                            ['course_id',          '=', $course->id],
+                            ['student_id',         '=', $stu->id],
+                            ['homework_submitted', '=', false],
+                        ])->count();
+
+            /* ------- حالة الفصل ------- */
+            if ($absences >= $stopAbsent || $missHw >= $stopHomework) {
+                /* ------------- ❶  فصل الطالب ------------- */
+                if ($stu->pivot->status !== 'excluded') {
+                    $course->students()
+                        ->updateExistingPivot($stu->id, ['status' => 'excluded']);
+
+                    // NEW: pause private course
+                    if ($course->groupType && strtolower($course->groupType->name) === 'private') {
+                        $course->update(['status' => 'paused']);
+                    }
+
+                    $msg = "🚫 *تنبيه هام*\n"
+                        . "تم فصل الطالب *{$stu->name}* من الكورس رقم *{$course->id}* "
+                        . "بسبب تجاوز حدّ الغياب/الواجب.\n"
+                        . "عدد الغيابات: $absences  عدد الواجبات غير المسلَّمة: $missHw.";
+
+                    $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
+                }
+
+            /* ------- حالة الإنذار فقط ------- */
+            } elseif ($absences >= $warnAbsent || $missHw >= $warnHomework) {
+
+                // ما زال الطالب ضمن الحدّ – إنذار
+                $msg = "⚠️ *إنذار للطالب {$stu->name}*\n"
+                     . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $warnAbsent)\n"
+                     . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $warnHomework)\n"
+                     . "يرجى الالتزام لتفادي الفصل.";
+
+                $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
+
+            }
+
+            /* ------- إعادة الطالب لو عاد تحت حدّ الفصل ------- */
+            if (
+                $stu->pivot->status === 'excluded' &&
+                $absences < $stopAbsent &&
+                $missHw  < $stopHomework
+            ) {
+                $course->students()
+                       ->updateExistingPivot($stu->id, ['status' => 'ongoing']);
             }
         }
-    
-        // Mark attendance as taken for this schedule
-        CourseSchedule::where('id', $data['course_schedule_id'])->update([
-            'attendance_taken_at' => now(),
+
+        /* ---------- 8. Audit Log ---------- */
+        AuditLog::create([
+            'user_id'     => Auth::id(),
+            'description' => "Took attendance for schedule #{$schedule->id}",
+            'type'        => 'update',
+            'entity_id'   => $course->id,
+            'entity_type' => Course::class,
         ]);
 
-        // log
-        AuditLog::create([
-            'user_id'      => Auth::id(),
-            'description'  => 'Took attendance for course schedule #' . $data['course_schedule_id'],
-            'type'         => 'update',
-            'entity_id'    => $course->id,
-            'entity_type'  => Course::class,
-        ]);
-    
+        /* ---------- 9. استجابة ---------- */
         return response()->json(['message' => 'Attendance saved successfully']);
     }
-
     public function restore($courseId)
     {
 

@@ -1,277 +1,151 @@
 <template>
-   <div class="progress-test-component">
-     <!-- Global Loading Spinner -->
-     <div v-if="globalLoading" class="global-spinner-overlay">
-       <div class="spinner"></div>
-     </div>
- 
-     <div class="progress-test-header">
-       <h3>
-         <i class="fa fa-pencil-alt info-icon"></i> Enter Progress Test Scores
-       </h3>
-       <p class="progress-test-date">
-         <i class="fa fa-calendar info-icon"></i> Date: {{ progressTest.date }}
-       </p>
-     </div>
- 
-     <!-- Display grid if course is loaded -->
-     <div class="progress-test-grid" v-if="course && course.students">
-       <div
-         v-for="(student, index) in course.students"
-         :key="student.id"
-         class="student-progress-card"
-       >
-         <div class="card-top-row">
-           <div class="student-info-section">
-             <div class="student-details">
-               <h6>
-                 <i class="fa fa-user info-icon"></i> {{ student.name }}
-               </h6>
-               <p>
-                 <i class="fa fa-phone info-icon"></i> {{ student.phone }}
-               </p>
-             </div>
-           </div>
-         </div>
-         <!-- Input fields for score and note -->
-         <div class="progress-inputs">
-           <div class="form-group">
-             <label>Score:</label>
-             <input
-               type="number"
-               v-model.number="student.score"
-               class="form-control"
-               placeholder="Enter score"
-             />
-           </div>
-         </div>
-       </div>
-     </div>
- 
-     <button
-       class="btn btn-primary submit-btn"
-       @click="submitProgressTest"
-       :disabled="!anyStudent"
-     >
-       <i class="fa fa-save info-icon"></i> Save Scores
-     </button>
- 
-     <!-- Back Button -->
-     <a href="/instructor/courses?status=ongoing" class="btn btn-secondary mt-4 btn-sm text-light">
-       <i class="fa fa-arrow-left"></i> back
-     </a>
-   </div>
- </template>
- 
- <script>
- import { ref, computed, onMounted } from "vue";
- import instance from "../instance";
- import toastr from "toastr";
- 
- export default {
-   name: "ProgressTest",
-   props: {
-     courseId: { type: Number, required: true }
-   },
-   setup(props) {
-     const $toastr = toastr;
-     const globalLoading = ref(false);
-     const course = ref(null);
-     // Initialize a new progress test with today's date
-     const progressTest = ref({
-       date: new Date().toISOString().substring(0, 10)
-     });
- 
-     // Check if there are students available
-     const anyStudent = computed(() => {
-       return course.value?.students?.length > 0;
-     });
- 
-     // Submit new progress test scores to the API
-     const submitProgressTest = async () => {
-       if (!course.value?.students) return;
- 
-       const payload = course.value.students.map((student) => ({
-         student_id: student.id,
-         score: student.score || 0,
-         note: student.note || "",
-         existing_id: student.existing_id || null
-       }));
- 
-       try {
-         await instance.post(`/courses/${props.courseId}/progress-tests`, {
-           // Sending new progress test details
-           date: progressTest.value.date,
-           students: payload
-         });
-         $toastr.success("Progress test scores have been saved successfully!");
-         setTimeout(() => {
-             // Redirect to the course details page
-             window.location.href = `/instructor/courses/${props.courseId}/show`;
-         }, 600);
-       } catch (error) {
-         console.error("Error saving progress test scores", error);
-         $toastr.error("Error saving progress test scores. Please try again later.");
-       }
-     };
- 
-     // Fetch course details from the API
-     const fetchData = async () => {
-       globalLoading.value = true;
-       try {
-         const { data } = await instance.get(`/courses/${props.courseId}?progress_test_id=true`);
-         course.value = data.course;
-         // Map students with additional fields for score and note
-         course.value.students = course.value.students.map((student) => ({
-           id: student.id,
-           name: student.name,
-           phone: student.phone,
-           score: null,
-           note: "",
-           existing_id: null
-         }));
-       } catch (error) {
-         console.error("Error fetching course data", error);
-         $toastr.error("Failed to load course data.");
-       } finally {
-         globalLoading.value = false;
-       }
-     };
- 
-     onMounted(fetchData);
- 
-     return {
-       course,
-       progressTest,
-       globalLoading,
-       anyStudent,
-       submitProgressTest
-     };
-   }
- };
- </script>
- 
- <style scoped>
- :root {
-   --primary-color: #6f42c1;
-   --secondary-color: #007bff;
-   --bg-color: #f0f2f5;
-   --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-   --transition-speed: 0.3s;
- }
- 
- .progress-test-component {
-   padding: 20px;
-   background: #fff;
-   border-radius: 15px;
-   box-shadow: var(--card-shadow);
-   max-width: 1000px;
-   margin: 0 auto;
- }
- .progress-test-header {
-   text-align: center;
-   margin-bottom: 20px;
- }
- .progress-test-header h2 {
-   font-size: 2rem;
-   color: var(--primary-color);
-   margin-bottom: 5px;
- }
- .progress-test-date {
-   font-size: 1.2rem;
-   color: var(--secondary-color);
- }
- 
- /* Progress Test Grid */
- .progress-test-grid {
-   display: grid;
-   grid-template-columns: 1fr;
-   gap: 15px;
-   margin-bottom: 20px;
- }
- @media (min-width: 768px) {
-   .progress-test-grid {
-     grid-template-columns: 1fr;
-   }
- }
- 
- /* Student Progress Card */
- .student-progress-card {
-   background: linear-gradient(135deg, #fdfdfd, #f0f2f5);
-   border-radius: 10px;
-   padding: 15px;
-   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-   display: flex;
-   flex-direction: column;
-   gap: 10px;
-   position: relative;
-   z-index: 1;
- }
- .card-top-row {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
- }
- .student-info-section {
-   flex: 3;
-   display: flex;
-   align-items: center;
- }
- .student-details h6 {
-   margin: 0;
-   font-size: 1.1rem;
-   color: #333;
-   font-weight: 600;
- }
- .student-details p {
-   margin: 0;
-   font-size: 0.9rem;
-   color: #777;
- }
- 
- /* Progress Inputs */
- .progress-inputs {
-   display: flex;
-   gap: 10px;
-   flex-wrap: wrap;
- }
- .progress-inputs .form-group {
-   flex: 1;
-   min-width: 150px;
- }
- 
- /* Button Styles */
- .submit-btn {
-   display: block;
-   margin: 20px auto 0;
-   font-size: 1.1rem;
-   padding: 10px 20px;
- }
- .info-icon {
-   margin-right: 5px;
- }
- .global-spinner-overlay {
-   position: fixed;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-   background: rgba(255, 255, 255, 0.7);
-   z-index: 9999;
-   display: flex;
-   align-items: center;
-   justify-content: center;
- }
- .spinner {
-   width: 25px;
-   height: 25px;
-   border: 4px solid #bbb;
-   border-top: 4px solid #333;
-   border-radius: 50%;
-   animation: spin 1s linear infinite;
- }
- @keyframes spin {
-   to { transform: rotate(360deg); }
- }
- </style>
- 
+  <div class="progress-test-component">
+    <!-- Global spinner -->
+    <div v-if="globalLoading" class="global-spinner-overlay">
+      <div class="spinner" />
+    </div>
+
+    <!-- Header -->
+    <header class="text-center mb-4">
+      <h3 class="mb-1">
+        <i class="fa fa-pencil-alt me-1" /> Enter Progress-Test Scores
+      </h3>
+      <p class="text-muted mb-0">
+        <i class="fa fa-calendar me-1" /> Date : {{ progressTest.date }}
+      </p>
+    </header>
+
+    <!-- =========== Students × Skills table =========== -->
+    <div v-if="ready" class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th style="width:60px">#</th>
+            <th style="min-width:220px">Student</th>
+
+            <!-- one column per skill -->
+            <th v-for="skill in skills"
+                :key="skill.id"
+                class="text-center"
+                style="min-width:120px">
+              {{ skill.name }}<br />
+              <small class="text-muted">( / {{ skill.pivot.mid_max }})</small>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr v-for="(student, idx) in course.students" :key="student.id">
+            <td>{{ idx + 1 }}</td>
+            <td>
+              <strong>{{ student.name }}</strong><br />
+              <small class="text-muted"><i class="fa fa-phone me-1" />{{ student.phone }}</small>
+            </td>
+
+            <!-- score input for each skill -->
+            <td v-for="skill in skills"
+                :key="skill.id">
+              <input type="number"
+                     class="form-control form-control-sm text-center"
+                     v-model.number="student.scores[skill.id]"
+                     :max="skill.pivot.mid_max"
+                     min="0"
+                     :placeholder="`0-${skill.pivot.mid_max}`" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Buttons -->
+    <footer class="d-flex justify-content-between mt-4">
+      <a class="btn btn-secondary btn-sm text-light"
+         href="/instructor/courses?status=ongoing">
+        <i class="fa fa-arrow-left" /> Back
+      </a>
+
+      <button class="btn btn-primary"
+              :disabled="!ready"
+              @click="submitProgressTest">
+        <i class="fa fa-save" /> Save Scores
+      </button>
+    </footer>
+  </div>
+</template>
+
+<script>
+import { ref, computed, onMounted } from 'vue'
+import instance                      from '../instance'
+import toastr                        from 'toastr'
+
+export default {
+  name : 'ProgressTest',
+  props: { courseId: { type: Number, required: true } },
+
+  setup (props) {
+    const globalLoading = ref(false)
+    const course        = ref(null)
+    const progressTest  = ref({ date: new Date().toISOString().slice(0, 10) })
+
+    /* ========= derived ========= */
+    const skills = computed(() => course.value?.course_type?.skills ?? [])
+    const ready  = computed(() => course.value && course.value.students?.length && skills.value.length)
+
+    /* ========= fetch ========= */
+    const fetchData = async () => {
+      globalLoading.value = true
+      try {
+        const { data } = await instance.get(`/courses/${props.courseId}?progress_test_id=true`)
+        course.value = data.course
+
+        /* initialise scores object for each student */
+        const skillIds = skills.value.map(s => s.id)
+        course.value.students = course.value.students.map(st => {
+          const scores = {}
+          skillIds.forEach(id => { scores[id] = null })
+          return { ...st, scores }
+        })
+      } catch (e) {
+        toastr.error('Failed to load course data')
+      } finally {
+        globalLoading.value = false
+      }
+    }
+
+    /* ========= submit ========= */
+    const submitProgressTest = async () => {
+      if (!ready.value) return
+
+      const payload = course.value.students.map(st => ({
+        student_id: st.id,
+        scores    : st.scores   // { skillId : score }
+      }))
+
+      try {
+        await instance.post(`/courses/${props.courseId}/progress-tests`, {
+          date    : progressTest.value.date,
+          students: payload
+        })
+        toastr.success('Scores saved successfully')
+        setTimeout(() =>
+          window.location.href = `/instructor/courses/${props.courseId}/show`, 600)
+      } catch (e) {
+        toastr.error('Error saving scores')
+      }
+    }
+
+    onMounted(fetchData)
+    return { course, skills, progressTest, globalLoading, ready, submitProgressTest }
+  }
+}
+</script>
+
+<style scoped>
+:root{--primary:#6f42c1;--shadow:0 6px 14px rgba(0,0,0,.08)}
+.progress-test-component{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:22px;max-width:1080px;margin:auto}
+.info-icon{margin-right:4px}
+.global-spinner-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:9999}
+.spinner{width:28px;height:28px;border:4px solid #bbb;border-top:4px solid #333;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.table th,.table td{vertical-align:middle}
+</style>

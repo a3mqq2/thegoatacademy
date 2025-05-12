@@ -26,6 +26,7 @@ class Course extends Model
         'time',
         'meeting_platform_id',
         'whatsapp_group_link',
+        'progress_test_day',
     ];
 
     /**

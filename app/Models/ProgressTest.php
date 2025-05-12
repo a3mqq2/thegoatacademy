@@ -15,6 +15,7 @@ class ProgressTest extends Model
     protected $fillable = [
         'date',
         'course_id',
+        'week',
     ];
 
     /**

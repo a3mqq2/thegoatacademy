@@ -38,7 +38,8 @@
                           <!-- Give each textarea the class 'editor' so Summernote can replace it -->
                           <textarea
                             name="settings[{{ $setting->key }}]"
-                            class="form-control editor"
+                            class="form-control " 
+                            {{-- editor class --}}
                             cols="30"
                             rows="10"
                           >{{ $setting->value }}</textarea>
