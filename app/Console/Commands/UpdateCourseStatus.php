@@ -10,19 +10,23 @@ use Illuminate\Support\Facades\DB;
 class UpdateCourseStatus extends Command
 {
     protected $signature = 'courses:update-status';
-    protected $description = 'Update course status (upcoming / ongoing) based on start_date';
+    protected $description = 'Update course status based on dates';
 
     public function handle(): int
     {
         DB::transaction(function () {
             $today = Carbon::today();
 
+            Course::whereDate('end_date', '<', $today)
+                ->whereNotIn('status', ['completed', 'canceled', 'paused'])
+                ->update(['status' => 'completed']);
+
             Course::whereDate('start_date', '<=', $today)
-                ->where('status', '!=', 'ongoing')
+                ->whereNotIn('status', ['ongoing', 'completed', 'canceled', 'paused'])
                 ->update(['status' => 'ongoing']);
 
             Course::whereDate('start_date', '>', $today)
-                ->where('status', '!=', 'upcoming')
+                ->whereNotIn('status', ['upcoming', 'completed', 'canceled', 'paused'])
                 ->update(['status' => 'upcoming']);
         });
 
