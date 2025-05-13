@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Exam;
 use Carbon\Carbon;
+use App\Models\Exam;
+use App\Services\WaapiService;
+use Illuminate\Console\Command;
 
 class UpdateOverdueExams extends Command
 {
@@ -13,18 +14,33 @@ class UpdateOverdueExams extends Command
 
     public function handle()
     {
-        // ✅ 1. اجعل أي امتحان assigned وتأخر يومين أو أكثر → overdue
-        $overdueUpdated = Exam::where('status', 'assigned')
+        $overdueExams = Exam::where('status', 'assigned')
             ->whereDate('exam_date', '<=', Carbon::now()->subDays(2))
-            ->update(['status' => 'overdue']);
+            ->get();
 
-        // ✅ 2. ولو أي امتحان overdue وتاريخه قادم → رجعه assigned
+        foreach($overdueExams as $exam)
+        {
+            $whatsapp_service = new WaapiService();
+            $msg = 
+            "🔔 *تنبيه إداري *\n"
+            . "لديك امتحان مرت عليه 48 ساعة ولم تدخل النتائج.\n\n"
+            . "🆔 *رقم الكورس:* {$exam->course->id}\n"
+            . "👤 *الممتحِن:* " . ($exam->examiner->name ?? 'غير محدد') . "\n"
+            . "📚 *نوع الامتحان:* {$exam->exam_type}\n"
+            . "🔗 *رابط القروب:* {$exam->course->whatsapp_group_link}\n\n"
+            . "يرجى الالتزام بإدخال النتائج في توقيتها  😊 ";
+
+            $whatsapp_service->sendText(formatLibyanPhone($exam->examiner->phone), $msg);
+        }
+
+            $overdueExams->update(['status' => 'overdue']);
+
         $revertedAssigned = Exam::where('status', 'overdue')
             ->whereDate('exam_date', '>', Carbon::now())
             ->update(['status' => 'assigned']);
 
-        $this->info("Overdue exams updated: {$overdueUpdated}");
         $this->info("Exams reverted to assigned: {$revertedAssigned}");
+
 
         return 0;
     }
