@@ -122,7 +122,7 @@
                             @foreach($skills as $skill)
                                 <td class="text-center">
                                     @if($exam->exam_type === 'pre')
-                                        {{ $skill->pivot->pre_max }}
+                                        {{ $skill->pivot->final_max }}
                                     @elseif($exam->exam_type === 'mid')
                                         {{ $skill->pivot->mid_max }}
                                     @else
