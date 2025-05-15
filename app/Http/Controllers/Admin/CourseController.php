@@ -639,7 +639,7 @@ class CourseController extends Controller
         $lectureEnd = Carbon::parse($schedule->date.' '.$schedule->to_time);
 
         $limitHrs   = (int) Setting::where('key',
-                    'Instructors Can Update Attendance Before Hours')->value('value');
+                    'Updating the students’ Attendance after the class.')->value('value');
 
         if (now()->lessThan($lectureEnd) ||
             now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
@@ -669,10 +669,10 @@ class CourseController extends Controller
         $schedule->update(['attendance_taken_at' => now()]);
 
         /* ---------- 6. جلب حدود الإنذار / الفصل من الإعدادات ---------- */
-        $warnAbsent      = (int) Setting::where('key','Alter Student Absent For Days')->value('value');
-        $warnHomework    = (int) Setting::where('key','Alter Student Missing Homework For Days')->value('value');
-        $stopAbsent      = (int) Setting::where('key','Stop Student Absent For Days')->value('value');
-        $stopHomework    = (int) Setting::where('key','Stop Student Missing Homework For Days')->value('value');
+        $warnAbsent      = (int) Setting::where('key','Student’s absence alert')->value('value');
+        $warnHomework    = (int) Setting::where('key','Student’s missing homework’s alert')->value('value');
+        $stopAbsent      = (int) Setting::where('key','Dismissing the student because of absence')->value('value');
+        $stopHomework    = (int) Setting::where('key','Dismissing the student because of not delivering the homework.')->value('value');
 
         /* ---------- 7. فحص كلّ طالب في هذا الكورس ---------- */
         foreach ($course->students as $stu) {

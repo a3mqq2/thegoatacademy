@@ -18,7 +18,8 @@
   table{width:100%;border-collapse:collapse}
   th,td{border:1px solid #dee2e6;padding:.45rem .7rem;vertical-align:top}
   th{background:#f8f9fa;font-size:.88rem;font-weight:600}
-  .exam-row{background:#151f42;color:#fff}
+  .exam-row{background:#151f42;color:#fff!important}
+  .exam-row td {color: #fff !important;}
   .progress-row{background:#ffc107;color:#000}
   .badge{font-size:.8rem}
 </style>
@@ -164,7 +165,7 @@
 
                     /* grace hours after lectureEnd (setting) */
                     $limitHrs = (int) (
-                      \App\Models\Setting::where('key','Instructors Can Update Attendance Before Hours')
+                      \App\Models\Setting::where('key','Updating the students’ Attendance after the class.')
                                         ->value('value') ?? 0
                     );
 
@@ -210,7 +211,7 @@
 
                   {{-- Mid-exam immediately after middle lecture --}}
                   @if($lecCounter==$midPoint && $course->mid_exam_date)
-                    <tr class="exam-row">
+                    <tr class="exam-row text-light">
                       <td colspan="2">MID-Exam</td>
                       <td>{{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})</td>
                       <td colspan="2"></td><td></td>

@@ -19,11 +19,11 @@ class NotifyLateAttendanceCommand extends Command
     public function handle(WaapiService $waapi): int
     {
         /* عدد الساعات المسموح بها بعد نهاية المحاضرة لتسجيل الحضور */
-        $limitHrs = (int) Setting::where('key','Instructors Can Update Attendance Before Hours')
+        $limitHrs = (int) Setting::where('key','Updating the students’ Attendance after the class.')
                                  ->value('value');
 
         if ($limitHrs === 0) {
-            $this->warn('لم يتم ضبط قيمة (Instructors Can Update Attendance Before Hours) أو أنها = 0');
+            $this->warn('لم يتم ضبط قيمة (Updating the students’ Attendance after the class.) أو أنها = 0');
             return self::SUCCESS;
         }
 

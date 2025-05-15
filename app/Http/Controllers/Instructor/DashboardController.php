@@ -26,7 +26,7 @@ class DashboardController extends Controller
             ->count();
 
         /*— المهلة بالساعات المسموح بها بعد نهاية المحاضرة —*/
-        $limitHrs = (int) (Setting::where('key', 'Instructors Can Update Attendance Before Hours')
+        $limitHrs = (int) (Setting::where('key', 'Updating the students’ Attendance after the class.')
                         ->value('value') ?? 0);
 
         /*══════════════ محاضرات اليوم (لم يُؤخذ حضورها) ══════════════*/

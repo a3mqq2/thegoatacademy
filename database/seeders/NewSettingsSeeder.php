@@ -14,23 +14,23 @@ class NewSettingsSeeder extends Seeder
     {
         $settings = [
             [
-                'key' => 'Alter Student Absent For Days',
+                'key' => 'Student’s absence alert',
                 'value' => 3,
             ],
             [
-                'key' => 'Alter Student Missing Homework For Days',
+                'key' => 'Student’s missing homework’s alert',
                 'value' => 3,
             ],
             [
-                'key' => 'Stop Student Absent For Days',
+                'key' => 'Dismissing the student because of absence',
                 'value' => 6,
             ],
             [
-                'key' => 'Stop Student Missing Homework For Days',
+                'key' => 'Dismissing the student because of not delivering the homework.',
                 'value' => 6,
             ],
             [
-                'key' => 'Instructors Can Update Attendance Before Hours',
+                'key' => 'Updating the students’ Attendance after the class.',
                 'value' => 12,
             ],
         ];
