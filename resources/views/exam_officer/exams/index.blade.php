@@ -141,13 +141,13 @@
                 <td>
                   <div class="d-flex align-items-center justify-content-between">
                     <span>{{ optional($exam->examiner)->name ?? '-' }}</span>
-                    <button
+                    {{-- <button
                       type="button"
                       class="btn btn-sm btn-outline-primary ms-2"
                       data-bs-toggle="modal"
                       data-bs-target="#assignExaminerModal-{{ $exam->id }}">
                       <i class="fas fa-user-edit"></i>
-                    </button>
+                    </button> --}}
                   </div>
                 </td>
                 <td>

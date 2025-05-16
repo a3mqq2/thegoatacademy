@@ -90,7 +90,7 @@
             $timeline->push([
               'type'     => 'lecture',
               'no'       => $idx+1,
-              'day'      => $dayName[$s->day] ?? $s->day,   // translate id→name
+              'day'      => $dayName[$s->day] ?? $s->day,
               'date'     => $s->date,
               'from'     => $s->from_time,
               'to'       => $s->to_time,
@@ -109,136 +109,125 @@
           $midPoint   = ceil($course->schedules->count()/2);
           $lecCounter = 0;
         @endphp
-        {{-- ════════════ Schedule Table with attendance-window logic ════════════ --}}
+
         <div class="table-responsive">
           <table class="table align-middle mb-0">
             <thead>
               <tr>
-                <th>#</th><th>Day</th><th>Date</th><th>From</th><th>To</th><th class="text-center">-</th>
+                <th>#</th>
+                <th>Day</th>
+                <th>Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">-</th>
               </tr>
             </thead>
-
             <tbody>
-              {{-- ── Pre-test ─────────────────────────────────────────────── --}}
+              {{-- Pre-test --}}
               @if($course->pre_test_date)
                 <tr class="exam-row">
                   <td colspan="2">Pre-Test</td>
                   <td>{{ $course->pre_test_date }} ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})</td>
-                  <td colspan="2"></td><td></td>
+                  <td colspan="2"></td>
+                  <td></td>
+                  <td></td>
                 </tr>
               @endif
 
-
-              {{-- ── Lectures & Progress tests ───────────────────────────── --}}
+              {{-- Lectures & Progress tests --}}
               @foreach($timeline as $row)
-
-                {{-- Progress test --}}
                 @if($row['type']==='progress')
                   <tr class="progress-row">
                     <td colspan="2">Progress Test – Week {{ $row['week'] }}</td>
                     <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                    <td colspan="2"></td><td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
                   </tr>
-
-                {{-- Lecture --}}
                 @else
                   @php
-                    /* increment counter */
                     $lecCounter++;
-
-                    $sch = $row['schedule'];                                     // CourseSchedule model
-
-                    /* --------------------------------------------------------
-                      Calculate lecture-end datetime correctly even when the
-                      class crosses midnight (e.g. From 11 PM → To 12 AM).   */
-                    $date        = $row['date'];                                 // 2025-05-11
-                    $fromTimeObj = \Carbon\Carbon::parse($row['from']);          // Carbon  ( for comparison )
-                    $toTimeObj   = \Carbon\Carbon::parse($row['to']);            // Carbon
-
-                    // end-of-lecture = Y-m-d + to_time
-                    $lectureEnd  = \Carbon\Carbon::parse($date.' '.$row['to']);
-
-                    // if “to” is *earlier* than “from” we crossed midnight → push to next day
+                    $sch         = $row['schedule'];
+                    $date        = $row['date'];
+                    $fromTimeObj = \Carbon\Carbon::parse($row['from']);
+                    $toTimeObj   = \Carbon\Carbon::parse($row['to']);
+                    $lectureEnd  = \Carbon\Carbon::parse("{$date} {$row['to']}");
                     if ($toTimeObj->lessThanOrEqualTo($fromTimeObj)) {
-                      $lectureEnd->addDay();                                     // now 2025-05-12 00:14
+                      $lectureEnd->addDay();
                     }
-
-                    /* grace hours after lectureEnd (setting) */
-                    $limitHrs = (int) (
-                      \App\Models\Setting::where('key','Updating the students’ Attendance after the class.')
-                                        ->value('value') ?? 0
-                    );
-
-                    /* show button ONLY when:
-                        now() is  ≥  lectureEnd
-                        AND       ≤  lectureEnd + limit      */
-                    $canTake = now()->between($lectureEnd, $lectureEnd->copy()->addHours($limitHrs));
+                    $limitHrs    = (int) (\App\Models\Setting::where('key','Updating the students’ Attendance after the class.')->value('value') ?? 0);
+                    $attendanceTaken = (bool) $sch->attendance_taken_at;
+                    $expired         = now()->gt($lectureEnd->copy()->addHours($limitHrs));
                   @endphp
-
 
                   <tr>
                     <td>{{ $lecCounter }}</td>
                     <td>{{ $row['day'] }}</td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['to'  ])->format('g:i A') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['to']  )->format('g:i A') }}</td>
+
+                    {{-- Status column --}}
                     <td class="text-center">
+                      @if($attendanceTaken)
+                        <i class="fa fa-check text-success"></i>
+                      @elseif($expired)
+                        <i class="fa fa-times text-danger"></i>
+                      @endif
+                    </td>
 
-
-
-
-
-                      {{-- Take-attendance button (inside time-window) --}}
-                      @if($canTake)
-                        <a href="{{ route('instructor.courses.take_attendance',[
-                                'course'         => $course->id,
-                                'CourseSchedule' => $sch->id
-                              ]) }}"
+                    {{-- Actions column --}}
+                    <td class="text-center">
+                      @if(now()->between($lectureEnd, $lectureEnd->copy()->addHours($limitHrs)))
+                        <a href="{{ route('instructor.courses.take_attendance', ['course'=>$course->id,'CourseSchedule'=>$sch->id]) }}"
                           class="btn btn-primary btn-sm">
                           <i class="fa fa-edit"></i>
                         </a>
                       @else
-                        @if ($sch->attendance_taken_at)
-                          {{-- Show attendance button (after time-window) --}}
-                          <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#attendanceModal-{{ $sch->id }}">
+                        @if($sch->attendance_taken_at)
+                          <button class="btn btn-success btn-sm"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#attendanceModal-{{ $sch->id }}">
                             <i class="fa fa-eye"></i>
                           </button>
-                            
                         @endif
                       @endif
                     </td>
                   </tr>
 
-                  {{-- Mid-exam immediately after middle lecture --}}
+                  {{-- Mid-exam --}}
                   @if($lecCounter==$midPoint && $course->mid_exam_date)
                     <tr class="exam-row text-light">
                       <td colspan="2">MID-Exam</td>
                       <td>{{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})</td>
-                      <td colspan="2"></td><td></td>
+                      <td colspan="2"></td>
+                      <td></td>
+                      <td></td>
                     </tr>
                   @endif
                 @endif
               @endforeach
-
 
               {{-- Final-exam --}}
               @if($course->final_exam_date)
                 <tr class="exam-row">
                   <td colspan="2">Final-Exam</td>
                   <td>{{ $course->final_exam_date }} ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})</td>
-                  <td colspan="2"></td><td></td>
+                  <td colspan="2"></td>
+                  <td></td>
+                  <td></td>
                 </tr>
               @endif
             </tbody>
           </table>
         </div>
-
-
       @else
         <p class="p-3 mb-0 text-muted">No schedule entries.</p>
       @endif
     </div>
   </div>
+
 
   {{-- ================= STUDENTS ================= --}}
   <div class="card">
