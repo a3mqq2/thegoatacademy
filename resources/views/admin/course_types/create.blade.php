@@ -80,6 +80,7 @@
               <thead>
                 <tr>
                   <th>Skill</th>
+                  <th>Progress Test Max Grade</th>
                   <th>Mid Max Grade</th>
                   <th>Final Max Grade</th>
                 </tr>
@@ -129,6 +130,7 @@
           var row = '<tr>';
           // تضمين الـ skill_id عبر حقل مخفي داخل عمود اسم المهارة
           row += '<td>' + skillName + '<input type="hidden" name="skill_grades['+ optionId +'][skill_id]" value="'+ optionId +'"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][progress_test_max]" class="form-control" placeholder="Progress Max Grade"></td>';
           row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][mid_max]" class="form-control" placeholder="Mid Max Grade"></td>';
           row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][final_max]" class="form-control" placeholder="Final Max Grade"></td>';
           row += '</tr>';

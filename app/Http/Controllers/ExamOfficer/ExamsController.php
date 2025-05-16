@@ -102,38 +102,12 @@ class ExamsController extends Controller
             'exam_id'        => 'required|exists:exams,id',
             'examiner_id'    => 'required|exists:users,id',
             'time'           => 'required',
-            'exam_date'      => 'required|date',
             'current_status' => 'required|in:new,assigned,completed',
         ]);
     
         $exam = Exam::findOrFail($data['exam_id']);
         $course = $exam->course;
-        $newDate = Carbon::parse($data['exam_date'])->startOfDay();
-    
-        if ($exam->exam_type === 'pre') {
-            $start = Carbon::parse($course->start_date)->startOfDay();
-            if ($newDate->gt($start)) {
-                return back()->withErrors(['exam_date' => 'Pre-test date cannot be after course start date.']);
-            }
-        }
-    
-        if ($exam->exam_type === 'mid') {
-            $halfIndex = intdiv($course->courseType->duration, 2) - 1;
-            $sortedSchedules = $course->schedules()->orderBy('date')->get();
-            if (isset($sortedSchedules[$halfIndex])) {
-                $expectedMid = Carbon::parse($sortedSchedules[$halfIndex]->date)->addDay();
-                if ($newDate->lt($expectedMid)) {
-                    return back()->withErrors(['exam_date' => 'Mid exam date cannot be earlier than suggested midpoint.']);
-                }
-            }
-        }
-    
-        if ($exam->exam_type === 'final') {
-            $lastClassDate = $course->schedules()->orderByDesc('date')->first();
-            if ($lastClassDate && $newDate->lte(Carbon::parse($lastClassDate->date))) {
-                return back()->withErrors(['exam_date' => 'Final exam must be after the last class date.']);
-            }
-        }
+     
     
         $origExaminer = $exam->examiner_id;
         $origTime     = $exam->time;
@@ -142,7 +116,6 @@ class ExamsController extends Controller
     
         $exam->examiner_id = $data['examiner_id'];
         $exam->time        = $data['time'];
-        $exam->exam_date   = $newDate;
     
         if ($exam->exam_date->lt(Carbon::today()->subDays(2))) {
             $exam->status = 'overdue';
@@ -150,6 +123,9 @@ class ExamsController extends Controller
             $exam->status = 'assigned';
         }
     
+
+
+
         $exam->save();
     
         $changes = [];

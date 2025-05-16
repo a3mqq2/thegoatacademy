@@ -380,19 +380,7 @@
               required
             >
           </div>
-
-          {{-- Date --}}
-          <div class="mb-3">
-            <label class="form-label">Date</label>
-            <input
-              type="text"
-              name="exam_date"
-              class="form-control datepicker"
-            style="width: 100% !important;"
-              value="{{ old('exam_date', optional($exam->exam_date)->format('Y-m-d')) }}"
-              required
-            >
-          </div>
+          
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

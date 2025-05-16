@@ -1,5 +1,4 @@
 <?php
-// app/Models/CourseTypeSkill.php
 
 namespace App\Models;
 
@@ -12,6 +11,7 @@ class CourseTypeSkill extends Model
     protected $fillable = [
         'course_type_id',
         'skill_id',
+        'progress_test_max',
         'mid_max',
         'final_max',
     ];
@@ -30,4 +30,11 @@ class CourseTypeSkill extends Model
     {
         return $this->hasMany(ExamStudentGrade::class, 'course_type_skill_id');
     }
+
+
+    public function progressTestStudentGrades()
+    {
+        return $this->hasMany(ProgressTestStudentGrade::class, 'course_type_skill_id');
+    }
+    
 }

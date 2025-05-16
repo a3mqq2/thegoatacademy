@@ -33,4 +33,17 @@ class ProgressTest extends Model
     {
         return $this->hasMany(ProgressTestStudent::class);
     }
+
+
+    public function grades()
+    {
+        return $this->hasManyThrough(
+            ProgressTestStudentGrade::class,
+            ProgressTestStudent::class,
+            'progress_test_id',            // Foreign key on ProgressTestStudent
+            'progress_test_student_id',    // Foreign key on ProgressTestStudentGrade
+            'id',                          // Local key on ProgressTest
+            'id'                           // Local key on ProgressTestStudent
+        );
+    }
 }

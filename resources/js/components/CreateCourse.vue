@@ -196,8 +196,13 @@
                   class="bg-warning text-center text-dark align-middle"
                 >
                   <td colspan="6">
-                    <strong>Progress Test – Week {{ row.week }}</strong>
-                    ({{ row.day }} – {{ row.date }})
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span>
+                        <strong>Progress Test – Week {{ row.week }}</strong>
+                        ({{ row.day }} – {{ row.date }})
+                      </span>
+                      <button class="btn btn-danger btn-sm" @click="removeSchedule(idx)">Delete</button>
+                    </div>
                   </td>
                 </tr>
 
@@ -223,9 +228,7 @@
                     />
                   </td>
                   <td>
-                    <button class="btn btn-danger" @click="removeSchedule(idx)">
-                      Delete
-                    </button>
+                    <button class="btn btn-danger" @click="removeSchedule(idx)">Delete</button>
                     <button
                       v-if="isScheduleIncomplete"
                       class="btn btn-sm btn-success"
@@ -317,9 +320,7 @@
                 <td>{{ student.phone }}</td>
                 <td>{{ student.booksDue ? 'Yes' : 'No' }}</td>
                 <td>
-                  <button class="btn btn-danger btn-sm" @click="removeStudent(idx)">
-                    Delete
-                  </button>
+                  <button class="btn btn-danger btn-sm" @click="removeStudent(idx)">Delete</button>
                 </td>
               </tr>
             </tbody>
@@ -409,7 +410,6 @@ import Flatpickr from 'vue-flatpickr-component'
 import 'flatpickr/dist/flatpickr.css'
 import instance from '../instance'
 
-/* helpers */
 const pad = n => String(n).padStart(2, '0')
 const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 const skipFriday = d => { if (d.getDay() === 5) d.setDate(d.getDate() + 1); return d }
@@ -431,7 +431,6 @@ export default defineComponent({
     const { appContext } = getCurrentInstance()
     const $toastr = appContext.config.globalProperties.$toastr
 
-    /* ────── state ────── */
     const courseTypes = ref([])
     const groupTypes = ref([])
     const instructors = ref([])
@@ -478,7 +477,6 @@ export default defineComponent({
     const loading = ref(true)
     const globalLoading = ref(false)
 
-    /* Students */
     const studentsList = ref([])
     const selectedStudent = ref(null)
     const showStudentModal = ref(false)
@@ -492,17 +490,14 @@ export default defineComponent({
     const newStudentEmergencyPhone = ref('')
     const newStudentBooksDue = ref(false)
 
-    /* Progress tests */
     const progressTestDay = ref(null)
     const progressTests = ref([])
 
-    /* flatpickr configs */
     const dateConfig = ref({ dateFormat: 'Y-m-d', allowInput: true })
     const dateConfigPre = ref({ dateFormat: 'Y-m-d', allowInput: true })
 
-    /* ────── lifecycle ────── */
     onMounted(() => {
-      selectedDays.value = days.value.filter(d => d.value !== 5) // exclude Friday
+      selectedDays.value = days.value.filter(d => d.value !== 5)
       fetchRequirements()
     })
 
@@ -573,7 +568,6 @@ export default defineComponent({
       nextTick(generateSchedule)
     }
 
-    /* ────── watchers ────── */
     watch(startDate, generateSchedule)
     watch(fromTime, updateToTime)
     watch(progressTestDay, generateSchedule)
@@ -585,7 +579,6 @@ export default defineComponent({
       }
     })
 
-    /* ────── computed ────── */
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) return instructors.value
       const ids = selectedCourseType.value.skills.map(s => s.id)
@@ -603,7 +596,6 @@ export default defineComponent({
       scheduleList.value.filter(r => !r.progress).length < +(selectedCourseType.value?.duration || 0)
     )
 
-    /* ────── utils ────── */
     function updateToTime () {
       if (!fromTime.value || !selectedGroupType.value?.lesson_duration) { toTime.value = ''; return }
       const plus = +selectedGroupType.value.lesson_duration
@@ -618,7 +610,6 @@ export default defineComponent({
       return n
     }
 
-    /* ────── schedule helpers & generator ────── */
     function pushLecture (d) {
       scheduleList.value.push({
         day: days.value.find(x => x.value === d.getDay()).label,
@@ -640,7 +631,6 @@ export default defineComponent({
 
       const occupied = new Set()
 
-      /* Pre-test */
       if (showPreTest.value) {
         if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
           preTestDate.value = startDate.value
@@ -648,7 +638,6 @@ export default defineComponent({
         occupied.add(preTestDate.value)
       } else preTestDate.value = ''
 
-      /* Lectures before mid */
       const half = Math.floor(totalLessons / 2)
       let cur = new Date(startDate.value); cur.setDate(cur.getDate() + 1); skipFriday(cur)
       let before = 0
@@ -660,14 +649,12 @@ export default defineComponent({
         cur.setDate(cur.getDate() + 1); skipFriday(cur)
       }
 
-      /* Mid exam */
       if (showMidExam.value) {
         midExamDate.value = nextFreeDay(cur, occupied)
         occupied.add(midExamDate.value)
         cur = new Date(midExamDate.value); cur.setDate(cur.getDate() + 1); skipFriday(cur)
       } else midExamDate.value = ''
 
-      /* Lectures after mid */
       while (scheduleList.value.filter(r => !r.progress).length < totalLessons) {
         if (storedSelectedDays.value.includes(cur.getDay())) {
           pushLecture(cur); occupied.add(fmtDate(cur))
@@ -675,15 +662,12 @@ export default defineComponent({
         cur.setDate(cur.getDate() + 1); skipFriday(cur)
       }
 
-      /* Final exam */
       const lastLecture = new Date(scheduleList.value[scheduleList.value.length - 1].date)
       lastLecture.setDate(lastLecture.getDate() + 1); skipFriday(lastLecture)
       finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
 
-      /* Progress Tests (weekly on chosen day) */
       if (progressTestDay.value !== null) {
         let p = new Date(startDate.value)
-        // move to first progressTestDay
         while (p.getDay() !== progressTestDay.value) { p.setDate(p.getDate() + 1); skipFriday(p) }
         let week = 1
         const end = new Date(finalExamDate.value || scheduleList.value[scheduleList.value.length - 1].date)
@@ -707,15 +691,19 @@ export default defineComponent({
         }
       }
 
-      /* Sort */
       scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
     }
 
-    /* ────── CRUD helpers ────── */
     const deletePreTest = () => { showPreTest.value = false; preTestDate.value = ''; generateSchedule() }
     const deleteMidExam = () => { showMidExam.value = false; midExamDate.value = ''; generateSchedule() }
     const deleteFinalExam = () => { showFinalExam.value = false; finalExamDate.value = ''; generateSchedule() }
-    function removeSchedule (i) { scheduleList.value.splice(i, 1) }
+    function removeSchedule (i) {
+      if (scheduleList.value[i].progress) {
+        const wk = scheduleList.value[i].week
+        progressTests.value = progressTests.value.filter(t => t.week !== wk)
+      }
+      scheduleList.value.splice(i, 1)
+    }
     function addScheduleAfter (idx) {
       if (!isScheduleIncomplete.value) return
       const cur = new Date(scheduleList.value[idx].date)
@@ -729,7 +717,6 @@ export default defineComponent({
       })
     }
 
-    /* student helpers */
     function onStudentSelected (v) { if (v) { studentsList.value.push({ ...v }); selectedStudent.value = null } }
     async function addStudent () {
       if (!newStudentName.value || !newStudentPhone.value) return
@@ -755,7 +742,6 @@ export default defineComponent({
     }
     function removeStudent (i) { studentsList.value.splice(i, 1) }
 
-    /* save course */
     async function saveCourse () {
       const errs = []
       if (!selectedCourseType.value) errs.push('Course Type is required')
@@ -803,9 +789,7 @@ export default defineComponent({
       } finally { globalLoading.value = false }
     }
 
-    /* expose */
     return {
-      /* data & refs */
       courseTypes, groupTypes, instructors, meetingPlatforms, levels, allStudents,
       selectedCourseType, selectedGroupType, selectedInstructor, selectedMeetingPlatform, selectedLevels,
       startDate, fromTime, toTime, preTestDate, midExamDate, finalExamDate,
@@ -818,11 +802,7 @@ export default defineComponent({
       newStudentSpecialization, newStudentEmergencyPhone, newStudentBooksDue,
       progressTestDay, progressTests,
       dateConfig, dateConfigPre,
-
-      /* computed */
       filteredInstructors, filteredStudents, isScheduleIncomplete,
-
-      /* methods */
       updateFields: () => {
         showFields.value = !!(selectedCourseType.value && selectedGroupType.value)
         if (selectedGroupType.value) studentCapacity.value = selectedGroupType.value.student_capacity || ''

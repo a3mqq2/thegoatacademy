@@ -19,7 +19,7 @@ return new class extends Migration
 
         // 2) Update the ENUM definition, dropping 'pending'
         Schema::table('exams', function (Blueprint $table) {
-            $table->enum('status', ['new', 'assigned', 'in_progress', 'completed'])
+            $table->enum('status', ['new', 'assigned', 'in_progress','overdue', 'completed'])
                   ->default('assigned')
                   ->change();
         });
@@ -37,7 +37,7 @@ return new class extends Migration
 
         // 2) Revert the ENUM definition to include 'pending'
         Schema::table('exams', function (Blueprint $table) {
-            $table->enum('status', ['new', 'pending', 'in_progress', 'completed'])
+            $table->enum('status', ['new', 'pending', 'in_progress','overdue', 'completed'])
                   ->default('pending')
                   ->change();
         });

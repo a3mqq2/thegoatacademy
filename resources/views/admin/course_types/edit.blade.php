@@ -81,6 +81,7 @@
               <thead>
                 <tr>
                   <th>Skill</th>
+                  <th>Progress test Max Grade</th>
                   <th>Mid Max Grade</th>
                   <th>Final Max Grade</th>
                 </tr>
@@ -124,6 +125,7 @@
         $courseType->skills->mapWithKeys(function ($skill) {
             return [
                 $skill->id => [
+                    'progress_test_max' => $skill->pivot->progress_test_max,
                     'mid_max' => $skill->pivot->mid_max,
                     'final_max' => $skill->pivot->final_max
                 ]
@@ -140,12 +142,14 @@
         data.forEach(function(skill) {
           let optionId = skill.id;
           let skillName = skill.text;
+          let progressTestMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].progress_test_max : '';
           let midMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].mid_max : '';
           let finalMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].final_max : '';
           
           let row = '<tr>';
           // Display the skill name and include a hidden input for the skill ID.
           row += '<td>' + skillName + '<input type="hidden" name="skill_grades['+ optionId +'][skill_id]" value="'+ optionId +'"></td>';
+          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][progress_test_max]" class="form-control" placeholder="Progress test Max" value="'+ progressTestMax +'"></td>';
           row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][mid_max]" class="form-control" placeholder="Mid Max Grade" value="'+ midMax +'"></td>';
           row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][final_max]" class="form-control" placeholder="Final Max Grade" value="'+ finalMax +'"></td>';
           row += '</tr>';

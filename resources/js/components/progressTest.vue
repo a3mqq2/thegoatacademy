@@ -29,7 +29,7 @@
                 class="text-center"
                 style="min-width:120px">
               {{ skill.name }}<br />
-              <small class="text-muted">( / {{ skill.pivot.mid_max }})</small>
+              <small class="text-muted">( / {{ skill.pivot.progress_test_max }})</small>
             </th>
           </tr>
         </thead>
@@ -48,9 +48,9 @@
               <input type="number"
                      class="form-control form-control-sm text-center"
                      v-model.number="student.scores[skill.id]"
-                     :max="skill.pivot.mid_max"
+                     :max="skill.pivot.progress_test_max"
                      min="0"
-                     :placeholder="`0-${skill.pivot.mid_max}`" />
+                     :placeholder="`0-${skill.pivot.progress_test_max}`" />
             </td>
           </tr>
         </tbody>

@@ -111,7 +111,7 @@
         @endphp
         {{-- ════════════ Schedule Table with attendance-window logic ════════════ --}}
         <div class="table-responsive">
-          <table class="table table-striped align-middle mb-0">
+          <table class="table align-middle mb-0">
             <thead>
               <tr>
                 <th>#</th><th>Day</th><th>Date</th><th>From</th><th>To</th><th class="text-center">-</th>

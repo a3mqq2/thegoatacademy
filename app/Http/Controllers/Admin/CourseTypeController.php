@@ -49,6 +49,7 @@ class CourseTypeController extends Controller
             'duration'                  => 'nullable',
             'skills'                    => 'nullable|array',
             'skill_grades'              => 'nullable|array',
+            'skill_grades.*.progress_test_max'    => 'required|numeric|min:0',
             'skill_grades.*.mid_max'    => 'required|numeric|min:0',
             'skill_grades.*.final_max'  => 'required|numeric|min:0',
         ]);
@@ -65,6 +66,7 @@ class CourseTypeController extends Controller
             $pivotData = [];
             foreach ($request->input('skill_grades') as $skillId => $grades) {
                 $pivotData[$skillId] = [
+                    'progress_test_max' => $grades['progress_test_max'],
                     'mid_max'   => $grades['mid_max'] ?? 0,
                     'final_max' => $grades['final_max'] ?? 0,
                 ];
@@ -120,6 +122,7 @@ class CourseTypeController extends Controller
             $pivotData = [];
             foreach ($request->input('skill_grades') as $skillId => $grades) {
                 $pivotData[$skillId] = [
+                    'progress_test_max' => $grades['progress_test_max'] ?? 0,
                     'mid_max'   => $grades['mid_max'] ?? 0,
                     'final_max' => $grades['final_max'] ?? 0,
                 ];

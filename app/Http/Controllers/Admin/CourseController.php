@@ -634,12 +634,28 @@ class CourseController extends Controller
         if ($course->instructor_id !== Auth::id()) {
             return response()->json(['message' => 'Access denied.'], 403);
         }
-
         /* ---------- 3. التحقق من نافذة الوقت المسموح بها ---------- */
-        $lectureEnd = Carbon::parse($schedule->date.' '.$schedule->to_time);
+        // وقت البداية كنقطة مرجعية
+        $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
 
-        $limitHrs   = (int) Setting::where('key',
-                    'Updating the students’ Attendance after the class.')->value('value');
+        // وقت النهاية عادي
+        $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
+
+        // إذا انتهت المحاضرة بعد منتصف الليل (end <= start) نضيف 1 يوم
+        if ($lectureEnd->lte($lectureStart)) {
+            $lectureEnd->addDay();
+        }
+
+        // حدود التعديل (بعد الانتهاء حتى نهاية الساعات المسموح بها)
+        $limitHrs = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')->value('value');
+        $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
+
+        // الآن: لا نسمح بالتعديل قبل انتهاء المحاضرة أو بعد انقضاء فترة السماح
+        if ( now()->lt($lectureEnd) || now()->gt($modifyWindowEnd) ) {
+            return response()->json([
+                'message' => 'Attendance cannot be modified at this time.'
+            ], 403);
+        }
 
         if (now()->lessThan($lectureEnd) ||
             now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
