@@ -8,7 +8,7 @@
     <div class="card-header">
       <h4><i class="fa fa-plus"></i> Create Course</h4>
     </div>
-    <div class="card-body">
+    <div class="card-body" id="app">
       <create-course id="{{$course->id}}" ></create-course>
     </div>
   </div>
