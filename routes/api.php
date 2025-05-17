@@ -14,5 +14,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
    Route::post('/courses', [CourseController::class, 'store']);
    Route::put('/courses/{course}', [CourseController::class, 'update']);
    Route::post('/courses/{course}/attendance', [CourseController::class, 'store_attendance']);
-   Route::post('/courses/{course}/progress-tests', [ProgressTestController::class, 'store']);
+   Route::put("/progress-tests/{progressTest}", [ProgressTestController::class, 'store']);
+   Route::get("/progress-tests/{progressTest}", [ProgressTestController::class, 'show']);
 });

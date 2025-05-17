@@ -97,17 +97,7 @@
                    class="btn btn-sm btn-outline-primary">
                   <i class="fa fa-eye"></i>
                 </a>
-          
-                {{-- Take attendance (فقط إذا بدأت المحاضرة) --}}
-                @if($todaySched && $canTake)
-                  <a href="{{ route('instructor.courses.take_attendance', [
-                          'course'         => $course->id,
-                          'CourseSchedule' => $todaySched->id
-                        ]) }}"
-                     class="btn btn-sm btn-success">
-                    <i class="fa fa-check"></i>
-                  </a>
-                @endif
+  
           
                 {{-- Delete --}}
                 {{-- <button class="btn btn-sm btn-danger"

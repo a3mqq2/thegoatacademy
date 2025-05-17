@@ -274,12 +274,11 @@
             </div>
           </div>
         </div>
-        {{-- ... (rest of announcement items exactly as your code) ... --}}
       </div>
     </div>
 
     <!-- [ Main Content ] start -->
-    <div class="pc-container" id="app">
+    <div class="pc-container">
       <div class="pc-content">
         {{-- Optional: separate breadcrumb section if you want --}}
         {{-- 

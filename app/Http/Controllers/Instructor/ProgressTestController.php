@@ -9,68 +9,75 @@ use App\Models\CourseTypeSkill;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProgressTestStudent;
 use App\Http\Controllers\Controller;
+use Laravel\Prompts\Progress;
 
 class ProgressTestController extends Controller
 {
-    public function create(Course $course)
+    public function show(ProgressTest $progressTest, Request $request)
     {
-        return view('instructor.courses.progress_test', compact('course'));
+        if ($request->wantsJson()) {
+            $progressTest->load([
+                'progressTestStudents.student',
+                'progressTestStudents.grades.courseTypeSkill.skill',
+                'course.courseType.skills'
+            ]);
+    
+            return response()->json([
+                'progressTest' => $progressTest
+            ]);
+        }
+    
+        return view('instructor.courses.progress_test', compact('progressTest'));
     }
+    
 
-    public function store(Request $request, $courseId)
+    public function store(Request $request, ProgressTest $progressTest)
     {
         $data = $request->validate([
-            'date'              => 'required|date',
-            'students'          => 'required|array',
-            'students.*.student_id'    => 'required|exists:students,id',
-            'students.*.scores'        => 'required|array',
-            'students.*.scores.*'      => 'nullable|numeric|min:0',
+            'date'               => 'required|date',
+            'students'           => 'required|array',
+            'students.*.student_id' => 'required|exists:students,id',
+            'students.*.scores'     => 'required|array',
+            'students.*.scores.*'   => 'nullable|numeric|min:0',
         ]);
 
-        $course = Course::with('courseType.skills')->findOrFail($courseId);
-
-        DB::transaction(function() use ($data, $course) {
-            // determine week number (e.g. next sequential)
-            $week = $course->progressTests()->count() + 1;
-
-            // create the progress test
-            $progressTest = ProgressTest::create([
-                'date'      => $data['date'],
-                'course_id' => $course->id,
-                'week'      => $week,
-            ]);
+        DB::transaction(function() use ($data, $progressTest) {
+            // update test date
+            $progressTest->update(['date' => $data['date'], 'done_at' => now(), 'done_by' => auth()->user()->id]);
 
             foreach ($data['students'] as $stu) {
-                // overall score can be sum of all skill scores (optional)
-                $totalScore = array_sum($stu['scores']);
+                // ensure a student record exists
+                $pts = ProgressTestStudent::firstOrCreate(
+                    [
+                        'progress_test_id' => $progressTest->id,
+                        'student_id'       => $stu['student_id'],
+                    ],
+                    [
+                        'course_id' => $progressTest->course_id,
+                    ]
+                );
 
-                // create student record
-                $pts = ProgressTestStudent::create([
-                    'progress_test_id' => $progressTest->id,
-                    'student_id'       => $stu['student_id'],
-                    'course_id'        => $course->id,
-                    'score'            => $totalScore,
-                ]);
+                // update aggregate score
+                $total = array_sum($stu['scores']);
+                $pts->update(['score' => $total]);
 
-                // store each skill grade
-                foreach ($stu['scores'] as $skillId => $score) {
-                    // find the pivot row to get max grade
-                    $ctSkill = CourseTypeSkill::where([
-                        'course_type_id' => $course->course_type_id,
-                        'skill_id'       => $skillId,
-                    ])->firstOrFail();
+                // update or create individual skill grades
+                foreach ($stu['scores'] as $pivotId => $score) {
+                    $pivot = CourseTypeSkill::findOrFail($pivotId);
 
-                    $pts->grades()->create([
-                        'course_type_skill_id' => $ctSkill->id,
-                        'progress_test_grade'  => $score,
-                        'max_grade'            => $ctSkill->progress_test_max,
-                    ]);
+                    $pts->grades()->updateOrCreate(
+                        ['course_type_skill_id' => $pivotId],
+                        [
+                            'progress_test_grade' => $score,
+                            'max_grade'           => $pivot->progress_test_max,
+                        ]
+                    );
                 }
             }
         });
 
         return response()->json([
-            'message' => 'Scores saved successfully'
-        ], 201);
+            'message' => 'Progress-test scores saved successfully'
+        ], 200);
     }
 }

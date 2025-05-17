@@ -1,14 +1,13 @@
-<!-- resources/js/components/Attendance.vue -->
 <template>
   <div class="attendance-component">
+    <!-- Global spinner -->
     <div v-if="globalLoading" class="global-spinner-overlay">
       <div class="spinner"></div>
     </div>
 
-    <div class="attendance-header text-left">
-      <p class="attendance-date" v-if="schedule">
-        <i class="fa fa-calendar info-icon"></i> Date: {{ schedule.date }}
-      </p>
+    <!-- Closed notice -->
+    <div v-if="isClosed" class="alert alert-warning text-center">
+      Editing window has closed. You cannot modify attendance anymore.
     </div>
 
     <div v-if="course && course.students">
@@ -26,7 +25,7 @@
             <tr
               v-for="(student, index) in course.students"
               :key="student.id"
-              :class="{ disabled: !canModify(student) || cannotMark(student) }"
+              :class="{ disabled: !canModify(student) || isClosed }"
             >
               <td>{{ index + 1 }}</td>
               <td>{{ student.name }}</td>
@@ -35,7 +34,7 @@
                   <input
                     type="checkbox"
                     v-model="student.attendancePresent"
-                    :disabled="!canModify(student)"
+                    :disabled="!canModify(student) || isClosed"
                   />
                   <span class="slider round"></span>
                 </label>
@@ -45,7 +44,7 @@
                   <input
                     type="checkbox"
                     v-model="student.homeworkSubmitted"
-                    :disabled="!canModify(student)"
+                    :disabled="!canModify(student) || isClosed"
                   />
                   <span class="slider round"></span>
                 </label>
@@ -59,7 +58,7 @@
     <button
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
-      :disabled="!anyModifiable"
+      :disabled="!anyModifiable || isClosed"
     >
       <i class="fa fa-save info-icon"></i> Save Attendance
     </button>
@@ -68,7 +67,7 @@
       href="/instructor/courses/?status=ongoing"
       class="btn btn-secondary mt-4 btn-sm text-light"
     >
-      <i class="fa fa-arrow-left"></i> back
+      <i class="fa fa-arrow-left"></i> Back
     </a>
   </div>
 </template>
@@ -82,31 +81,84 @@ export default {
   name: "Attendance",
   props: {
     courseId: { type: Number, required: true },
-    date: { type: String, default: () => new Date().toISOString().substring(0, 10) },
+    date: {
+      type: String,
+      default: () => new Date().toISOString().substring(0, 10),
+    },
     scheduleId: { type: Number, default: null },
   },
   setup(props) {
-    const $toastr = toastr;
     const globalLoading = ref(false);
     const course = ref(null);
     const schedule = ref(null);
 
+    // today as JS Date (midnight)
+    const today = computed(() => {
+      const d = new Date(props.date);
+      d.setHours(0,0,0,0);
+      return d;
+    });
+
+    // what weekday is today? 0=Sunday…6=Saturday
+    const todayWeekday = computed(() => new Date(props.date).getDay());
+
+    // six days ago at midnight
+    const sixDaysAgo = computed(() => {
+      const d = new Date(props.date);
+      d.setDate(d.getDate() - 6);
+      d.setHours(0,0,0,0);
+      return d;
+    });
+
+    // is today the course’s configured “catch-up” weekday?
+    const isProgressTestDay = computed(() => {
+      return (
+        course.value.progress_test_day == todayWeekday.value
+      );
+    });
+
+    // can still “catch up” on a lecture if:
+    // – lecture date is before today but strictly after sixDaysAgo
+    // – today matches progress_test_day
+    const isCatchup = computed(() => {
+      if (!schedule.value) return false;
+      const lec = new Date(schedule.value.date);
+      return (
+        lec < today.value &&
+        lec.getTime() > sixDaysAgo.value.getTime() &&
+        isProgressTestDay.value &&
+        !schedule.value.attendance_taken_at
+      );
+    });
+
+    // Determine if the editing window has closed
+    const isClosed = computed(() => {
+      if (isCatchup.value) return false;
+      const rawClose = schedule.value?.close_at;
+      if (!rawClose) return false;
+      // convert "YYYY-MM-DD HH:mm:ss" → ISO
+      const closeMs = new Date(rawClose.replace(" ", "T")).getTime();
+      return Date.now() >= closeMs;
+    });
+
     const cannotMark = (student) => student.absencesCount >= 6;
-    const canModify = (student) => !["withdrawn", "excluded"].includes(student.pivot?.status);
+    const canModify = (student) =>
+      !["withdrawn", "excluded"].includes(student.pivot?.status);
 
     const anyModifiable = computed(() =>
-      course.value?.students?.some((student) => canModify(student))
+      course.value?.students?.some(
+        (st) => canModify(st) && !isClosed.value
+      )
     );
 
     const submitAttendance = async () => {
-      if (!course.value?.students) return;
-
-      const payload = course.value.students.map((student) => ({
-        student_id: student.id,
-        attendance: student.attendancePresent ? "present" : "absent",
-        notes: student.notes || "",
-        homework_submitted: student.homeworkSubmitted ? 1 : 0,
-        existing_id: student.existing_id || null,
+      if (!anyModifiable.value) return;
+      const payload = course.value.students.map((st) => ({
+        student_id: st.id,
+        attendance: st.attendancePresent ? "present" : "absent",
+        notes: st.notes || "",
+        homework_submitted: st.homeworkSubmitted ? 1 : 0,
+        existing_id: st.existing_id || null,
       }));
 
       try {
@@ -114,10 +166,10 @@ export default {
           course_schedule_id: schedule.value.id,
           students: payload,
         });
-        $toastr.success("Attendance has been saved successfully!");
+        toastr.success("Attendance has been saved successfully!");
       } catch (error) {
         console.error("Error saving attendance", error);
-        $toastr.error("Error saving attendance. Please try again later.");
+        toastr.error("Error saving attendance. Please try again later.");
       }
     };
 
@@ -130,30 +182,29 @@ export default {
         course.value = data.course;
         schedule.value = data.schedule;
 
+        // map existing attendance
         const attendanceMap = {};
-        if (schedule.value?.attendances?.length) {
-          schedule.value.attendances.forEach((attendance) => {
-            attendanceMap[attendance.student_id] = attendance;
-          });
-        }
+        (schedule.value.attendances || []).forEach((att) => {
+          attendanceMap[att.student_id] = att;
+        });
 
-        course.value.students = course.value.students.map((student) => {
-          const existing = attendanceMap[student.id] || {};
+        course.value.students = course.value.students.map((st) => {
+          const ex = attendanceMap[st.id] || {};
           return {
-            id: student.id,
-            name: student.name,
-            phone: student.phone,
-            absencesCount: student.absencesCount ?? 0,
-            homeworkSubmitted: existing.homework_submitted !== 0,
-            attendancePresent: existing.attendance === "present",
-            notes: existing.notes ?? "",
-            existing_id: existing.id || null,
-            pivot: student.pivot || {},
+            id: st.id,
+            name: st.name,
+            phone: st.phone,
+            absencesCount: st.absencesCount ?? 0,
+            attendancePresent: ex.attendance === "present",
+            homeworkSubmitted: ex.homework_submitted === 1,
+            notes: ex.notes || "",
+            existing_id: ex.id || null,
+            pivot: st.pivot || {},
           };
         });
       } catch (error) {
         console.error("Error fetching data", error);
-        $toastr.error("Failed to load attendance data.");
+        toastr.error("Failed to load attendance data.");
       } finally {
         globalLoading.value = false;
       }
@@ -162,9 +213,10 @@ export default {
     onMounted(fetchData);
 
     return {
+      globalLoading,
       course,
       schedule,
-      globalLoading,
+      isClosed,
       canModify,
       cannotMark,
       anyModifiable,
@@ -192,15 +244,6 @@ export default {
   margin: 0 auto;
 }
 
-.attendance-header {
-  margin-bottom: 20px;
-}
-
-.attendance-date {
-  font-size: 1.1rem;
-  color: var(--secondary-color);
-}
-
 .attendance-table th,
 .attendance-table td {
   vertical-align: middle !important;
@@ -211,11 +254,6 @@ export default {
   cursor: not-allowed;
 }
 
-.attendance-table tbody tr:hover:not(.disabled) {
-  background: #f8f9fa;
-  transition: background var(--transition-speed);
-}
-
 .submit-btn {
   display: block;
   margin: 20px auto 0;
@@ -223,16 +261,9 @@ export default {
   padding: 10px 20px;
 }
 
-.info-icon {
-  margin-right: 5px;
-}
-
 .global-spinner-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(255, 255, 255, 0.7);
   z-index: 9999;
   display: flex;
@@ -249,12 +280,6 @@ export default {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .switch {
   position: relative;
   display: inline-block;
@@ -269,10 +294,7 @@ export default {
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background-color: #ccc;
   transition: 0.4s;
   border-radius: 34px;
@@ -280,10 +302,8 @@ export default {
 .slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
   background-color: white;
   transition: 0.4s;
   border-radius: 50%;
@@ -294,4 +314,5 @@ export default {
 .switch input:checked + .slider:before {
   transform: translateX(26px);
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

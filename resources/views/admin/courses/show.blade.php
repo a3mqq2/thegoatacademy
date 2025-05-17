@@ -252,55 +252,6 @@
   </div>
   <!-- End Schedule Section -->
 
-  <!-- Progress Tests Section -->
-  <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
-      <h5 class="mb-0">
-        <i class="fa fa-clipboard"></i> Progress Tests
-      </h5>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#progressTestsCollapse" aria-expanded="true" aria-controls="progressTestsCollapse">
-        <i class="fa fa-minus"></i>
-      </button>
-    </div>
-    <div id="progressTestsCollapse" class="collapse">
-      <div class="card-body">
-        @if($course->progressTests->count())
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Date</th>
-                  <th>Students Taken</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($course->progressTests as $i => $test)
-                  <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ \Carbon\Carbon::parse($test->date)->format('Y-m-d') }}</td>
-                    <td>{{ $test->progressTestStudents->count() }}</td>
-                    <td>
-                      <button class="btn btn-sm btn-info" 
-                              data-bs-toggle="modal" 
-                              data-bs-target="#progressTestDetailsModal-{{ $test->id }}">
-                        <i class="fa fa-eye"></i> View Details
-                      </button>
-                    </td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
-        @else
-          <p class="text-muted mb-0">No progress tests available for this course.</p>
-        @endif
-      </div>
-    </div>
-  </div>
-  <!-- End Progress Tests Section -->
-
   <!-- Enrolled Students Section -->
   <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
@@ -443,52 +394,6 @@
   </div>
 </div>
 <!-- End Container -->
-
-<!-- Modals for Progress Test Details -->
-@foreach($course->progressTests as $test)
-  <div class="modal fade" id="progressTestDetailsModal-{{ $test->id }}" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Progress Test Details - {{ \Carbon\Carbon::parse($test->date)->format('Y-m-d') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          @if($test->progressTestStudents->count())
-            <div class="table-responsive">
-              <table class="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Student Name</th>
-                    <th>Student Phone</th>
-                    <th>Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @foreach($test->progressTestStudents as $item)
-                    <tr>
-                      <td>{{ $loop->iteration }}</td>
-                      <td>{{ $item->student->name ?? 'N/A' }}</td>
-                      <td>{{ $item->student->phone ?? 'N/A' }}</td>
-                      <td>{{ $item->score }}</td>
-                    </tr>
-                  @endforeach
-                </tbody>
-              </table>
-            </div>
-          @else
-            <p>No student records found for this test.</p>
-          @endif
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-@endforeach
-
 <!-- Enroll Student Modal -->
 <div class="modal fade" id="enrollStudentModal" tabindex="-1">
   <div class="modal-dialog">

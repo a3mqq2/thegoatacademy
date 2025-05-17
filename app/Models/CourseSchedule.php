@@ -15,7 +15,9 @@ class CourseSchedule extends Model
         'date',
         'from_time',
         'to_time',
-        'attendance_taken_at'
+        'attendance_taken_at',
+        'close_at',
+        'alert_at',
     ];
 
     /**

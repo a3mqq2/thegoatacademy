@@ -21,6 +21,8 @@
     --transition-speed: 0.3s;
   }
 
+
+
   body {
     background: var(--bg-color);
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -80,6 +82,14 @@
     to { transform: rotate(360deg); }
   }
 
+
+  .card-success
+  {
+    background-color: #28a745 !important;
+    color: #fff !important;
+  }
+
+  
   /* Dashboard Main Card Styles */
   .card.dashboard-card {
     border: none;
@@ -166,7 +176,7 @@
   
   <div class="row">
 
-   @foreach ($coursesNeedsProgressTest as $course)
+   @foreach ($rawTests as $test)
     <div class="col-md-6">
       <div class="card" style="border-radius: 5px !important; border: 4px dashed #FF5722; background: rgb(255 242 238); padding: 0 !important;">
         <div class="card-body d-flex align-items-center p-3">
@@ -176,8 +186,8 @@
               It's time for the Progress Test! 🎯<br>
               Ready to enter the scores?
             </h5>
-            <h3>{{ $course->courseType->name }}</h3>
-            <a href="{{ route('instructor.courses.progress_tests.create', $course->id) }}" class="btn btn-success mt-3">
+            <h3>{{ $test->course->courseType->name }}</h3>
+            <a href="{{ route('instructor.courses.progress_tests.show', $test->id) }}" class="btn btn-success mt-3">
               Enter Scores
             </a>
           </div>
@@ -190,7 +200,7 @@
 
 
 
-    @foreach ($schedules as $schedule)
+    @foreach ($pendingSchedules as $schedule)
 
       <div class="col-md-12">
         <div class="card" style="border-radius: 5px !important;
@@ -217,7 +227,7 @@
     @endforeach
 
 
-    @foreach ($previousWeekSchedules as $schedule)
+    @foreach ($missedLastWeek as $schedule)
     <div class="col-md-12">
       <div class="card" style="border-radius: 5px !important;
       border: 4px dashed #F57F17;
@@ -248,7 +258,7 @@
   </div>
 
   <div class="row  mb-3">
-    <div class="col-12 col-md-12 col-lg-12">
+    <div class="col-12 col-md-12 col-lg-6">
         <a href="{{route('instructor.courses.index',['status' => 'ongoing'])}}">
           <div class="card top-widget">
             <div class="card-body">
@@ -263,7 +273,26 @@
           </div>
         </a>
     </div>
+    <div class="col-12 col-md-12 col-lg-6">
+      <a href="{{route('instructor.courses.index',['status' => 'completed'])}}">
+        <div class="card card-success top-widget" style="background: #28a745 !important;">
+          <div class="card-body">
+            <div>
+              <h3 class="mb-1 text-light">{{ $completed_courses }}</h3>
+              <p class="mb-0">Completed Courses</p>
+            </div>
+            <div>
+              <i class="fa fa-book fa-3x"></i>
+            </div>
+          </div>
+        </div>
+      </a>
   </div>
+  </div>
+
+
+
+
 
 
 </div><!-- end container -->

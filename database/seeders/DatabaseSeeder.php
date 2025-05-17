@@ -69,6 +69,8 @@ class DatabaseSeeder extends Seeder
             GroupTypeSeeder::class,
             // CourseTypeSeeder::class,
             LevelsTableSeeder::class,
+            NewSettingsSeeder::class,
+            SettingsForProgressTestSeeder::class,
         ]);
     }
 }

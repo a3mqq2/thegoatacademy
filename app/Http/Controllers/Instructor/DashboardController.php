@@ -8,98 +8,99 @@
  *──────────────────────────────────────────────────────────────*/
 namespace App\Http\Controllers\Instructor;
 
-use App\Http\Controllers\Controller;
-use App\Models\CourseSchedule;
-use App\Models\Setting;
 use Carbon\Carbon;
+use App\Models\Setting;
+use App\Models\ProgressTest;
+use App\Models\CourseSchedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
 
 class DashboardController extends Controller
 {
-    /*──────────────────────── index ────────────────────────*/
+    /**
+     * Display the instructor dashboard.
+     */
     public function index()
     {
-        /*— عدد الكورسات الجارية —*/
-        $ongoing_courses = auth()->user()
-            ->courses()
-            ->where('status', 'ongoing')
-            ->count();
+        $user = Auth::user();
 
-        /*— المهلة بالساعات المسموح بها بعد نهاية المحاضرة —*/
-        $limitHrs = (int) (Setting::where('key', 'Updating the students’ Attendance after the class.')
-                        ->value('value') ?? 0);
+        // 1) Counters
+        $ongoing_courses   = $user->courses()->where('status', 'ongoing')->count();
+        $completed_courses = $user->courses()->where('status', 'completed')->count();
 
-        /*══════════════ محاضرات اليوم (لم يُؤخذ حضورها) ══════════════*/
-        $todayRaw = CourseSchedule::whereDate('date', now()->toDateString())
-            ->whereNull('attendance_taken_at')
-            ->whereHas('course', function ($q) {
-                $q->where('instructor_id', auth()->id());
-            })
-            ->with('course')
+        // 2) Today’s date & weekday (0=Sun … 6=Sat)
+        $today   = Carbon::now()->toDateString();
+        $weekday = Carbon::now()->dayOfWeek;
+
+        // 3) Open progress-tests whose scheduled time ≤ now, still within close_at, not done yet
+        $rawTests = ProgressTest::whereNull('done_at')
+            ->whereDate('date', $today)
+            ->whereHas('course', fn($q) => $q->where('instructor_id', $user->id))
+            ->whereRaw(
+                "STR_TO_DATE(CONCAT(`date`,' ',`time`),'%Y-%m-%d %H:%i') <= ?",
+                [ now()->format('Y-m-d H:i') ]
+            )
+            ->where('close_at', '>=', now())
             ->get();
 
-        // إبقاء المحاضرات التى بدأت بالفعل ولم تنقضِ المهلة
-        $schedules = $todayRaw->filter(function ($sch) use ($limitHrs) {
-            $start   = Carbon::parse($sch->date . ' ' . $sch->from_time); // وقت البداية
-            $closing = Carbon::parse($sch->date . ' ' . $sch->to_time)->addHours($limitHrs);
+        // 4) Today’s schedules still within their attendance window
+        $rawSchedules = CourseSchedule::whereDate('date', $today)
+            ->whereHas('course', fn($q) => $q->where('instructor_id', $user->id))
+            ->get();
+        $pendingSchedules = $rawSchedules
+            ->whereNull('attendance_taken_at')
+            ->where('close_at', '>', now())
+            ->values();
 
-            return now()->greaterThanOrEqualTo($start)   // بدأت
-                && now()->lessThanOrEqualTo($closing);    // والمهلة مستمرة
-        })->values();
+        // 5) Courses that need a progress-test today
+        $coursesDueProgress = $user->courses()
+            ->where('status', 'ongoing')
+            ->where('progress_test_day', $weekday)
+            ->whereDoesntHave('progressTests', fn($q) => $q->where('date', $today))
+            ->get();
 
-        /*══════════════ محاضرات الأسبوع الماضى (لم يُؤخذ حضورها) ══════════════*/
+        // 6) Missed lectures last week, but only if today is this course's progress_test_day
         $weekStart = Carbon::now()->startOfWeek(Carbon::SATURDAY)->subWeek();
-        $weekEnd   = (clone $weekStart)->addDays(6);
+        $weekEnd   = (clone $weekStart)->addDays(5);
+        $todayDow  = Carbon::now()->dayOfWeek;
 
-        $prevRaw = CourseSchedule::whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+        $missedLastWeek = CourseSchedule::whereBetween('date', [
+                $weekStart->toDateString(),
+                $weekEnd->toDateString(),
+            ])
             ->whereNull('attendance_taken_at')
-            ->whereHas('course', function ($q) {
-                $q->where('instructor_id', auth()->id());
-            })
-            ->with('course')
-            ->get();
-
-        $previousWeekSchedules = $prevRaw->filter(function ($sch) use ($limitHrs) {
-            $start   = Carbon::parse($sch->date . ' ' . $sch->from_time);
-            $closing = Carbon::parse($sch->date . ' ' . $sch->to_time)->addHours($limitHrs);
-
-            return now()->greaterThanOrEqualTo($start)
-                && now()->lessThanOrEqualTo($closing);
-        })->values();
-
-        /*══════════════ الكورسات التى لم يُضف لها Progress-Test لهذا الأسبوع ══════════════*/
-        $progressTestDate = Carbon::now(); // الخميس (أو الجمعة تحسب خميس حسب السياسة)
-        if ($progressTestDate->isFriday()) {
-            $progressTestDate = $progressTestDate->subDay();
-        }
-        $progressTestDate = $progressTestDate->toDateString();
-
-        $coursesNeedsProgressTest = auth()->user()->courses()
-            ->where('status', 'ongoing')
-            ->whereDoesntHave('progressTests', function ($q) use ($progressTestDate) {
-                $q->where('date', $progressTestDate);
+            ->whereDate('date', '>=', Carbon::now()->subDays(6)->toDateString())   // no older than 6 days
+            ->whereHas('course', function($q) use ($user, $todayDow) {
+                $q->where('instructor_id', $user->id)
+                  ->where('progress_test_day', $todayDow);
             })
             ->get();
 
-        /*══════════════ إرجاع الـ view ══════════════*/
         return view('instructor.dashboard', compact(
             'ongoing_courses',
-            'schedules',
-            'previousWeekSchedules',
-            'coursesNeedsProgressTest'
+            'completed_courses',
+            'rawTests',
+            'pendingSchedules',
+            'coursesDueProgress',
+            'missedLastWeek'
         ));
     }
 
-    /*──────────────────────── الملف الشخصـى ────────────────────────*/
+    /**
+     * Show instructor profile page.
+     */
     public function profile()
     {
         return view('instructor.profile');
     }
 
-    /*──────────────────────── تحديث الملف الشخصـى ────────────────────────*/
+    /**
+     * Update instructor profile.
+     */
     public function profile_update(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $rules = [
             'name'     => 'required|string|max:255',
@@ -113,35 +114,37 @@ class DashboardController extends Controller
             'shifts'   => 'nullable|array',
         ];
 
-        $validated       = $request->validate($rules);
-        $user->name      = $validated['name'];
-        $user->email     = $validated['email'];
-        $user->phone     = $validated['phone'];
-        $user->age       = $validated['age']   ?? $user->age;
-        $user->video     = $validated['video'] ?? $user->video;
-        $user->notes     = $validated['notes'] ?? $user->notes;
+        $validated = $request->validate($rules);
+
+        $user->fill([
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'age'   => $validated['age']   ?? $user->age,
+            'video' => $validated['video'] ?? $user->video,
+            'notes' => $validated['notes'] ?? $user->notes,
+        ]);
 
         if (!empty($validated['password'])) {
             $user->password = \Hash::make($validated['password']);
         }
+
         if ($request->hasFile('avatar')) {
             $user->avatar = $request->file('avatar')->store('avatars', 'public');
         }
+
         $user->save();
 
-        /*—— تحديث الورديات ——*/
+        // Update shifts
         $user->shifts()->delete();
         if ($request->has('shifts')) {
             foreach (array_chunk($request->shifts, 3) as $shift) {
-                $day = $shift[0]['day'] ?? null;
-                $st  = $shift[1]['start_time'] ?? null;
-                $et  = $shift[2]['end_time']   ?? null;
-
-                if ($day && $st && $et) {
+                [$dayEntry, $startEntry, $endEntry] = $shift;
+                if (!empty($dayEntry['day']) && !empty($startEntry['start_time']) && !empty($endEntry['end_time'])) {
                     $user->shifts()->create([
-                        'day'        => $day,
-                        'start_time' => $st,
-                        'end_time'   => $et,
+                        'day'        => $dayEntry['day'],
+                        'start_time' => $startEntry['start_time'],
+                        'end_time'   => $endEntry['end_time'],
                     ]);
                 }
             }

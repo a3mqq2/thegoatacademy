@@ -25,6 +25,21 @@
 
 
 <li class="pc-item">
+  <a href="{{route('instructor.courses.index', ['status' => 'completed'])}}" class="pc-link">
+    <span class="pc-micon">
+      <svg class="pc-icon">
+        <use xlink:href="#custom-element-plus"></use>
+      </svg>
+    </span>
+    <span class="pc-mtext">Completed Courses</span>
+  </a>
+</li>
+
+
+
+
+
+<li class="pc-item">
   <a href="{{route('instructor.profile')}}" class="pc-link">
     <span class="pc-micon">
       <svg class="pc-icon">

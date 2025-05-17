@@ -33,10 +33,12 @@
 
 <div class="container">
 
+
   {{-- ================= OVERVIEW ================= --}}
   <div class="card mt-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h4 class="text-light"><i class="fa fa-info-circle"></i> Course #{{ $course->id }}</h4>
+      <a href="{{route('instructor.courses.print', $course)}}" class="btn btn-danger btn-sm"><i class="fa fa-print"></i> Print Course </a>
       <a href="{{ route('instructor.courses.index',['status'=>'ongoing']) }}" class="btn btn-outline-light btn-sm"><i class="fa fa-arrow-left"></i> Back</a>
     </div>
     <div class="card-body p-0">
@@ -81,38 +83,43 @@
 
   {{-- ================= SCHEDULE + PROGRESS ================= --}}
   <div class="card mt-3">
-    <div class="card-header"><h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5></div>
+    <div class="card-header">
+      <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
+    </div>
     <div class="card-body p-0">
       @if($course->schedules->count())
         @php
           $timeline = collect();
-          foreach($course->schedules as $idx=>$s){
+          foreach ($course->schedules as $idx => $s) {
             $timeline->push([
               'type'     => 'lecture',
-              'no'       => $idx+1,
+              'no'       => $idx + 1,
               'day'      => $dayName[$s->day] ?? $s->day,
               'date'     => $s->date,
               'from'     => $s->from_time,
               'to'       => $s->to_time,
-              'schedule' => $s
+              'schedule' => $s,
             ]);
           }
-          foreach($course->progressTests as $pt){
+          foreach ($course->progressTests as $pt) {
             $timeline->push([
               'type' => 'progress',
+              'pt'   => $pt,
               'week' => $pt->week,
               'day'  => \Carbon\Carbon::parse($pt->date)->format('l'),
-              'date' => $pt->date
+              'date' => $pt->date,
+              'time' => $pt->time,
+              'id'   => $pt->id,
             ]);
           }
           $timeline   = $timeline->sortBy('date')->values();
-          $midPoint   = ceil($course->schedules->count()/2);
+          $midPoint   = ceil($course->schedules->count() / 2);
           $lecCounter = 0;
         @endphp
-
+  
         <div class="table-responsive">
-          <table class="table align-middle mb-0">
-            <thead>
+          <table class="table table-bordered align-middle mb-0">
+            <thead class="table-light">
               <tr>
                 <th>#</th>
                 <th>Day</th>
@@ -120,105 +127,78 @@
                 <th>From</th>
                 <th>To</th>
                 <th class="text-center">Status</th>
-                <th class="text-center">-</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {{-- Pre-test --}}
-              @if($course->pre_test_date)
-                <tr class="exam-row">
-                  <td colspan="2">Pre-Test</td>
-                  <td>{{ $course->pre_test_date }} ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})</td>
-                  <td colspan="2"></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              @endif
-
-              {{-- Lectures & Progress tests --}}
               @foreach($timeline as $row)
-                @if($row['type']==='progress')
-                  <tr class="progress-row">
+                {{-- Progress Test --}}
+                @if($row['type'] === 'progress')
+                  @php
+                    $pt        = $row['pt'];
+                    $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
+                    $closed    = now()->gt(\Carbon\Carbon::parse($pt->close_at));
+                  @endphp
+                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) table-danger text-light @endif">
                     <td colspan="2">Progress Test – Week {{ $row['week'] }}</td>
                     <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                    <td colspan="2"></td>
-                    <td></td>
-                    <td></td>
+                    <td colspan="2">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                    <td>
+                      @if($hasGrades)
+                        <i class="fa fa-check text-success"></i>
+                      @elseif($closed)
+                        <i class="fa fa-times text-light"></i>
+                      @endif
+                    </td>
+                    <td>
+                      @if($hasGrades)
+                        <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
+                           class="btn btn-info btn-sm">Grades</a>
+                      @endif
+                    </td>
                   </tr>
                 @else
+                  {{-- Lecture --}}
                   @php
                     $lecCounter++;
-                    $sch         = $row['schedule'];
-                    $date        = $row['date'];
-                    $fromTimeObj = \Carbon\Carbon::parse($row['from']);
-                    $toTimeObj   = \Carbon\Carbon::parse($row['to']);
-                    $lectureEnd  = \Carbon\Carbon::parse("{$date} {$row['to']}");
-                    if ($toTimeObj->lessThanOrEqualTo($fromTimeObj)) {
-                      $lectureEnd->addDay();
-                    }
-                    $limitHrs    = (int) (\App\Models\Setting::where('key','Updating the students’ Attendance after the class.')->value('value') ?? 0);
-                    $attendanceTaken = (bool) $sch->attendance_taken_at;
-                    $expired         = now()->gt($lectureEnd->copy()->addHours($limitHrs));
+                    $sch     = $row['schedule'];
+                    $closeAt = \Carbon\Carbon::parse($sch->close_at);
+                    $today   = now()->toDateString();
+                    $showBtn = ($row['date'] === $today) && now()->lt($closeAt);
                   @endphp
-
                   <tr>
                     <td>{{ $lecCounter }}</td>
                     <td>{{ $row['day'] }}</td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['to']  )->format('g:i A') }}</td>
-
-                    {{-- Status column --}}
+                    <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
                     <td class="text-center">
-                      @if($attendanceTaken)
+                      @if($sch->attendance_taken_at)
                         <i class="fa fa-check text-success"></i>
-                      @elseif($expired)
+                      @elseif(now()->toDateString() >= $row['date'] && now()->gt($closeAt))
                         <i class="fa fa-times text-danger"></i>
                       @endif
                     </td>
-
-                    {{-- Actions column --}}
                     <td class="text-center">
-                      @if(now()->between($lectureEnd, $lectureEnd->copy()->addHours($limitHrs)))
-                        <a href="{{ route('instructor.courses.take_attendance', ['course'=>$course->id,'CourseSchedule'=>$sch->id]) }}"
+                      @if($showBtn)
+                        <a href="{{ route('instructor.courses.take_attendance', [
+                            'course'         => $course->id,
+                            'CourseSchedule' => $sch->id,
+                          ]) }}"
                           class="btn btn-primary btn-sm">
                           <i class="fa fa-edit"></i>
                         </a>
-                      @else
-                        @if($sch->attendance_taken_at)
-                          <button class="btn btn-success btn-sm"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#attendanceModal-{{ $sch->id }}">
-                            <i class="fa fa-eye"></i>
-                          </button>
-                        @endif
+                      @elseif($sch->attendance_taken_at)
+                        <button class="btn btn-success btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#attendanceModal-{{ $sch->id }}">
+                          <i class="fa fa-eye"></i>
+                        </button>
                       @endif
                     </td>
                   </tr>
-
-                  {{-- Mid-exam --}}
-                  @if($lecCounter==$midPoint && $course->mid_exam_date)
-                    <tr class="exam-row text-light">
-                      <td colspan="2">MID-Exam</td>
-                      <td>{{ $course->mid_exam_date }} ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})</td>
-                      <td colspan="2"></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
-                  @endif
                 @endif
               @endforeach
-
-              {{-- Final-exam --}}
-              @if($course->final_exam_date)
-                <tr class="exam-row">
-                  <td colspan="2">Final-Exam</td>
-                  <td>{{ $course->final_exam_date }} ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})</td>
-                  <td colspan="2"></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              @endif
             </tbody>
           </table>
         </div>
@@ -227,30 +207,115 @@
       @endif
     </div>
   </div>
-
-
-  {{-- ================= STUDENTS ================= --}}
-  <div class="card">
-    <div class="card-header"><h5 class="text-light"><i class="fa fa-users"></i> Enrolled Students</h5></div>
-    <div class="card-body p-0">
-      @if($course->students->count())
-        <table>
-          <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
-          <tbody>
-            @foreach($course->students as $i=>$st)
-              @php $c = $st->pivot->status=='ongoing'?'info':($st->pivot->status=='withdrawn'?'warning':'danger'); @endphp
-              <tr>
-                <td>{{ $i+1 }}</td><td>{{ $st->name }}</td><td>{{ $st->phone }}</td>
-                <td><span class="badge bg-{{ $c }}">{{ ucfirst($st->pivot->status) }}</span></td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
-      @else
-        <p class="p-3 mb-0 text-muted">No students enrolled.</p>
-      @endif
+  
+  
+  
+{{-- Progress Test Grades Modals --}}
+@foreach($course->progressTests as $pt)
+  <div class="modal fade" id="progressModal-{{ $pt->id }}" tabindex="-1" aria-labelledby="progressModalLabel-{{ $pt->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="progressModalLabel-{{ $pt->id }}">
+            Progress Test Grades – Week {{ $pt->week }} ({{ $pt->date }}) 
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Student</th>
+                  @foreach($course->courseType->skills as $skill)
+                    <th class="text-center">{{ $skill->name }}</th>
+                  @endforeach
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($pt->progressTestStudents as $i => $pts)
+                  <tr>
+                    <td>{{ $i+1 }}</td>
+                    <td>
+                      {{ $pts->student->name }}<br>
+                      <small class="text-muted">{{ $pts->student->phone }}</small>
+                    </td>
+                    @foreach($course->courseType->skills as $skill)
+                      @php
+                        $g = $pts->grades
+                                ->where('course_type_skill_id', $skill->pivot->id)
+                                ->first();
+                      @endphp
+                      <td class="text-center">{{ $g ? $g->progress_test_grade : '-' }}</td>
+                    @endforeach
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
     </div>
   </div>
+@endforeach
+
+
+
+{{-- ================= STUDENTS ================= --}}
+<div class="card">
+  <div class="card-header">
+    <h5 class="text-light"><i class="fa fa-users"></i> Enrolled Students</h5>
+  </div>
+  <div class="card-body p-0">
+    @if($course->students->count())
+      <table class="table mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th style="width:120px">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($course->students as $i => $st)
+            @php
+              $badge = match($st->pivot->status) {
+                'ongoing'   => 'info',
+                'withdrawn' => 'warning',
+                default     => 'danger',
+              };
+            @endphp
+            <tr>
+              <td>{{ $i + 1 }}</td>
+              <td>{{ $st->name }}</td>
+              <td>{{ $st->phone }}</td>
+              <td>
+                <span class="badge bg-{{ $badge }}">
+                  {{ ucfirst($st->pivot->status) }}
+                </span>
+              </td>
+              <td>
+                <a href="{{ route('instructor.courses.students.stats', [$course->id, $st->id]) }}"
+                   class="btn btn-sm btn-info">
+                  Show Stats
+                </a>
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    @else
+      <p class="p-3 mb-0 text-muted">No students enrolled.</p>
+    @endif
+  </div>
+</div>
+
 
 </div>
 

@@ -14,8 +14,13 @@ class ProgressTest extends Model
      */
     protected $fillable = [
         'date',
+        'time',
         'course_id',
         'week',
+        'close_at',
+        'done_at',
+        'done_by',
+        'will_alert_at',
     ];
 
     /**

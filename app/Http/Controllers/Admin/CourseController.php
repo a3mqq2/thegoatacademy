@@ -21,6 +21,7 @@ use App\Models\MeetingPlatform;
 use App\Models\WithdrawnReason;
 use App\Models\CourseAttendance;
 use Illuminate\Support\Facades\DB;
+use App\Models\ProgressTestStudent;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -170,24 +171,78 @@ class CourseController extends Controller
                 ]);
 
 
-                    foreach($request->progress_tests as $progress_test)
-                    {
-                        ProgressTest::create([
-                            'date' => $progress_test['date'],
-                            'course_id' => $course->id,
-                            'week' => $progress_test['week'],
-                        ]);
-                    }
+
+                // 1) load the full close‐window in hours
+                $hoursForClose = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')
+                                            ->value('value');
+
+                // 2) convert that to minutes, then take half
+                $minutesForAlert = ($hoursForClose * 60) / 2;
 
                 foreach ($schedule as $row) {
+                    // 3) build a Carbon for the actual end of the session
+                    //    adjust the format string if your $row['toTime'] has seconds
+                    $endDateTime = Carbon::createFromFormat(
+                    'Y-m-d H:i',
+                    "{$row['date']} {$row['toTime']}"
+                    );
+
+                    // 4) compute the two timestamps
+                    $alertAt = $endDateTime->copy()->addMinutes($minutesForAlert);
+                    $closeAt = $endDateTime->copy()->addHours($hoursForClose);
+
+                    // 5) persist both
                     $course->schedules()->create([
                         'day'       => $row['day'],
                         'date'      => $row['date'],
                         'from_time' => $row['fromTime'],
                         'to_time'   => $row['toTime'],
+                        'alert_at'  => $alertAt,   // halfway point
+                        'close_at'  => $closeAt,   // full window
                     ]);
                 }
+     
+                
+                foreach ($request->progress_tests as $ptData) {
+                    // load settings
+                    $updateWindow = (int) Setting::where('key', 'Allow updating progress tests after class end time (hours)')
+                                                ->value('value');
+                    $alertDelay   = (int) Setting::where('key', 'Notify instructor after update grace period (hours)')
+                                                ->value('value');
 
+                    // find the matching schedule for this date
+                    $schedule = $course->schedules()->first();
+                    if (! $schedule) {
+                        throw new \Exception("No schedule found for {$ptData['date']}");
+                    }
+
+                    // use only the end time
+                    $toTime   = $schedule->to_time; // e.g. "17:44"
+                    $testEnd  = Carbon::createFromFormat('Y-m-d H:i', "{$ptData['date']} {$toTime}");
+
+                    // alert first, then hard close
+                    $willAlertAt = $testEnd->copy()->addHours($alertDelay);
+                    $closeAt     = $willAlertAt->copy()->addHours($updateWindow);
+
+                    // create the ProgressTest
+                    $progressTest = ProgressTest::create([
+                        'date'          => $ptData['date'],
+                        'time'          => $toTime,        // <-- now only the end-time
+                        'course_id'     => $course->id,
+                        'week'          => $ptData['week'],
+                        'will_alert_at' => $willAlertAt,
+                        'close_at'      => $closeAt,
+                    ]);
+
+                    // seed students
+                    foreach ($students as $student_id) {
+                        ProgressTestStudent::create([
+                            'progress_test_id' => $progressTest->id,
+                            'student_id'       => $student_id,
+                            'course_id'        => $course->id,
+                        ]);
+                    }
+                }
                 $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
                 foreach ($examMap as $type=>$field) {
                     if ($data[$field]) {
@@ -651,18 +706,18 @@ class CourseController extends Controller
         $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
 
         // الآن: لا نسمح بالتعديل قبل انتهاء المحاضرة أو بعد انقضاء فترة السماح
-        if ( now()->lt($lectureEnd) || now()->gt($modifyWindowEnd) ) {
-            return response()->json([
-                'message' => 'Attendance cannot be modified at this time.'
-            ], 403);
-        }
+        // if ( now()->lt($lectureEnd) || now()->gt($modifyWindowEnd) ) {
+        //     return response()->json([
+        //         'message' => 'Attendance cannot be modified at this time.'
+        //     ], 403);
+        // }
 
-        if (now()->lessThan($lectureEnd) ||
-            now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
-            return response()->json([
-                'message' => 'Attendance cannot be modified at this time.'
-            ], 403);
-        }
+        // if (now()->lessThan($lectureEnd) ||
+        //     now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
+        //     return response()->json([
+        //         'message' => 'Attendance cannot be modified at this time.'
+        //     ], 403);
+        // }
 
         /* ---------- 4. حفظ / تحديث سجلات الحضور للطلبة المُرسَلة ---------- */
         foreach ($data['students'] as $student) {

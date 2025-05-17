@@ -121,7 +121,7 @@
             <label>Progress Test day (weekly)</label>
             <v-select
               v-model="progressTestDay"
-              :options="days"
+              :options="selectableDays"
               label="label"
               track-by="value"
               :reduce="d => d.value"
@@ -133,7 +133,7 @@
             <label>Select Days</label>
             <v-select
               v-model="selectedDays"
-              :options="days"
+              :options="selectableDays"
               label="label"
               track-by="value"
               multiple
@@ -467,6 +467,11 @@ export default defineComponent({
       { label: 'Thu', value: 4 },
       { label: 'Fri', value: 5 }
     ])
+
+    const selectableDays = computed(() =>
+      days.value.filter(d => d.value !== 5)
+    )
+
     const selectedDays = ref([])
     const storedSelectedDays = ref([])
     const scheduleList = ref([])
@@ -813,6 +818,7 @@ export default defineComponent({
       removeSchedule, addScheduleAfter,
       onStudentSelected, addStudent, removeStudent,
       saveCourse,
+      selectableDays,
       getDayName: d => d ? ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(d).getDay()] : '',
       lectureIndex
     }
