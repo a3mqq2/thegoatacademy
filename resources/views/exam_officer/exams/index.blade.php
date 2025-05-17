@@ -167,13 +167,13 @@
                     <span>
                       {{ $exam->time ? date('h:i A', strtotime($exam->time)) : '' }}
                     </span>
-                    <button
+                    {{-- <button
                       type="button"
                       class="btn btn-sm btn-outline-secondary ms-2"
                       data-bs-toggle="modal"
                       data-bs-target="#editTimeModal-{{ $exam->id }}">
                       <i class="fas fa-clock"></i>
-                    </button>
+                    </button> --}}
                   </div>
                 </td>                
                 <td>
