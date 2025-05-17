@@ -61,12 +61,12 @@ class NotifyProgressTestsCommand extends Command
                   . "🔗 *WhatsApp Group:* {$course->whatsapp_group_link}\n\n"
                   . "Please enter student scores now before the window closes. ✅";
 
-            if ($instructor && $instructor->phone) {
-                $waapi->sendText(
-                    formatLibyanPhone($instructor->phone) . '@c.us',
-                    $msg
-                );
-            }
+            // if ($instructor && $instructor->phone) {
+            //     $waapi->sendText(
+            //         formatLibyanPhone($instructor->phone) . '@c.us',
+            //         $msg
+            //     );
+            // }
         }
 
         return self::SUCCESS;
