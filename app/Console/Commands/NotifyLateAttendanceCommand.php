@@ -30,20 +30,27 @@ class NotifyLateAttendanceCommand extends Command
         $halfWindow = $limitHrs / 2;
         $now        = Carbon::now();
 
+        // فقط المحاضرات بتاريخ 2025-05-17 وما بعده
+        $cutoffDate = Carbon::create(2025, 5, 17);
+
         /* كل المحاضرات التى لم يُسجَّل لها حضور بعد */
         $schedules  = CourseSchedule::with(['course.courseType','course.instructor'])
                       ->whereNull('attendance_taken_at')
                       ->get()
-                      ->filter(function ($s) use ($now,$halfWindow,$limitHrs) {
+                      ->filter(function ($s) use ($now, $halfWindow, $limitHrs, $cutoffDate) {
+                            // إذا كانت المحاضرة قبل 2025-05-17 نتجاهلها
+                            $lectureDate = Carbon::parse($s->date);
+                            if ($lectureDate->lt($cutoffDate)) {
+                                return false;
+                            }
 
                             /* نهاية المحاضرة */
-                            $end = Carbon::parse($s->date.' '.$s->to_time);
+                            $end = Carbon::parse("{$s->date} {$s->to_time}");
 
                             /* إن كان وقت النهاية أصغر من البداية ➜ عبور منتصف الليل */
-                            if (
-                                Carbon::parse($s->to_time)
-                                ->lessThanOrEqualTo(Carbon::parse($s->from_time))
-                            ){
+                            if (Carbon::parse($s->to_time)
+                                      ->lessThanOrEqualTo(Carbon::parse($s->from_time))
+                            ) {
                                 $end->addDay();
                             }
 
@@ -54,14 +61,15 @@ class NotifyLateAttendanceCommand extends Command
                                    );
                       });
 
-        Log::info('Late-attendance schedules', ['count'=>$schedules->count()]);
+        Log::info('Late-attendance schedules', ['count' => $schedules->count()]);
 
         foreach ($schedules as $sch) {
-
             $course = $sch->course;
             $inst   = $course->instructor;
 
-            if (!$inst || !$inst->phone) { continue; }
+            if (! $inst || ! $inst->phone) {
+                continue;
+            }
 
             $msg = "🔔 *تنبيه تسجيل حضور*\n"
                  . "لم يتم تسجيل حضور المحاضرة التالية وقد تجاوزت نصف فترة السماح:\n\n"
@@ -71,8 +79,10 @@ class NotifyLateAttendanceCommand extends Command
                  . "⏰ *الوقت:* {$sch->from_time} – {$sch->to_time}\n\n"
                  . "يرجى تسجيل الحضور قبل انتهاء المهلة المحددة. ✅";
 
-            // util موجود لديك فى المشروع
-            $waapi->sendText(formatLibyanPhone($inst->phone), $msg);
+            $waapi->sendText(
+                formatLibyanPhone($inst->phone),
+                $msg
+            );
         }
 
         return self::SUCCESS;
