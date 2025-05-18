@@ -79,10 +79,10 @@ class NotifyLateAttendanceCommand extends Command
                  . "⏰ *الوقت:* {$sch->from_time} – {$sch->to_time}\n\n"
                  . "يرجى تسجيل الحضور قبل انتهاء المهلة المحددة. ✅";
 
-            // $waapi->sendText(
-            //     formatLibyanPhone($inst->phone),
-            //     $msg
-            // );
+            $waapi->sendText(
+                formatLibyanPhone($inst->phone),
+                $msg
+            );
         }
 
         return self::SUCCESS;

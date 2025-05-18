@@ -686,7 +686,7 @@ class CourseController extends Controller
 
         $course = $schedule->course;
 
-        if ($course->instructor_id !== Auth::id()) {
+        if ($course->instructor_id != Auth::id()) {
             return response()->json(['message' => 'Access denied.'], 403);
         }
         /* ---------- 3. التحقق من نافذة الوقت المسموح بها ---------- */
