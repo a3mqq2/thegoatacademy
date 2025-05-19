@@ -132,19 +132,16 @@
                   $timeParts = explode(' - ', $course->time);
                   $start = $timeParts[0] ?? null;
                   $end   = $timeParts[1] ?? null;
-                  $formattedStart = $start
-                      ? \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A')
-                      : '';
-                  $formattedEnd = $end
-                      ? \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A')
-                      : '';
-                @endphp
-                <td>
+                  $formattedStart = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
+                  $formattedEnd   = $end   ? \Carbon\Carbon::parse($end)->format('h:i A')   : '';
+              @endphp
+              <td>
                   {{ $formattedStart }}
                   @if($formattedStart && $formattedEnd)
-                    - {{ $formattedEnd }}
+                      - {{ $formattedEnd }}
                   @endif
-                </td>
+              </td>
+              
 
                 
                 
