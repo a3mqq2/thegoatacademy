@@ -95,47 +95,60 @@
           </thead>
           <tbody>
             @foreach($courses as $course)
-              @php
-                $timeParts = explode(' - ', $course->time);
-                $start = $timeParts[0] ?? '';
-                $end   = $timeParts[1] ?? '';
-                $fs = $start ? Carbon::parse($start)->format('h:i A') : '';
-                $fe = $end   ? Carbon::parse($end)->format('h:i A') : '';
+            @php
+                $timeParts = preg_split('/\s*-\s*/', $course->time);
+                $start = trim($timeParts[0] ?? '');
+                $end   = trim($timeParts[1] ?? '');
+                try {
+                    $fs = $start ? Carbon::createFromFormat('H:i', $start)->format('h:i A') : '';
+                } catch (\Exception $e) {
+                    $fs = $start;
+                }
+                try {
+                    $fe = $end ? Carbon::createFromFormat('H:i', $end)->format('h:i A') : '';
+                } catch (\Exception $e) {
+                    $fe = $end;
+                }
                 $dates = [
-                  'pre'  => $course->pre_test_date,
-                  'mid'  => $course->mid_exam_date,
-                  'final'=> $course->final_exam_date,
+                    'pre'   => $course->pre_test_date,
+                    'mid'   => $course->mid_exam_date,
+                    'final' => $course->final_exam_date,
                 ];
                 $classes = [];
-                foreach($dates as $key=>$d) {
-                  $cls = '';
-                  if ($schedule==='daily' && $d && $d == $today->toDateString()) {
-                    $cls = 'table-danger';
-                  }
-                  if ($schedule==='weekly' && $d && \Carbon\Carbon::parse($d)->between($startWeek,$endWeek)) {
-                    $cls = 'table-danger';
-                  }
-                  if ($schedule==='afterTwoDays' && $d && $d == $afterTwo) {
-                    $cls = 'table-danger';
-                  }
-                  if ($schedule==='afterADay' && $d && $d == $afterOne) {
-                    $cls = 'table-danger';
-                  }
-                  $classes[$key] = $cls;
+                foreach ($dates as $key => $d) {
+                    $cls = '';
+                    if ($schedule === 'daily' && $d === $today->toDateString()) {
+                        $cls = 'table-danger';
+                    } elseif ($schedule === 'weekly' && $d && Carbon::parse($d)->between($startWeek, $endWeek)) {
+                        $cls = 'table-danger';
+                    } elseif ($schedule === 'afterTwoDays' && $d === $afterTwo) {
+                        $cls = 'table-danger';
+                    } elseif ($schedule === 'afterADay' && $d === $afterOne) {
+                        $cls = 'table-danger';
+                    }
+                    $classes[$key] = $cls;
                 }
-              @endphp
-              <tr>
+            @endphp
+            <tr>
                 <td>{{ $course->id }}</td>
-                <td>{{ $fs }} - {{ $fe }}</td>
+                <td>
+                    {{ $fs }}
+                    @if($fs && $fe)
+                        - {{ $fe }}
+                    @elseif(!$fs && $fe)
+                        {{ $fe }}
+                    @endif
+                </td>
                 <td>{{ $course->days }}</td>
                 <td class="{{ $classes['pre'] }}">{{ $course->pre_test_date ?? '-' }}</td>
                 <td class="{{ $classes['mid'] }}">{{ $course->mid_exam_date ?? '-' }}</td>
                 <td class="{{ $classes['final'] }}">{{ $course->final_exam_date ?? '-' }}</td>
                 <td>
-                  <a href="{{ route(get_area_name().'.courses.show',$course->id) }}" class="btn btn-info btn-sm">View</a>
+                    <a href="{{ route(get_area_name().'.courses.show', $course->id) }}" class="btn btn-info btn-sm">View</a>
                 </td>
-              </tr>
-            @endforeach
+            </tr>
+        @endforeach
+        
           </tbody>
         </table>
         {{ $courses->withQueryString()->links() }}
