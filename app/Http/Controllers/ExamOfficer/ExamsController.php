@@ -379,7 +379,7 @@ class ExamsController extends Controller
     
         // تحديث التاريخ والحالة
         $exam->exam_date = $newDate;
-        $exam->status = $newDate->lt(Carbon::today()->subDays(2)) ? 'overdue' : 'assigned';
+        $exam->status = $newDate->lt(Carbon::today()->subDays(2)) ? 'overdue' : $exam->status;
         $exam->save();
     
         // Audit Log
