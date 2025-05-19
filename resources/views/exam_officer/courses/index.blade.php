@@ -96,9 +96,11 @@
           <tbody>
             @foreach($courses as $course)
               @php
-                [$start,$end] = explode(' - ',$course->time);
-                $fs = \Carbon\Carbon::createFromFormat('H:i',$start)->format('h:i A');
-                $fe = \Carbon\Carbon::createFromFormat('H:i',$end)->format('h:i A');
+                $timeParts = explode(' - ', $course->time);
+                $start = $timeParts[0] ?? '';
+                $end   = $timeParts[1] ?? '';
+                $fs = $start ? Carbon::parse($start)->format('h:i A') : '';
+                $fe = $end   ? Carbon::parse($end)->format('h:i A') : '';
                 $dates = [
                   'pre'  => $course->pre_test_date,
                   'mid'  => $course->mid_exam_date,
