@@ -339,10 +339,12 @@
 {{-- PER-EXAM PREPARE MODALS --}}
 @foreach($exams as $exam)
 @php
-  // grab the course and split its class time
-  $course    = $exam->course;
-  [$courseStart, $courseEnd] = explode(' - ', $course->time);
+  $course = $exam->course;
+  $timeParts = explode(' - ', $course->time);
+  $courseStart = $timeParts[0] ?? null;
+  $courseEnd   = $timeParts[1] ?? null;
 @endphp
+
 
 <div class="modal fade" id="prepExamModal-{{ $exam->id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
