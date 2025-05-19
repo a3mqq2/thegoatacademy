@@ -130,10 +130,10 @@
             $start = trim($timeParts[0] ?? '');
             $end   = trim($timeParts[1] ?? '');
             $formattedStart = preg_match('/^\d{1,2}:\d{2}$/', $start)
-                ? Carbon::createFromFormat('H:i', $start)->format('h:i A')
+                ? Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A')
                 : $start;
             $formattedEnd = preg_match('/^\d{1,2}:\d{2}$/', $end)
-                ? Carbon::createFromFormat('H:i', $end)->format('h:i A')
+                ? Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A')
                 : $end;
         @endphp
         <td>
