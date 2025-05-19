@@ -116,114 +116,80 @@
              </tr>
            </thead>
            <tbody>
-              @forelse($courses as $course)
-                <tr>
-                  <td>{{ $course->id }}</td>
-                  <td>
-                    {{ $course->courseType->name ?? 'N/A' }}
-                  </td>
-                  <td>{{ $course->instructor->name ?? 'N/A' }}</td>
-                  <td>{{ $course->start_date }}</td>
-                  <td>{{ $course->mid_exam_date }}</td>
-                  <td>{{ $course->final_exam_date }}</td>
-                  <td>{{ $course->days }}</td>
-                 
-                  @php
-                  $timeParts = explode(' - ', $course->time);
-                  $start        = $timeParts[0] ?? '';
-                  $end          = $timeParts[1] ?? '';
-                  $formattedStart = $start ? \Carbon\Carbon::parse($start)->format('h:i A') : '';
-                  $formattedEnd   = $end   ? \Carbon\Carbon::parse($end)->format('h:i A') : '';
-              @endphp
-              
-              <td>
-                  {{ $formattedStart }}
-                  @if($formattedStart && $formattedEnd)
-                      - {{ $formattedEnd }}
-                  @endif
-              </td>
-              
-
-                
-                
-                  <td>{{ $course->student_capacity }}</td>
-                  <td>{{ $course->student_count }}</td>
-                  <td>{{ $course->student_capacity - $course->student_count }}</td>
-                  <td>{{ $course->meetingPlatform->name ?? 'N/A' }}</td>
-                  <td>
+            @forelse($courses as $course)
+            <tr>
+                <td>{{ $course->id }}</td>
+                <td>{{ $course->courseType->name ?? 'N/A' }}</td>
+                <td>{{ $course->instructor->name ?? 'N/A' }}</td>
+                <td>{{ $course->start_date }}</td>
+                <td>{{ $course->mid_exam_date }}</td>
+                <td>{{ $course->final_exam_date }}</td>
+                <td>{{ $course->days }}</td>
+                @php
+                    $timeParts = preg_split('/\s*-\s*/', $course->time);
+                    $start = trim($timeParts[0] ?? '');
+                    $end   = trim($timeParts[1] ?? '');
+                    $formattedStart = preg_match('/^\d{1,2}:\d{2}$/', $start)
+                        ? Carbon::createFromFormat('H:i', $start)->format('h:i A')
+                        : $start;
+                    $formattedEnd = preg_match('/^\d{1,2}:\d{2}$/', $end)
+                        ? Carbon::createFromFormat('H:i', $end)->format('h:i A')
+                        : $end;
+                @endphp
+                <td>
+                    {{ $formattedStart }}
+                    @if($formattedStart && $formattedEnd)
+                        - {{ $formattedEnd }}
+                    @endif
+                </td>
+                <td>{{ $course->student_capacity }}</td>
+                <td>{{ $course->student_count }}</td>
+                <td>{{ $course->student_capacity - $course->student_count }}</td>
+                <td>{{ $course->meetingPlatform->name ?? 'N/A' }}</td>
+                <td>
                     @if($course->status === 'paused')
-                      <span class="badge bg-warning text-dark">Paused</span>
+                        <span class="badge bg-warning text-dark">Paused</span>
                     @else
-                      <span class="badge bg-{{ 
-                        $course->status === 'upcoming'  ? 'warning' : (
-                        $course->status === 'ongoing'   ? 'info'    : (
-                        $course->status === 'completed' ? 'success' : (
-                        $course->status === 'cancelled' ? 'danger'  : 'secondary')))
-                      }}">
-                        {{ ucfirst($course->status) }}
-                      </span>
+                        <span class="badge bg-{{ 
+                            $course->status === 'upcoming'  ? 'warning' : (
+                            $course->status === 'ongoing'   ? 'info'    : (
+                            $course->status === 'completed' ? 'success' : (
+                            $course->status === 'cancelled' ? 'danger'  : 'secondary')))) }}">
+                            {{ ucfirst($course->status) }}
+                        </span>
                     @endif
-                  </td>
-                  <td>
-                    <a href="{{ route('admin.courses.show', $course->id) }}"
-                      class="btn btn-primary btn-sm"
-                     >
-                       <i class="fa fa-eye"></i> Show
-                     </a>
-
-                     
-                     <a href="{{ route('admin.courses.print', $course->id) }}"
-                      class="btn btn-secondary btn-sm"
-                     >
-                       <i class="fa fa-print"></i> Print
-                     </a>
-
-                     
-
-                    @if($course->status === 'ongoing' || $course->status == "upcoming")
-                      <a href="{{ route('admin.courses.edit', $course->id) }}"
-                       class="btn btn-warning btn-sm"
-                      >
-                        <i class="fa fa-edit"></i> Edit
-                      </a>
-                      <button
-                        class="btn btn-danger btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#cancelModal"
-                        data-course-id="{{ $course->id }}"
-                      >
-                        <i class="fa fa-ban"></i> Cancel
-                      </button>
+                </td>
+                <td>
+                    <a href="{{ route('admin.courses.show', $course->id) }}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-eye"></i> Show
+                    </a>
+                    <a href="{{ route('admin.courses.print', $course->id) }}" class="btn btn-secondary btn-sm">
+                        <i class="fa fa-print"></i> Print
+                    </a>
+                    @if(in_array($course->status, ['ongoing','upcoming']))
+                        <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-warning btn-sm">
+                            <i class="fa fa-edit"></i> Edit
+                        </a>
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal" data-course-id="{{ $course->id }}">
+                            <i class="fa fa-ban"></i> Cancel
+                        </button>
                     @endif
-
-                    <!-- If the course is paused, show a Reactivate button -->
                     @if($course->status === 'paused')
-                      <button
-                        class="btn btn-success btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#reactiveModal"
-                        data-course-id="{{ $course->id }}"
-                      >
-                        <i class="fa fa-play"></i> Reactivate
-                      </button>
+                        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#reactiveModal" data-course-id="{{ $course->id }}">
+                            <i class="fa fa-play"></i> Reactivate
+                        </button>
                     @endif
-
-                    <!-- Delete button -->
-                    <button
-                      class="btn btn-danger btn-sm"
-                      data-bs-toggle="modal"
-                      data-bs-target="#deleteModal"
-                      data-course-id="{{ $course->id }}"
-                    >
-                      <i class="fa fa-trash"></i> Delete
+                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal" data-course-id="{{ $course->id }}">
+                        <i class="fa fa-trash"></i> Delete
                     </button>
-                  </td>
-                </tr>
-              @empty
-                <tr>
-                   <td colspan="11" class="text-center">No courses found</td>
-                </tr>
-              @endforelse
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="14" class="text-center">No courses found</td>
+            </tr>
+        @endforelse
+        
            </tbody>
          </table>
       </div>
