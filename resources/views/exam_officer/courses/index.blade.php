@@ -96,19 +96,7 @@
           <tbody>
             @foreach($courses as $course)
             @php
-                $timeParts = preg_split('/\s*-\s*/', $course->time);
-                $start = trim($timeParts[0] ?? '');
-                $end   = trim($timeParts[1] ?? '');
-                try {
-                    $fs = $start ? Carbon::createFromFormat('H:i', $start)->format('h:i A') : '';
-                } catch (\Exception $e) {
-                    $fs = $start;
-                }
-                try {
-                    $fe = $end ? Carbon::createFromFormat('H:i', $end)->format('h:i A') : '';
-                } catch (\Exception $e) {
-                    $fe = $end;
-                }
+           
                 $dates = [
                     'pre'   => $course->pre_test_date,
                     'mid'   => $course->mid_exam_date,
@@ -132,12 +120,7 @@
             <tr>
                 <td>{{ $course->id }}</td>
                 <td>
-                    {{ $fs }}
-                    @if($fs && $fe)
-                        - {{ $fe }}
-                    @elseif(!$fs && $fe)
-                        {{ $fe }}
-                    @endif
+                  {{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }} 
                 </td>
                 <td>{{ $course->days }}</td>
                 <td class="{{ $classes['pre'] }}">{{ $course->pre_test_date ?? '-' }}</td>

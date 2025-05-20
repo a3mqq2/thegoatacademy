@@ -46,14 +46,10 @@
             <tr>
              <td>{{ $course->end_date ?? '-' }}</td>
               <td>{{ $course->student_capacity ?? '-' }}</td>
-              <td>{{ ucfirst($course->status) }}</td>
-              @php
-                [$start, $end] = explode(' - ', $course->time);
-                $formattedStart = \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A');
-                $formattedEnd = \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A');
-                @endphp
-                
-              <td>{{ $course->days ?? '-' }}/ {{ $formattedStart }} - {{ $formattedEnd }} </td>
+              <td>{{ ucfirst($course->status) }}</td>                
+              <td>{{ $course->days ?? '-' }}/ 
+                {{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }} 
+            </td>
             </tr>
             <tr>
               <th class="bg-primary text-light" colspan="2">Meeting Platform</th>

@@ -99,9 +99,7 @@
 
           @foreach($courses as $course)
             @php
-              [$start,$end] = explode(' - ', $course->time);
-              $fs = Carbon::createFromFormat('H:i',$start)->format('h:i A');
-              $fe = Carbon::createFromFormat('H:i',$end  )->format('h:i A');
+           
 
               // helper to decide if a given date matches the schedule
               $match = fn($d) => match($schedule) {
@@ -120,7 +118,9 @@
 
             <tr>
               <td>{{ $course->id }}</td>
-              <td>{{ $fs }} – {{ $fe }}</td>
+              <td>
+                {{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }} 
+              </td>
               <td>{{ $course->days }}</td>
               <td class="{{ $preCls   }}">{{ $course->pre_test_date   ?? '-' }}</td>
               <td class="{{ $midCls   }}">{{ $course->mid_exam_date   ?? '-' }}</td>

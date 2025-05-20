@@ -43,9 +43,8 @@
     </div>
     <div class="card-body p-0">
       @php
-        [$s,$e] = explode(' - ',$course->time);
-        $s = \Carbon\Carbon::createFromFormat('H:i',$s)->format('h:i A');
-        $e = \Carbon\Carbon::createFromFormat('H:i',$e)->format('h:i A');
+        $s = date('h:i A', strtotime($course->schedules()->first()->from_time));
+        $e = date('h:i A', strtotime($course->schedules()->first()->to_time));
         $stColor = ['upcoming'=>'warning','ongoing'=>'info','completed'=>'success','cancelled'=>'danger'][$course->status] ?? 'secondary';
 
         /* translate stored day-ids string (e.g. "6-0-2") → names */

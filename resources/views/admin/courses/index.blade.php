@@ -125,22 +125,9 @@
         <td>{{ $course->mid_exam_date }}</td>
         <td>{{ $course->final_exam_date }}</td>
         <td>{{ $course->days }}</td>
-        @php
-            $timeParts = preg_split('/\s*-\s*/', $course->time);
-            $start = trim($timeParts[0] ?? '');
-            $end   = trim($timeParts[1] ?? '');
-            $formattedStart = preg_match('/^\d{1,2}:\d{2}$/', $start)
-                ? Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A')
-                : $start;
-            $formattedEnd = preg_match('/^\d{1,2}:\d{2}$/', $end)
-                ? Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A')
-                : $end;
-        @endphp
+  
         <td>
-            {{ $formattedStart }}
-            @if($formattedStart && $formattedEnd)
-                - {{ $formattedEnd }}
-            @endif
+          {{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }} 
         </td>
         <td>{{ $course->student_capacity }}</td>
         <td>{{ $course->student_count }}</td>

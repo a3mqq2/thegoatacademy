@@ -92,9 +92,9 @@
          <tr>
             <th>Days</th><td>{{ $course->days }}</td>
             @php
-            [$st,$en]=explode(' - ', $course->time);
-            $st=\Carbon\Carbon::createFromFormat('H:i',$st)->format('h:i A');
-            $en=\Carbon\Carbon::createFromFormat('H:i',$en)->format('h:i A');
+
+            $st= date('h:i A', strtotime($course->schedules()->first()->from_time));
+            $en=date('h:i A', strtotime($course->schedules()->first()->to_time));
           @endphp
             <th>Time</th><td>{{ $st }} - {{ $en }}</td>
          </tr>

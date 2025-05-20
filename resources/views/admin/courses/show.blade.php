@@ -137,7 +137,7 @@
           <!-- Time -->
           <div class="col-md-3">
             <div class="text-uppercase fw-semibold text-primary mb-1">Time:</div>
-            <div class="text-secondary">{{ date('H:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('H:i A', strtotime($course->schedules()->first()->to_time) ) }}</div>
+            <div class="text-secondary">{{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }}</div>
           </div>
           <!-- Whatsapp Group Link -->
           <div class="col-md-3">

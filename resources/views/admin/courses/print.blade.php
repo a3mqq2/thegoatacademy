@@ -91,12 +91,10 @@
         <tr><th>Start Date</th><td>{{ $course->start_date }}</td></tr>
         <tr><th>Participants</th><td>{{ $course->students->count() }}</td></tr>
         <tr><th>Days</th><td>{{ $course->days }}</td></tr>
-        @php
-          [$st,$en]=explode(' - ', $course->time);
-          $st=\Carbon\Carbon::createFromFormat('H:i',$st)->format('h:i A');
-          $en=\Carbon\Carbon::createFromFormat('H:i',$en)->format('h:i A');
-        @endphp
-        <tr><th>Time</th><td>{{ $st }} - {{ $en }}</td></tr>
+       
+        <tr><th>Time</th><td>
+          {{ date('h:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('h:i A', strtotime($course->schedules()->first()->to_time) ) }}   
+        </td></tr>
         <tr><th>Meeting Platform</th><td>{{ $course->meetingPlatform->name ?? '-' }}</td></tr>
       </table>
     </div>

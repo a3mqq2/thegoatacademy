@@ -339,10 +339,10 @@
 {{-- PER-EXAM PREPARE MODALS --}}
 @foreach($exams as $exam)
 @php
+
   $course = $exam->course;
-  $timeParts = explode(' - ', $course->time);
-  $courseStart = $timeParts[0] ?? null;
-  $courseEnd   = $timeParts[1] ?? null;
+  $courseStart = date('h:i A', strtotime($course->schedules()->first()->from_time));
+  $courseEnd   = date('h:i A', strtotime($course->schedules()->first()->to_time) );
 @endphp
 
 
