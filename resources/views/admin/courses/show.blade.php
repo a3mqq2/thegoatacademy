@@ -137,13 +137,7 @@
           <!-- Time -->
           <div class="col-md-3">
             <div class="text-uppercase fw-semibold text-primary mb-1">Time:</div>
-            @php
-            [$start, $end] = explode(' - ', $course->time);
-            $formattedStart = \Carbon\Carbon::createFromFormat('H:i', $start)->format('h:i A');
-            $formattedEnd = \Carbon\Carbon::createFromFormat('H:i', $end)->format('h:i A');
-          @endphp
-
-            <div class="text-secondary">{{ $formattedStart }} - {{ $formattedEnd }}</div>
+            <div class="text-secondary">{{ date('H:i A', strtotime($course->schedules()->first()->from_time) ) }} - {{ date('H:i A', strtotime($course->schedules()->first()->to_time) ) }}</div>
           </div>
           <!-- Whatsapp Group Link -->
           <div class="col-md-3">
