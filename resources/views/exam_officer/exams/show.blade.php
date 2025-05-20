@@ -9,7 +9,6 @@
     $isExaminer   = $exam->examiner_id == auth()->id();
     $hasStarted   = $now->gte($examDateTime);
     $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new','completed']);
-    // prepare skills & students
     $skills  = $exam->course->courseType->skills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
 @endphp

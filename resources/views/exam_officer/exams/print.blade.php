@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<title>Exam #{{ $exam->id }}</title>
+<title>Exam #{{ $exam->course_id }}</title>
 
 @php
     $fontRegular = 'file://' . storage_path('fonts/Cairo-Regular.ttf');
@@ -67,8 +67,8 @@ body {
     justify-content: center;
 }
 table {
-    width: 90%; /* ✅ هنا نزود شوي عشان يجي مرتب */
-    margin: auto; /* ✅ أهم نقطة يخليه بالنص */
+    width: 90%;
+    margin: auto;
     border-collapse: collapse;
     position: absolute;
     top: 300px;
@@ -80,12 +80,10 @@ th, td {
     border: 1px solid #333;
     text-align: center;
 }
-
-.title
-{
-  position: absolute;
-  top: 160px;
-  left: 40px;
+.title {
+    position: absolute;
+    top: 160px;
+    left: 40px;
 }
 </style>
 </head>
@@ -94,16 +92,14 @@ th, td {
 
     <div class="header">
         <h1 class="title">
-            {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->id }})
+            {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->course_id }})
         </h1>
         <div class="sub-details">
-            <div 
-              style="position: absolute;top:210px;"
-            >
+            <div style="position: absolute; top:210px;">
                 Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}
             </div>
-            <div style="text-align: right;position: absolute;top:210px;left:250px;">
+            <div style="text-align: right; position: absolute; top:210px; left:250px;">
                 Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
                 Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}
             </div>
@@ -129,23 +125,28 @@ th, td {
             <tbody>
                 @foreach($ongoing as $i => $student)
                     @php
-                        $es = $exam->examStudents->firstWhere('student_id', $student->id);
-                        $grades = [];
-                        $maxes = [];
-                        foreach($skills as $sk) {
-                            $g = optional($es?->grades->firstWhere('course_type_skill_id', $sk->id))->grade ?: 0;
-                            $m = $exam->exam_type == 'pre' ? $sk->pivot->pre_max :
-                                ($exam->exam_type == 'mid' ? $sk->pivot->mid_max : $sk->pivot->final_max);
-                            $grades[] = $g;
-                            $maxes[] = $m;
+                        $es      = $exam->examStudents->firstWhere('student_id', $student->id);
+                        $grades  = [];
+                        $maxes   = [];
+
+                        foreach ($skills as $sk) {
+                            $pivotId = $sk->pivot->id;  // ⬅️ يجب استخدام id من Pivot
+                            $grade   = optional($es?->grades->firstWhere('course_type_skill_id', $pivotId))->grade ?? 0;
+
+                            $max     = $exam->exam_type === 'pre'   ? $sk->pivot->pre_max  :
+                                       ($exam->exam_type === 'mid' ? $sk->pivot->mid_max  : $sk->pivot->final_max);
+
+                            $grades[] = $grade;
+                            $maxes[]  = $max;
                         }
+
                         $per = array_sum($maxes) ? round(array_sum($grades) / array_sum($maxes) * 100, 1) : 0;
                     @endphp
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $student->name }}</td>
                         @foreach($grades as $g)
-                            <td>{{ $g }}</td>
+                            <td>{{ number_format($g, 2) }}</td>
                         @endforeach
                         <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}">{{ $per }}%</td>
                     </tr>

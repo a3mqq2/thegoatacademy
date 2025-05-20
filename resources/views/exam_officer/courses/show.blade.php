@@ -152,10 +152,8 @@
                             </a>
 
 
-                                <!-- Show Prepare / Edit only if NOT today -->
                         
-                                 @if ($exam->status == "new")
-                                 <button 
+                            <button 
                                  type="button" 
                                  class="btn btn-sm btn-primary prepExamBtn" 
                                  data-examid="{{ $exam->id }}"
@@ -163,8 +161,8 @@
                                  data-examdate="{{ optional($exam->exam_date)->format('Y-m-d') }}"
                                  data-examinerid="{{ $exam->examiner_id ?? '' }}"
                                  data-status="{{ $exam->status }}"
-                                 data-grammarmax="{{ $exam->grammar_max ?? 30 }}"
-                                 data-vocabmax="{{ $exam->vocabulary_max ?? 40 }}"
+                                 data-grammarmax="{{ $exam->grammar_max }}"
+                                 data-vocabmax="{{ $exam->vocabulary_max }}"
                                  data-practicalmax="{{ $exam->practical_english_max ?? 10 }}"
                                  data-readingmax="{{ $exam->reading_max ?? 15 }}"
                                  data-writingmax="{{ $exam->writing_max ?? 15 }}"
@@ -172,13 +170,11 @@
                                  data-speakingmax="{{ $exam->speaking_max ?? 20 }}"
                              >
                                  @if($exam->status == 'new')
-                                     Prepare <i class="fa fa-plus"></i>
+                                     Assigning <i class="fa fa-plus"></i>
                                  @else
-                                     Edit Preparation <i class="fa fa-edit"></i>
+                                     Edit Assigning <i class="fa fa-edit"></i>
                                  @endif
                              </button>
-                                 @endif
-
                         </td>
                      </tr>
                  @endforeach

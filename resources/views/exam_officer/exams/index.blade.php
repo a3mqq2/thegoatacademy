@@ -180,13 +180,13 @@
                   <a href="{{ route('exam_officer.exams.show',$exam->id) }}" class="btn btn-sm btn-info">
                     Show
                   </a>
-                  @if($exam->status=='new' && auth()->user()->permissions->contains('name','Exam Manager'))
+                  @if(auth()->user()->permissions->contains('name','Exam Manager'))
                   <button
                     type="button"
                     class="btn btn-sm btn-primary"
                     data-bs-toggle="modal"
                     data-bs-target="#prepExamModal-{{ $exam->id }}">
-                    Prepare
+                    Assigning
                   </button>
                   @endif
                   @if(auth()->user()->permissions->contains('name','Exam Manager') && $exam->status != 'completed')
