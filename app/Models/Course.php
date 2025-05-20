@@ -126,101 +126,104 @@ class Course extends Model
 
          public function generateSchedule()
          {
-             [$fromTime, $toTime] = array_map('trim', explode(' - ', $this->time));
+             /* ────── from / to times ────── */
+             $first = $this->schedules()->orderBy('id')->first();
+             $fromTime = $first?->from_time;
+             $toTime   = $first?->to_time;
          
-             $selectedDays = collect(explode('-', $this->days))->map(function ($label) {
-                 return [
-                     'Sat' => Carbon::SATURDAY, 'Sun' => Carbon::SUNDAY, 'Mon' => Carbon::MONDAY,
-                     'Tue' => Carbon::TUESDAY,  'Wed' => Carbon::WEDNESDAY, 'Thu' => Carbon::THURSDAY,
-                     'Fri' => Carbon::FRIDAY,
-                 ][$label];
-             })->all();
+             if (!$fromTime) {
+                 $parts    = array_map('trim', explode(' - ', (string) $this->time));
+                 $fromTime = $parts[0] ?? null;
+                 $toTime   = $parts[1] ?? null;
+             }
+         
+             if (!$toTime && $fromTime) {
+                 $minutes = (int) optional($this->groupType)->lesson_duration ?: 60;
+                 $toTime  = Carbon::createFromFormat('H:i', $fromTime)->addMinutes($minutes)->format('H:i');
+             }
+         
+             /* ────── days mapping ────── */
+             $map = ['Sat'=>6,'Sun'=>0,'Mon'=>1,'Tue'=>2,'Wed'=>3,'Thu'=>4,'Fri'=>5];
+             $selectedDays = collect(explode('-', (string) $this->days))
+                 ->filter(fn ($l) => isset($map[$l]))
+                 ->map(fn ($l) => $map[$l])
+                 ->values()->all();
          
              $duration = (int) $this->courseType->duration;
-             $half = intdiv($duration, 2);
-             $occupied = [];
+             if (!$duration || !$selectedDays || !$fromTime) return;
          
+             $half       = intdiv($duration, 2);
+             $occupied   = [];
              $classDates = [];
          
-             // 1) pre test
+             /* pre-test */
              $pre = $this->pre_test_date
                  ? Carbon::parse($this->pre_test_date)
-                 : Carbon::parse($this->start_date)->copy();
-             $pre->setTime(0, 0);
+                 : Carbon::parse($this->start_date);
+         
              if ($pre->gt(Carbon::parse($this->start_date))) {
                  $pre = Carbon::parse($this->start_date);
              }
-             $this->pre_test_date = $pre->toDateString();
+             $pre->setTime(0,0);
+             $this->pre_test_date            = $pre->toDateString();
              $occupied[$pre->toDateString()] = true;
          
-             // 2) generate first half
-             $cursor = $pre->copy()->addDay();
+             /* first half */
+             $cur = $pre->copy()->addDay();
              while (count($classDates) < $half) {
-                 if (in_array($cursor->dayOfWeek, $selectedDays) && !isset($occupied[$cursor->toDateString()])) {
-                     $classDates[] = $cursor->copy();
-                     $occupied[$cursor->toDateString()] = true;
+                 if (in_array($cur->dayOfWeek, $selectedDays, true) && !isset($occupied[$cur->toDateString()])) {
+                     $classDates[]                      = $cur->copy();
+                     $occupied[$cur->toDateString()]    = true;
                  }
-                 $cursor->addDay();
+                 $cur->addDay();
              }
          
-             // 3) mid exam
-             $mid = $this->mid_exam_date ? Carbon::parse($this->mid_exam_date) : null;
-             $mid = $mid ? $mid->copy()->setTime(0, 0) : null;
-         
-             if (!$mid) {
-                 $mid = $classDates[$half - 1]->copy()->addDay();
-                 while (
-                     in_array($mid->dayOfWeek, $selectedDays) === false ||
-                     isset($occupied[$mid->toDateString()])
-                 ) {
-                     $mid->addDay();
-                 }
-             } else {
-                 // enforce mid is not before the suggested mid
-                 $suggestedMid = $classDates[$half - 1]->copy()->addDay();
-                 if ($mid->lt($suggestedMid)) {
-                     $mid = $suggestedMid;
-                 }
+             /* mid-exam */
+             $mid = $this->mid_exam_date ? Carbon::parse($this->mid_exam_date)->startOfDay() : null;
+             $ref = $classDates[$half-1]->copy()->addDay();
+             if (!$mid || $mid->lte($ref)) $mid = $ref;
+             while (!in_array($mid->dayOfWeek, $selectedDays, true) || isset($occupied[$mid->toDateString()])) {
+                 $mid->addDay();
              }
-         
-             $this->mid_exam_date = $mid->toDateString();
+             $this->mid_exam_date            = $mid->toDateString();
              $occupied[$mid->toDateString()] = true;
          
-             // 4) second half after mid
-             $cursor = $mid->copy()->addDay();
+             /* second half */
+             $cur = $mid->copy()->addDay();
              while (count($classDates) < $duration) {
-                 if (in_array($cursor->dayOfWeek, $selectedDays) && !isset($occupied[$cursor->toDateString()])) {
-                     $classDates[] = $cursor->copy();
-                     $occupied[$cursor->toDateString()] = true;
+                 if (in_array($cur->dayOfWeek, $selectedDays, true) && !isset($occupied[$cur->toDateString()])) {
+                     $classDates[]                      = $cur->copy();
+                     $occupied[$cur->toDateString()]    = true;
                  }
-                 $cursor->addDay();
+                 $cur->addDay();
              }
          
-             // 5) final exam
-             $final = $this->final_exam_date ? Carbon::parse($this->final_exam_date) : null;
+             /* final-exam */
              $lastLecture = end($classDates);
-             $suggestedFinal = $lastLecture->copy()->addDay();
-         
-             if (!$final || $final->lte($lastLecture)) {
-                 $final = $suggestedFinal;
+             $final       = $this->final_exam_date
+                 ? Carbon::parse($this->final_exam_date)->startOfDay()
+                 : $lastLecture->copy()->addDay();
+             while ($final->dayOfWeek === Carbon::FRIDAY || $final->lte($lastLecture)) {
+                 $final->addDay();
              }
-             $this->final_exam_date = $final->toDateString();
+             $this->final_exam_date            = $final->toDateString();
              $occupied[$final->toDateString()] = true;
          
-             // 6) حفظ وتوليد الجدول
+             /* persist */
              $this->save();
              $this->schedules()->delete();
          
-             foreach ($classDates as $index => $date) {
+             foreach ($classDates as $i => $d) {
                  $this->schedules()->create([
-                     'day'       => $date->format('l'),
-                     'date'      => $date->toDateString(),
+                     'day'       => $d->format('l'),
+                     'date'      => $d->toDateString(),
                      'from_time' => $fromTime,
                      'to_time'   => $toTime,
-                     'order'     => $index + 1,
+                     'order'     => $i + 1,
                  ]);
              }
          }
+         
          
 
 }

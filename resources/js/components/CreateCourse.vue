@@ -584,6 +584,9 @@ export default defineComponent({
       }
     })
 
+    watch(midExamDate, generateSchedule)
+
+
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) return instructors.value
       const ids = selectedCourseType.value.skills.map(s => s.id)
@@ -626,78 +629,134 @@ export default defineComponent({
     }
 
     function generateSchedule () {
-      if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return
-      const totalLessons = +selectedCourseType.value.duration || 0
-      if (!totalLessons) return
+  if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return
 
-      scheduleList.value = []
-      progressTests.value = []
-      storedSelectedDays.value = selectedDays.value.map(d => d.value)
+  const totalLessons = +selectedCourseType.value.duration || 0
+  if (!totalLessons) return
 
-      const occupied = new Set()
+  scheduleList.value     = []
+  progressTests.value    = []
+  storedSelectedDays.value = selectedDays.value.map(d => d.value)
 
-      if (showPreTest.value) {
-        if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
-          preTestDate.value = startDate.value
-        }
-        occupied.add(preTestDate.value)
-      } else preTestDate.value = ''
+  const occupied = new Set()
 
-      const half = Math.floor(totalLessons / 2)
-      let cur = new Date(startDate.value); cur.setDate(cur.getDate() + 1); skipFriday(cur)
-      let before = 0
-      while (before < half) {
-        if (storedSelectedDays.value.includes(cur.getDay())) {
-          const str = fmtDate(cur)
-          pushLecture(cur); occupied.add(str); before++
-        }
-        cur.setDate(cur.getDate() + 1); skipFriday(cur)
-      }
-
-      if (showMidExam.value) {
-        midExamDate.value = nextFreeDay(cur, occupied)
-        occupied.add(midExamDate.value)
-        cur = new Date(midExamDate.value); cur.setDate(cur.getDate() + 1); skipFriday(cur)
-      } else midExamDate.value = ''
-
-      while (scheduleList.value.filter(r => !r.progress).length < totalLessons) {
-        if (storedSelectedDays.value.includes(cur.getDay())) {
-          pushLecture(cur); occupied.add(fmtDate(cur))
-        }
-        cur.setDate(cur.getDate() + 1); skipFriday(cur)
-      }
-
-      const lastLecture = new Date(scheduleList.value[scheduleList.value.length - 1].date)
-      lastLecture.setDate(lastLecture.getDate() + 1); skipFriday(lastLecture)
-      finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
-
-      if (progressTestDay.value !== null) {
-        let p = new Date(startDate.value)
-        while (p.getDay() !== progressTestDay.value) { p.setDate(p.getDate() + 1); skipFriday(p) }
-        let week = 1
-        const end = new Date(finalExamDate.value || scheduleList.value[scheduleList.value.length - 1].date)
-        while (p <= end) {
-          const dStr = fmtDate(p)
-          progressTests.value.push({
-            week,
-            date: dStr,
-            day: days.value.find(d => d.value === progressTestDay.value).label
-          })
-          scheduleList.value.push({
-            progress: true,
-            week,
-            day: days.value.find(d => d.value === progressTestDay.value).label,
-            date: dStr,
-            fromTime: fromTime.value,
-            toTime: toTime.value
-          })
-          p.setDate(p.getDate() + 7)
-          week++
-        }
-      }
-
-      scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
+  /* ────── Pre-test ────── */
+  if (showPreTest.value) {
+    if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
+      preTestDate.value = startDate.value
     }
+    occupied.add(preTestDate.value)
+  } else {
+    preTestDate.value = ''
+  }
+
+  /* ────── First half of lectures ────── */
+  const half = Math.floor(totalLessons / 2)
+  let cur = new Date(startDate.value)
+  cur.setDate(cur.getDate() + 1)
+  skipFriday(cur)
+
+  const pushLecture = d => {
+    scheduleList.value.push({
+      day: days.value.find(x => x.value === d.getDay()).label,
+      date: fmtDate(d),
+      fromTime: fromTime.value,
+      toTime: toTime.value,
+      progress: false
+    })
+  }
+
+  let before = 0
+  while (before < half) {
+    if (storedSelectedDays.value.includes(cur.getDay())) {
+      pushLecture(cur)
+      occupied.add(fmtDate(cur))
+      before++
+    }
+    cur.setDate(cur.getDate() + 1)
+    skipFriday(cur)
+  }
+
+  /* ────── Mid-exam ────── */
+  if (showMidExam.value) {
+    let mid = midExamDate.value ? new Date(midExamDate.value) : null
+
+    const fits = d => d >= cur && !occupied.has(fmtDate(d)) && d.getDay() !== 5
+
+    if (!mid || !fits(mid)) {
+      mid = new Date(nextFreeDay(cur, occupied))
+    } else {
+      skipFriday(mid)
+      while (!fits(mid)) {
+        mid.setDate(mid.getDate() + 1)
+        skipFriday(mid)
+      }
+    }
+
+    midExamDate.value = fmtDate(mid)
+    occupied.add(midExamDate.value)
+
+    cur = new Date(midExamDate.value)
+    cur.setDate(cur.getDate() + 1)
+    skipFriday(cur)
+  } else {
+    midExamDate.value = ''
+  }
+
+  /* ────── Second half of lectures ────── */
+  while (scheduleList.value.filter(r => !r.progress).length < totalLessons) {
+    if (storedSelectedDays.value.includes(cur.getDay())) {
+      pushLecture(cur)
+      occupied.add(fmtDate(cur))
+    }
+    cur.setDate(cur.getDate() + 1)
+    skipFriday(cur)
+  }
+
+  /* ────── Final-exam ────── */
+  const lastLecture = new Date(
+    scheduleList.value
+      .filter(r => !r.progress)
+      .slice(-1)[0].date
+  )
+  lastLecture.setDate(lastLecture.getDate() + 1)
+  skipFriday(lastLecture)
+  finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
+
+  /* ────── Progress tests ────── */
+  if (progressTestDay.value !== null) {
+    let p = new Date(startDate.value)
+    while (p.getDay() !== progressTestDay.value) {
+      p.setDate(p.getDate() + 1)
+      skipFriday(p)
+    }
+
+    let week = 1
+    const end = new Date(finalExamDate.value || scheduleList.value.slice(-1)[0].date)
+
+    while (p <= end) {
+      const dStr = fmtDate(p)
+      const dayLabel = days.value.find(d => d.value === progressTestDay.value).label
+
+      progressTests.value.push({ week, date: dStr, day: dayLabel })
+      scheduleList.value.push({
+        progress: true,
+        week,
+        day: dayLabel,
+        date: dStr,
+        fromTime: fromTime.value,
+        toTime: toTime.value
+      })
+
+      p.setDate(p.getDate() + 7)
+      week++
+    }
+  }
+
+  /* ────── Sort everything ────── */
+  scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
+}
+
 
     const deletePreTest = () => { showPreTest.value = false; preTestDate.value = ''; generateSchedule() }
     const deleteMidExam = () => { showMidExam.value = false; midExamDate.value = ''; generateSchedule() }
