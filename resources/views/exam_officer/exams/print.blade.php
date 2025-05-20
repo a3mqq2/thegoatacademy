@@ -112,6 +112,7 @@ th, td {
             $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
         @endphp
 
+
         <table>
             <thead>
                 <tr>
@@ -128,18 +129,22 @@ th, td {
                         $es      = $exam->examStudents->firstWhere('student_id', $student->id);
                         $grades  = [];
                         $maxes   = [];
-
+                
                         foreach ($skills as $sk) {
-                            $pivotId = $sk->pivot->id;  // ⬅️ يجب استخدام id من Pivot
-                            $grade   = optional($es?->grades->firstWhere('course_type_skill_id', $pivotId))->grade ?? 0;
-
-                            $max     = $exam->exam_type === 'pre'   ? $sk->pivot->pre_max  :
-                                       ($exam->exam_type === 'mid' ? $sk->pivot->mid_max  : $sk->pivot->final_max);
-
-                            $grades[] = $grade;
-                            $maxes[]  = $max;
+                            $pivotId  = $sk->pivot->id;                              // ⬅️ pivot ID
+                            $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
+                
+                            $g = $gradeRow?->grade ?: 0;
+                            $m = match(strtolower($exam->exam_type)) {               // ⬅️ safe exam_type
+                                'pre'   => $sk->pivot->pre_max,
+                                'mid'   => $sk->pivot->mid_max,
+                                default => $sk->pivot->final_max,
+                            } ?: 0;
+                
+                            $grades[] = $g;
+                            $maxes[]  = $m;
                         }
-
+                
                         $per = array_sum($maxes) ? round(array_sum($grades) / array_sum($maxes) * 100, 1) : 0;
                     @endphp
                     <tr>
@@ -151,7 +156,7 @@ th, td {
                         <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}">{{ $per }}%</td>
                     </tr>
                 @endforeach
-            </tbody>
+                </tbody>
         </table>
     </div>
 
