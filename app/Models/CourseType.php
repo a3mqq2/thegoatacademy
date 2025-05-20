@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CourseType extends Model
 {
@@ -30,14 +31,9 @@ class CourseType extends Model
         );
     }
 
-    public function skills()
+    public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'course_type_skill', 'course_type_id', 'skill_id')
-                    ->withPivot(['id', 'mid_max', 'final_max','progress_test_max']);
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
+                    ->withPivot(['id', 'pre_max', 'mid_max', 'final_max', 'progress_test_max']);
     }
 }
