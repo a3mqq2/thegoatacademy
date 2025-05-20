@@ -130,17 +130,19 @@ th, td {
                         $grades  = [];
                         $maxes   = [];
                 
+                        
                         foreach ($skills as $sk) {
-                            $pivotId  = $sk->pivot->id;                              // ⬅️ pivot ID
+                            $pivotId  = $sk->pivot->id;
                             $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
-                
+
                             $g = $gradeRow?->grade ?: 0;
-                            $m = match(strtolower($exam->exam_type)) {               // ⬅️ safe exam_type
-                                'pre'   => $sk->pivot->pre_max,
-                                'mid'   => $sk->pivot->mid_max,
-                                default => $sk->pivot->final_max,
-                            } ?: 0;
-                
+
+                            $m = match(strtolower($exam->exam_type)) {
+                                'mid'   => $sk->pivot->mid_max   ?? 0,
+                                'final' => $sk->pivot->final_max ?? 0,
+                                default => $sk->pivot->final_max ?? 0,   // pre
+                            };
+
                             $grades[] = $g;
                             $maxes[]  = $m;
                         }

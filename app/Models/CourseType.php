@@ -34,6 +34,6 @@ class CourseType extends Model
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'course_type_skill', 'course_type_id', 'skill_id')
-                    ->withPivot(['id', 'pre_max', 'mid_max', 'final_max', 'progress_test_max']);
+                    ->withPivot(['id', 'mid_max', 'final_max', 'progress_test_max']);
     }
 }
