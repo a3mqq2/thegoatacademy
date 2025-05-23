@@ -57,7 +57,7 @@ class ProgressTestController extends Controller
         ]);
         
         $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
-        $html   = view('instructor.courses.progress_test_print', compact('exam','bgB64'))->render();
+        $html   = view('instructor.courses.progress_test_print', compact('progressTest','bgB64'))->render();
     
         $sidePt = 768; // لازم 768 pt عشان بالضبط 1024px بعد التحويل
     
