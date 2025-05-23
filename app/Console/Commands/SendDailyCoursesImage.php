@@ -18,13 +18,14 @@ class SendDailyCoursesImage extends Command
     public function handle(WaapiService $waapi): int
     {
         $today   = Carbon::today();
-        $courses = Course::query()
-                  ->whereDate('pre_test_date',   $today)
+        $courses = Course::where('status', 'ongoing')
+        ->where(function ($query) use ($today) {
+            $query->whereDate('pre_test_date', $today)
                   ->orWhereDate('mid_exam_date', $today)
-                  ->orWhereDate('final_exam_date', $today)
-                  ->where('status', 'ongoing')
-                  ->get();
-
+                  ->orWhereDate('final_exam_date', $today);
+        })
+        ->get();
+    
         $bgB64 = base64_encode(file_get_contents(public_path('images/cource.png')));
 
         $html  = View::make('exam_officer.courses.print-2', [
