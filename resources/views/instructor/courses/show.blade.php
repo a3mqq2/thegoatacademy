@@ -153,7 +153,7 @@
                       @if($hasGrades)
                         <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
                            class="btn btn-info btn-sm">Grades</a>
-                        <a href="{{route("instructor.courses.progress_tests.print", $row['id'])}}" class="btn btn-danger text-light mt-3"> Download Results <i class="fa fa-print"></i> </a>
+                        <a href="{{route("instructor.courses.progress_tests.print", $row['id'])}}" class="btn btn-danger text-light btn-sm"> Download Results <i class="fa fa-print"></i> </a>
                       @endif
                     </td>
                   </tr>
