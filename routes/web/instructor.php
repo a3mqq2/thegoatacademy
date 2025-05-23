@@ -27,3 +27,9 @@ Route::get(
     '/progress-test/{progressTest}',
     [ProgressTestController::class, 'show']
 )->name('courses.progress_tests.show');
+
+
+Route::get(
+    '/progress-test/{progressTest}/print',
+    [ProgressTestController::class, 'print']
+)->name('courses.progress_tests.print');

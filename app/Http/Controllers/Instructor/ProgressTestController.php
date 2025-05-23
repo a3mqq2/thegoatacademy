@@ -31,6 +31,18 @@ class ProgressTestController extends Controller
     }
     
 
+    public function print(ProgressTest $progressTest, Request $request)
+    {
+        $progressTest->load([
+            'progressTestStudents.student',
+            'progressTestStudents.grades.courseTypeSkill.skill',
+            'course.courseType.skills'
+        ]);
+    
+        return view('instructor.courses.progress_test_print', compact('progressTest'));
+    }
+
+
     public function store(Request $request, ProgressTest $progressTest)
     {
         $data = $request->validate([
