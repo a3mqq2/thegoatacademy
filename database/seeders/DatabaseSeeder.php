@@ -71,6 +71,7 @@ class DatabaseSeeder extends Seeder
             LevelsTableSeeder::class,
             NewSettingsSeeder::class,
             SettingsForProgressTestSeeder::class,
+            InstructorSettingSeeder::class,
         ]);
     }
 }

@@ -27,6 +27,12 @@ class Course extends Model
         'meeting_platform_id',
         'whatsapp_group_link',
         'progress_test_day',
+        'allowed_abcences_instructor',
+        'alert_abcences_instructor',
+        'warn_absent',
+        'warn_homework',
+        'stop_absent',
+        'stop_homework'
     ];
 
     /**

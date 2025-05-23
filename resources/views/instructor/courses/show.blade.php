@@ -81,6 +81,42 @@
   </div>
 
   {{-- ================= SCHEDULE + PROGRESS ================= --}}
+  
+  {{-- absences count --}}
+  @php
+    $absences = $course->schedules->filter(function($s) {
+      return $s->status == 'absent';
+    })->count();
+  @endphp
+
+  @if ($absences > 0)
+  <div class="alert alert-warning border">
+    <h5 class=""><i class="fa fa-info-circle"></i> Important Notes:</h5>
+    <ul class="mb-0">
+      <li>
+        You are allowed 
+        <strong>{{ $course->allowed_abcences_instructor ?? 0 }}</strong> absences in this course.
+      </li>
+      @php
+        $absentCount = $course->schedules()->where('status', 'absent')->count();
+        $allowed = (int) ($course->allowed_abcences_instructor ?? 0);
+        $remaining = max(0, $allowed - $absentCount);
+      @endphp
+      <li>
+        You have used 
+        <strong>{{ $absentCount }}</strong> of your allowed absences.
+      </li>
+      <li>
+        You have 
+        <strong>{{ $remaining }}</strong> remaining.
+      </li>
+      <li>
+        If you exceed the allowed limit, <strong>the course will be paused automatically.</strong>
+      </li>
+    </ul>
+  </div>
+  @endif
+  
   <div class="card mt-3">
     <div class="card-header">
       <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
@@ -151,8 +187,10 @@
                     </td>
                     <td>
                       @if($hasGrades)
+                        @if ($course->status == "ongoing")
                         <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
-                           class="btn btn-info btn-sm">Grades</a>
+                        class="btn btn-info btn-sm">Edit Grades</a>
+                        @endif
                         <a href="{{route("instructor.courses.progress_tests.print", $row['id'])}}" class="btn btn-danger text-light btn-sm"> Download Results <i class="fa fa-print"></i> </a>
                       @endif
                     </td>
@@ -166,21 +204,42 @@
                     $today   = now()->toDateString();
                     $showBtn = ($row['date'] === $today) && now()->lt($closeAt);
                   @endphp
-                  <tr>
-                    <td>{{ $lecCounter }}</td>
-                    <td>{{ $row['day'] }}</td>
+                  <tr
+                  @if ($sch->status == "absent")
+                  class="text-light"
+                  style="background:#ffc0c0"
+                  @endif
+                  >
+                    <td>{{ $sch->id }}</td>
+                    <td>{{ $row['day'] }} 
+                      
+                      @if ($row['schedule']->extra_date)
+                        <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
+                      @endif
+
+                    </td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
                     <td class="text-center">
-                      @if($sch->attendance_taken_at)
-                        <i class="fa fa-check text-success"></i>
-                      @elseif(now()->toDateString() >= $row['date'] && now()->gt($closeAt))
-                        <i class="fa fa-times text-danger"></i>
+                      @if ($sch->status == "pending")
+                          <span class="badge badge-warning bg-warning">
+                            <i class="fa fa-hourglass-end"></i>
+                          </span>
+                      @endif
+                      @if ($sch->status == "done")
+                          <span class="badge badge-success bg-success">
+                            <i class="fa fa-check"></i>
+                          </span>
+                      @endif
+                      @if ($sch->status == "absent")
+                          <span class="badge badge-danger bg-danger">
+                            <i class="fa fa-times"></i>
+                          </span>
                       @endif
                     </td>
                     <td class="text-center">
-                      @if($showBtn)
+                      @if($showBtn && $course->status == "ongoing" )
                         <a href="{{ route('instructor.courses.take_attendance', [
                             'course'         => $course->id,
                             'CourseSchedule' => $sch->id,
@@ -188,7 +247,7 @@
                           class="btn btn-primary btn-sm">
                           <i class="fa fa-edit"></i>
                         </a>
-                      @elseif($sch->attendance_taken_at)
+                      @elseif($sch->attendance_taken_at && $course->status == "ongoing" && $sch->status == "done")
                         <button class="btn btn-success btn-sm"
                                 data-bs-toggle="modal"
                                 data-bs-target="#attendanceModal-{{ $sch->id }}">

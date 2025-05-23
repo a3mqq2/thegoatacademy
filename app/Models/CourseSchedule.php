@@ -18,6 +18,8 @@ class CourseSchedule extends Model
         'attendance_taken_at',
         'close_at',
         'alert_at',
+        'status',
+        'extra_date',
     ];
 
     /**

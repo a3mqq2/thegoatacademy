@@ -151,6 +151,15 @@ class CourseController extends Controller
             /* 5. persist  -------------------------------------------------- */
             DB::beginTransaction();
             try {
+
+                $setting_allowed_abcences_instructor = Setting::where('key', 'Allowed instructor absence count per course')->first();
+                $setting_alert_abcences_instructor = Setting::where('key', 'Instructor absence warning threshold per course')->first();
+                $warnAbsent      = (int) Setting::where('key','Student’s absence alert')->value('value');
+                $warnHomework    = (int) Setting::where('key','Student’s missing homework’s alert')->value('value');
+                $stopAbsent      = (int) Setting::where('key','Dismissing the student because of absence')->value('value');
+                $stopHomework    = (int) Setting::where('key','Dismissing the student because of not delivering the homework.')->value('value');
+
+        
                 $course = Course::create([
                     'course_type_id'       => $data['course_type_id'],
                     'group_type_id'        => $data['group_type_id'],
@@ -168,6 +177,12 @@ class CourseController extends Controller
                     'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
                     'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
                     'progress_test_day'    => $request->progress_test_day,
+                    'allowed_abcences_instructor' => $setting_allowed_abcences_instructor ? $setting_allowed_abcences_instructor->value : '',
+                    'alert_abcences_instructor' => $setting_alert_abcences_instructor ? $setting_alert_abcences_instructor->value : '',
+                    'warn_absent'           => $warnAbsent,
+                    'warn_homework'         => $warnHomework,
+                    'stop_absent'           => $stopAbsent,
+                    'stop_homework'         => $stopHomework,
                 ]);
 
 
@@ -463,7 +478,10 @@ class CourseController extends Controller
     {
         $groupTypes = GroupType::where('status','active')->get();
         $courseTypes = CourseType::where('status','active')->with('skills')->get();
-        $instructors = User::role('instructor')->with('skills','levels')->get();
+        $instructors = User::role('instructor')->with('skills','levels')
+        ->whereDoesntHave('courses', function($q) {
+            $q->whereIn('status', ['ongoing', 'upcoming']);
+        })->get();
         $students = Student::with('skills')->orderByDesc('id')->get();
         $levels = Level::all();
         $meeting_platforms = MeetingPlatform::all();
@@ -670,141 +688,117 @@ class CourseController extends Controller
 
     public function store_attendance(Request $request, WaapiService $waapi)
     {
-        /* ---------- 1. التحقق من البيانات الأساسية ---------- */
         $data = $request->validate([
-            'course_schedule_id'          => 'required|exists:course_schedules,id',
-            'students'                    => 'required|array',
-            'students.*.student_id'       => 'required|exists:students,id',
-            'students.*.attendance'       => 'required|in:present,absent',
-            'students.*.notes'            => 'nullable|string',
-            'students.*.homework_submitted'=> 'required|boolean',
+            'course_schedule_id'            => 'required|exists:course_schedules,id',
+            'students'                      => 'required|array',
+            'students.*.student_id'         => 'required|exists:students,id',
+            'students.*.attendance'         => 'required|in:present,absent',
+            'students.*.notes'              => 'nullable|string',
+            'students.*.homework_submitted' => 'required|boolean',
         ]);
-
-        /* ---------- 2. التحقق من ملكية الكورس ومعرفة الجدول ---------- */
-        $schedule = CourseSchedule::with('course')        // نحتاج الكورس لاحقاً
-                    ->findOrFail($data['course_schedule_id']);
-
+    
+        $schedule = CourseSchedule::with('course')->findOrFail($data['course_schedule_id']);
         $course = $schedule->course;
-
+    
         if ($course->instructor_id != Auth::id()) {
             return response()->json(['message' => 'Access denied.'], 403);
         }
-        /* ---------- 3. التحقق من نافذة الوقت المسموح بها ---------- */
-        // وقت البداية كنقطة مرجعية
+    
         $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
-
-        // وقت النهاية عادي
         $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
-
-        // إذا انتهت المحاضرة بعد منتصف الليل (end <= start) نضيف 1 يوم
         if ($lectureEnd->lte($lectureStart)) {
             $lectureEnd->addDay();
         }
-
-        // حدود التعديل (بعد الانتهاء حتى نهاية الساعات المسموح بها)
+    
         $limitHrs = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')->value('value');
         $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
-
-        // الآن: لا نسمح بالتعديل قبل انتهاء المحاضرة أو بعد انقضاء فترة السماح
-        // if ( now()->lt($lectureEnd) || now()->gt($modifyWindowEnd) ) {
-        //     return response()->json([
-        //         'message' => 'Attendance cannot be modified at this time.'
-        //     ], 403);
-        // }
-
-        // if (now()->lessThan($lectureEnd) ||
-        //     now()->greaterThan($lectureEnd->copy()->addHours($limitHrs))) {
-        //     return response()->json([
-        //         'message' => 'Attendance cannot be modified at this time.'
-        //     ], 403);
-        // }
-
-        /* ---------- 4. حفظ / تحديث سجلات الحضور للطلبة المُرسَلة ---------- */
+    
+        $newSchedule = null;
+    
+        if (Carbon::parse($schedule->date)->lt(today())) {
+            $schedule->update([
+                'attendance_taken_at' => now(),
+                'status'              => 'absent',
+            ]);
+    
+            $newSchedule = CourseSchedule::create([
+                'course_id' => $course->id,
+                'day'       => today()->dayOfWeek,
+                'date'      => today()->toDateString(),
+                'from_time' => $schedule->from_time,
+                'to_time'   => $schedule->to_time,
+                'status'    => 'done',
+                'attendance_taken_at' => now(),
+                'extra_date'  => $schedule->date,
+            ]);
+        } else {
+            $schedule->update([
+                'attendance_taken_at' => now(),
+                'status'              => 'done',
+            ]);
+        }
+    
         foreach ($data['students'] as $student) {
-
             CourseAttendance::updateOrCreate(
                 [
-                    'course_id'         => $course->id,
-                    'student_id'        => $student['student_id'],
-                    'course_schedule_id'=> $schedule->id,
+                    'course_id'          => $course->id,
+                    'student_id'         => $student['student_id'],
+                    'course_schedule_id' => $newSchedule?->id ?? $schedule->id,
                 ],
                 [
-                    'attendance'        => $student['attendance'],
-                    'homework_submitted'=> $student['homework_submitted'],
-                    'notes'             => $student['notes'] ?? null,
+                    'attendance'         => $student['attendance'],
+                    'homework_submitted' => $student['homework_submitted'],
+                    'notes'              => $student['notes'] ?? null,
                 ]
             );
         }
-
-        /* ---------- 5. وسم الجدول بأنه تم أخذ الحضور ---------- */
-        $schedule->update(['attendance_taken_at' => now()]);
-
-        /* ---------- 6. جلب حدود الإنذار / الفصل من الإعدادات ---------- */
-        $warnAbsent      = (int) Setting::where('key','Student’s absence alert')->value('value');
-        $warnHomework    = (int) Setting::where('key','Student’s missing homework’s alert')->value('value');
-        $stopAbsent      = (int) Setting::where('key','Dismissing the student because of absence')->value('value');
-        $stopHomework    = (int) Setting::where('key','Dismissing the student because of not delivering the homework.')->value('value');
-
-        /* ---------- 7. فحص كلّ طالب في هذا الكورس ---------- */
+    
         foreach ($course->students as $stu) {
-
             $absences = CourseAttendance::where([
                             ['course_id',   '=', $course->id],
                             ['student_id',  '=', $stu->id],
                             ['attendance',  '=', 'absent'],
                         ])->count();
-
-            $missHw   = CourseAttendance::where([
+    
+            $missHw = CourseAttendance::where([
                             ['course_id',          '=', $course->id],
                             ['student_id',         '=', $stu->id],
                             ['homework_submitted', '=', false],
                         ])->count();
-
-            /* ------- حالة الفصل ------- */
-            if ($absences >= $stopAbsent || $missHw >= $stopHomework) {
-                /* ------------- ❶  فصل الطالب ------------- */
+    
+            if ($absences >= $course->stop_absent || $missHw >= $course->stop_homework) {
                 if ($stu->pivot->status !== 'excluded') {
-                    $course->students()
-                        ->updateExistingPivot($stu->id, ['status' => 'excluded']);
-
-                    // NEW: pause private course
+                    $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
+    
                     if ($course->groupType && strtolower($course->groupType->name) === 'private') {
                         $course->update(['status' => 'paused']);
                     }
-
+    
                     $msg = "🚫 *تنبيه هام*\n"
                         . "تم فصل الطالب *{$stu->name}* من الكورس رقم *{$course->id}* "
                         . "بسبب تجاوز حدّ الغياب/الواجب.\n"
                         . "عدد الغيابات: $absences  عدد الواجبات غير المسلَّمة: $missHw.";
-
+    
                     $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
                 }
-
-            /* ------- حالة الإنذار فقط ------- */
-            } elseif ($absences >= $warnAbsent || $missHw >= $warnHomework) {
-
-                // ما زال الطالب ضمن الحدّ – إنذار
+            } elseif ($absences >= $course->warn_absent || $missHw >= $course->warn_homework) {
                 $msg = "⚠️ *إنذار للطالب {$stu->name}*\n"
-                     . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $warnAbsent)\n"
-                     . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $warnHomework)\n"
+                     . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $course->warn_absent)\n"
+                     . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $course->warn_homework)\n"
                      . "يرجى الالتزام لتفادي الفصل.";
-
+    
                 $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
-
             }
-
-            /* ------- إعادة الطالب لو عاد تحت حدّ الفصل ------- */
+    
             if (
                 $stu->pivot->status === 'excluded' &&
-                $absences < $stopAbsent &&
-                $missHw  < $stopHomework
+                $absences < $course->stop_absent &&
+                $missHw  < $course->stop_homework
             ) {
-                $course->students()
-                       ->updateExistingPivot($stu->id, ['status' => 'ongoing']);
+                $course->students()->updateExistingPivot($stu->id, ['status' => 'ongoing']);
             }
         }
-
-        /* ---------- 8. Audit Log ---------- */
+    
         AuditLog::create([
             'user_id'     => Auth::id(),
             'description' => "Took attendance for schedule #{$schedule->id}",
@@ -812,10 +806,10 @@ class CourseController extends Controller
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-
-        /* ---------- 9. استجابة ---------- */
+    
         return response()->json(['message' => 'Attendance saved successfully']);
     }
+    
     public function restore($courseId)
     {
 

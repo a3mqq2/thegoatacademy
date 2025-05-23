@@ -22,6 +22,7 @@ class SendDailyCoursesImage extends Command
                   ->whereDate('pre_test_date',   $today)
                   ->orWhereDate('mid_exam_date', $today)
                   ->orWhereDate('final_exam_date', $today)
+                  ->where('status', 'ongoing')
                   ->get();
 
         $bgB64 = base64_encode(file_get_contents(public_path('images/cource.png')));

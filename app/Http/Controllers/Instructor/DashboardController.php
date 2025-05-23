@@ -29,14 +29,15 @@ class DashboardController extends Controller
         $ongoing_courses   = $user->courses()->where('status', 'ongoing')->count();
         $completed_courses = $user->courses()->where('status', 'completed')->count();
 
-        // 2) Today’s date & weekday (0=Sun … 6=Sat)
         $today   = Carbon::now()->toDateString();
         $weekday = Carbon::now()->dayOfWeek;
 
-        // 3) Open progress-tests whose scheduled time ≤ now, still within close_at, not done yet
         $rawTests = ProgressTest::whereNull('done_at')
             ->whereDate('date', $today)
-            ->whereHas('course', fn($q) => $q->where('instructor_id', $user->id))
+            ->whereHas('course', function($q) use($user) {
+                $q->where('instructor_id', $user->id) 
+                  ->where('status', 'ongoing');
+            })
             ->whereRaw(
                 "STR_TO_DATE(CONCAT(`date`,' ',`time`),'%Y-%m-%d %H:%i') <= ?",
                 [ now()->format('Y-m-d H:i') ]
@@ -65,15 +66,13 @@ class DashboardController extends Controller
         $weekEnd   = (clone $weekStart)->addDays(5);
         $todayDow  = Carbon::now()->dayOfWeek;
 
-        $missedLastWeek = CourseSchedule::whereBetween('date', [
-                $weekStart->toDateString(),
-                $weekEnd->toDateString(),
-            ])
-            ->whereNull('attendance_taken_at')
-            ->whereDate('date', '>=', Carbon::now()->subDays(6)->toDateString())   // no older than 6 days
+        $missedLastWeek = CourseSchedule::whereNull('attendance_taken_at')
+            ->where('status', 'absent')
+            ->whereDate('date', '>=', Carbon::now()->subDays(6)->toDateString())  
             ->whereHas('course', function($q) use ($user, $todayDow) {
-                $q->where('instructor_id', $user->id)
-                  ->where('progress_test_day', $todayDow);
+                $q->where('instructor_id', $user->id);
+                $q->where('progress_test_day', $todayDow);
+                $q->where('status','ongoing');
             })
             ->get();
 

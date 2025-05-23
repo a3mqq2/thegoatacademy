@@ -19,6 +19,7 @@
               <th>Student Name</th>
               <th class="text-center">Is Attend</th>
               <th class="text-center">Homework Submitted</th>
+              <th class="text-center">Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -48,6 +49,15 @@
                   />
                   <span class="slider round"></span>
                 </label>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  v-model="student.notes"
+                  class="form-control form-control-sm"
+                  :disabled="!canModify(student) || isClosed"
+                  placeholder="Notes..."
+                />
               </td>
             </tr>
           </tbody>
@@ -92,34 +102,25 @@ export default {
     const course = ref(null);
     const schedule = ref(null);
 
-    // today as JS Date (midnight)
     const today = computed(() => {
       const d = new Date(props.date);
-      d.setHours(0,0,0,0);
+      d.setHours(0, 0, 0, 0);
       return d;
     });
 
-    // what weekday is today? 0=Sunday…6=Saturday
     const todayWeekday = computed(() => new Date(props.date).getDay());
 
-    // six days ago at midnight
     const sixDaysAgo = computed(() => {
       const d = new Date(props.date);
       d.setDate(d.getDate() - 6);
-      d.setHours(0,0,0,0);
+      d.setHours(0, 0, 0, 0);
       return d;
     });
 
-    // is today the course’s configured “catch-up” weekday?
     const isProgressTestDay = computed(() => {
-      return (
-        course.value.progress_test_day == todayWeekday.value
-      );
+      return course.value.progress_test_day == todayWeekday.value;
     });
 
-    // can still “catch up” on a lecture if:
-    // – lecture date is before today but strictly after sixDaysAgo
-    // – today matches progress_test_day
     const isCatchup = computed(() => {
       if (!schedule.value) return false;
       const lec = new Date(schedule.value.date);
@@ -131,12 +132,10 @@ export default {
       );
     });
 
-    // Determine if the editing window has closed
     const isClosed = computed(() => {
       if (isCatchup.value) return false;
       const rawClose = schedule.value?.close_at;
       if (!rawClose) return false;
-      // convert "YYYY-MM-DD HH:mm:ss" → ISO
       const closeMs = new Date(rawClose.replace(" ", "T")).getTime();
       return Date.now() >= closeMs;
     });
@@ -182,7 +181,6 @@ export default {
         course.value = data.course;
         schedule.value = data.schedule;
 
-        // map existing attendance
         const attendanceMap = {};
         (schedule.value.attendances || []).forEach((att) => {
           attendanceMap[att.student_id] = att;
