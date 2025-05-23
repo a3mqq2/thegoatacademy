@@ -91,8 +91,8 @@ th, td {
 <div class="container">
 
     <div class="header">
-        <h1 class="title">
-         Progress Test Results
+        <h1 class="title text-center">
+         Progress Test Results ({{$progressTest->course_id}})
         </h1>
         <div class="sub-details">
             <div style="position: absolute; top:210px;">
