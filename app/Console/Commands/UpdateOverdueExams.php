@@ -33,7 +33,9 @@ class UpdateOverdueExams extends Command
             $whatsapp_service->sendText(formatLibyanPhone($exam->examiner->phone), $msg);
         }
 
-            $overdueExams->update(['status' => 'overdue']);
+        $overdueExams = Exam::where('status', 'assigned')
+        ->whereDate('exam_date', '<=', Carbon::now()->subDays(2))
+        ->update('status', 'overdue');
 
         $revertedAssigned = Exam::where('status', 'overdue')
             ->whereDate('exam_date', '>', Carbon::now())
