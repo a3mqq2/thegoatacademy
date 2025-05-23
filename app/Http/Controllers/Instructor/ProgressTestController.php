@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Instructor;
 
+use Imagick;
 use App\Models\Course;
 use App\Models\ProgressTest;
 use Illuminate\Http\Request;
+use Laravel\Prompts\Progress;
 use App\Models\CourseTypeSkill;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProgressTestStudent;
 use App\Http\Controllers\Controller;
-use Laravel\Prompts\Progress;
+use Illuminate\Support\Facades\Storage;
 
 class ProgressTestController extends Controller
 {
@@ -31,7 +34,7 @@ class ProgressTestController extends Controller
     }
     
 
-    public function print(ProgressTest $progressTest, Request $request)
+    public function prindt(ProgressTest $progressTest, Request $request)
     {
         $progressTest->load([
             'progressTestStudents.student',
@@ -42,6 +45,55 @@ class ProgressTestController extends Controller
         return view('instructor.courses.progress_test_print', compact('progressTest'));
     }
 
+    
+
+    public function print(int $id)
+    {
+        $progressTest = ProgressTest::findOrFail($id);
+        $progressTest->load([
+            'progressTestStudents.student',
+            'progressTestStudents.grades.courseTypeSkill.skill',
+            'course.courseType.skills'
+        ]);
+        
+        $bgB64  = base64_encode(file_get_contents(public_path('images/exam.png')));
+        $html   = view('instructor.courses.progress_test_print', compact('exam','bgB64'))->render();
+    
+        $sidePt = 768; // لازم 768 pt عشان بالضبط 1024px بعد التحويل
+    
+        $pdfBin = Pdf::loadHTML($html)
+                    ->setPaper([0, 0, $sidePt, $sidePt])
+                    ->setOptions([
+                        'dpi' => 96,
+                        'isRemoteEnabled' => true,
+                        'isHtml5ParserEnabled' => true,
+                        'isFontSubsettingEnabled' => true,
+                        'defaultFont' => 'cairo',
+                    ])->output();
+    
+        $tmpPdf = storage_path("app/tmp_progress_test_$id.pdf");
+        file_put_contents($tmpPdf, $pdfBin);
+    
+        $im = new Imagick();
+        $im->setResolution(96, 96);
+        $im->readImage($tmpPdf.'[0]');
+        $im->setImageUnits(\Imagick::RESOLUTION_PIXELSPERINCH);
+        $im->setImageFormat('jpg');
+        $im->setImageCompressionQuality(90);
+        $im->resizeImage(1024, 1024, \Imagick::FILTER_LANCZOS, 1);
+    
+        $ts     = now()->format('Ymd_His');
+        $nameLg = "prints/progress_test_{$id}_{$ts}_lg.jpg";
+    
+        Storage::disk('public')->put($nameLg, $im);
+    
+        unlink($tmpPdf);
+    
+        return response()->download(
+            storage_path('app/public/' . $nameLg),
+            "progress_test_{$id}.jpg"
+        );
+    }
 
     public function store(Request $request, ProgressTest $progressTest)
     {
