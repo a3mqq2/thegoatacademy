@@ -45,19 +45,13 @@
 
       {{-- Info Fields --}}
       <div class="row">
-        <div class="col-md-4 mb-3">
-          <label><i class="fa fa-user"></i> Name</label>
-          <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                 value="{{ old('name', $user->name) }}" required>
-          @error('name') <div class="invalid-feedback"><i class="fa fa-exclamation-circle"></i> {{ $message }}</div> @enderror
-        </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 mb-3">
           <label><i class="fa fa-phone"></i> Phone</label>
           <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror"
                  value="{{ old('phone', $user->phone) }}" required>
           @error('phone') <div class="invalid-feedback"><i class="fa fa-exclamation-circle"></i> {{ $message }}</div> @enderror
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-6 mb-3">
           <label><i class="fa fa-envelope"></i> Email</label>
           <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
                  value="{{ old('email', $user->email) }}" required>

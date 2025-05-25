@@ -7,6 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/fonts/fontawesome.css') }}" />
     <style>
+          @media print {
+            *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+          }
         :root{
             --primary:#5637dd;
             --secondary:#00c3ff;
@@ -201,7 +204,7 @@
                         style="background:#ffc0c0"
                         @endif
                         >
-                          <td>{{ $sch->id }}</td>
+                          <td>{{ $lecCounter }}</td>
                           <td>{{ $row['day'] }} 
                             
                             @if ($row['schedule']->extra_date)

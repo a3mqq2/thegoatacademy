@@ -210,7 +210,7 @@
                   style="background:#ffc0c0"
                   @endif
                   >
-                    <td>{{ $sch->id }}</td>
+                    <td>{{ $lecCounter }}</td>
                     <td>{{ $row['day'] }} 
                       
                       @if ($row['schedule']->extra_date)
