@@ -17,25 +17,32 @@ class UpdateCourseScheduleStatuses extends Command
     {
         $now = Carbon::now();
 
-        // 1. Mark as done if attendance taken and time passed
+        // 1. Mark as done if attendance taken and time passed, and course is ongoing
         CourseSchedule::whereNotNull('attendance_taken_at')
             ->where('status', '!=', 'done')
+            ->whereHas('course', function ($q) {
+                $q->where('status', 'ongoing');
+            })
             ->update(['status' => 'done']);
 
-        // 2. Mark as absent if close_at is passed and no attendance
+        // 2. Mark as absent if close_at is passed and no attendance, and course is ongoing
         CourseSchedule::whereNull('attendance_taken_at')
             ->whereNotNull('close_at')
             ->where('close_at', '<=', $now)
             ->where('status', '!=', 'absent')
+            ->whereHas('course', function ($q) {
+                $q->where('status', 'ongoing');
+            })
             ->update(['status' => 'absent']);
 
-        // 3. Pause courses and alert instructors
-        $courses = Course::with([
-            'schedules' => function ($q) {
-                $q->where('status', 'absent');
-            },
-            'instructor' // assuming this relation exists
-        ])->get();
+        // 3. Pause courses and alert instructors (only ongoing)
+        $courses = Course::where('status', 'ongoing')
+            ->with([
+                'schedules' => function ($q) {
+                    $q->where('status', 'absent');
+                },
+                'instructor'
+            ])->get();
 
         foreach ($courses as $course) {
             $allowed = (int) ($course->allowed_abcences_instructor ?? 0);

@@ -186,13 +186,16 @@
                       @endif
                     </td>
                     <td>
-                      @if($hasGrades)
-                        @if ($course->status == "ongoing")
-                        <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
-                        class="btn btn-info btn-sm">Edit Grades</a>
-                        @endif
-                        <a href="{{route("instructor.courses.progress_tests.print", $row['id'])}}" class="btn btn-danger text-light btn-sm"> Download Results <i class="fa fa-print"></i> </a>
-                      @endif
+                        @php
+                          $testStart = \Carbon\Carbon::parse($pt->date . ' ' . $pt->time);
+                          $isStarted = now()->gt($testStart);
+                          $isClosed  = $closed;
+                        @endphp
+                        
+                        @if($course->status == "ongoing" && ($hasGrades || ($isStarted && ! $isClosed)))
+                          <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
+                            class="btn btn-info btn-sm">Edit Grades</a>
+                        @endif                    
                     </td>
                   </tr>
                 @else
