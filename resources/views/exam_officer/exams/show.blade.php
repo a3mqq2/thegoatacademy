@@ -8,7 +8,7 @@
     $examDateTime = Carbon::parse($exam->exam_date->format('Y-m-d').' '.$exam->time);
     $isExaminer   = $exam->examiner_id == auth()->id();
     $hasStarted   = $now->gte($examDateTime);
-    $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new','completed']);
+    $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new']);
     $skills  = $exam->course->courseType->skills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
 @endphp

@@ -174,7 +174,7 @@
                     $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
                     $closed    = now()->gt(\Carbon\Carbon::parse($pt->close_at));
                   @endphp
-                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) table-danger text-light @endif">
+                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades)  text-light @endif">
                     <td colspan="2">Progress Test – Week {{ $row['week'] }}</td>
                     <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
                     <td colspan="2">{{ date('h:i A', strtotime($row['time'])) }}</td>
