@@ -1,3 +1,4 @@
+<!-- AddCourse.vue -->
 <template>
   <div>
     <!-- Global Spinner -->
@@ -331,7 +332,7 @@
 
     <!-- Save Button -->
     <button v-if="showFields" class="btn btn-primary mt-3" @click="saveCourse">
-      {{ id ? 'Update Course' : 'Create Course' }}
+      Create Course
     </button>
 
     <!-- Student Modal -->
@@ -424,38 +425,37 @@ function nextFreeDay (base, occupied) {
 }
 
 export default defineComponent({
-  name: 'CreateOrEditCourse',
+  name: 'AddCourse',
   components: { 'v-select': vSelect, Flatpickr },
-  props: { id: [Number, String] },
-  setup (props) {
+  setup () {
     const { appContext } = getCurrentInstance()
     const $toastr = appContext.config.globalProperties.$toastr
 
-    const courseTypes = ref([])
-    const groupTypes = ref([])
-    const instructors = ref([])
+    const courseTypes      = ref([])
+    const groupTypes       = ref([])
+    const instructors      = ref([])
     const meetingPlatforms = ref([])
-    const levels = ref([])
-    const allStudents = ref([])
+    const levels           = ref([])
+    const allStudents      = ref([])
 
     const selectedCourseType = ref(null)
-    const selectedGroupType = ref(null)
+    const selectedGroupType  = ref(null)
     const selectedInstructor = ref(null)
     const selectedMeetingPlatform = ref(null)
-    const selectedLevels = ref([])
+    const selectedLevels     = ref([])
 
     const startDate = ref('')
-    const fromTime = ref('')
-    const toTime = ref('')
-    const preTestDate = ref('')
-    const midExamDate = ref('')
-    const finalExamDate = ref('')
+    const fromTime  = ref('')
+    const toTime    = ref('')
+    const preTestDate  = ref('')
+    const midExamDate  = ref('')
+    const finalExamDate= ref('')
 
-    const showPreTest = ref(true)
-    const showMidExam = ref(true)
-    const showFinalExam = ref(true)
+    const showPreTest  = ref(true)
+    const showMidExam  = ref(true)
+    const showFinalExam= ref(true)
 
-    const studentCapacity = ref('')
+    const studentCapacity   = ref('')
     const whatsappGroupLink = ref('')
 
     const days = ref([
@@ -467,38 +467,35 @@ export default defineComponent({
       { label: 'Thu', value: 4 },
       { label: 'Fri', value: 5 }
     ])
+    const selectableDays = computed(() => days.value.filter(d => d.value !== 5))
 
-    const selectableDays = computed(() =>
-      days.value.filter(d => d.value !== 5)
-    )
-
-    const selectedDays = ref([])
+    const selectedDays       = ref([])
     const storedSelectedDays = ref([])
-    const scheduleList = ref([])
+    const scheduleList       = ref([])
 
     const matchInstructorSkills = ref(false)
-    const matchStudentSkills = ref(false)
+    const matchStudentSkills    = ref(false)
     const showFields = ref(false)
-    const loading = ref(true)
+    const loading    = ref(true)
     const globalLoading = ref(false)
 
-    const studentsList = ref([])
+    const studentsList    = ref([])
     const selectedStudent = ref(null)
-    const showStudentModal = ref(false)
+    const showStudentModal= ref(false)
 
-    const newStudentName = ref('')
-    const newStudentPhone = ref('')
-    const newStudentGender = ref('')
-    const newStudentAge = ref('')
-    const newStudentCity = ref('')
+    const newStudentName           = ref('')
+    const newStudentPhone          = ref('')
+    const newStudentGender         = ref('')
+    const newStudentAge            = ref('')
+    const newStudentCity           = ref('')
     const newStudentSpecialization = ref('')
     const newStudentEmergencyPhone = ref('')
-    const newStudentBooksDue = ref(false)
+    const newStudentBooksDue       = ref(false)
 
     const progressTestDay = ref(null)
-    const progressTests = ref([])
+    const progressTests   = ref([])
 
-    const dateConfig = ref({ dateFormat: 'Y-m-d', allowInput: true })
+    const dateConfig    = ref({ dateFormat: 'Y-m-d', allowInput: true })
     const dateConfigPre = ref({ dateFormat: 'Y-m-d', allowInput: true })
 
     onMounted(() => {
@@ -509,68 +506,17 @@ export default defineComponent({
     async function fetchRequirements () {
       globalLoading.value = true
       try {
-        const params = props.id ? { id: props.id } : {}
-        const { data } = await instance.get('/course-requirements', { params })
+        const { data } = await instance.get('/course-requirements')
         courseTypes.value      = data.courseTypes       || []
         groupTypes.value       = data.groupTypes        || []
         instructors.value      = data.instructors       || []
         meetingPlatforms.value = data.meeting_platforms || []
         levels.value           = data.levels            || []
         allStudents.value      = data.students          || []
-        if (data.course) populateCourse(data.course)
       } finally {
         loading.value = false
         globalLoading.value = false
       }
-    }
-
-    function populateCourse (c) {
-      selectedCourseType.value     = courseTypes.value.find(x => x.id === c.course_type_id)     || null
-      selectedGroupType.value      = groupTypes.value.find(x => x.id === c.group_type_id)       || null
-      selectedInstructor.value     = instructors.value.find(x => x.id === c.instructor_id)      || null
-      selectedMeetingPlatform.value = meetingPlatforms.value.find(x => x.id === c.meeting_platform_id) || null
-
-      startDate.value = c.start_date || ''
-      ;[fromTime.value, toTime.value] = c.time.split(' - ')
-      preTestDate.value  = c.pre_test_date  || ''
-      midExamDate.value  = c.mid_exam_date  || ''
-      finalExamDate.value = c.final_exam_date || ''
-
-      showPreTest.value  = !!c.pre_test_date
-      showMidExam.value  = !!c.mid_exam_date
-      showFinalExam.value = !!c.final_exam_date
-
-      progressTestDay.value = c.progress_test_day || null;
-      studentCapacity.value = c.student_capacity || ''
-      whatsappGroupLink.value = c.whatsapp_group_link || ''
-
-      if (c.days) {
-        const parts = c.days.split('-')
-        selectedDays.value = days.value.filter(d => parts.includes(d.label))
-        storedSelectedDays.value = parts.map(l => days.value.find(d => d.label === l).value)
-      }
-
-      if (c.schedules) {
-        scheduleList.value = c.schedules.map(s => ({
-          day: s.day,
-          date: s.date,
-          fromTime: s.from_time,
-          toTime: s.to_time,
-          progress: false
-        }))
-      }
-
-      if (c.students) {
-        studentsList.value = c.students.map(s => ({
-          id: s.id,
-          name: s.name,
-          phone: s.phone,
-          booksDue: s.books_due
-        }))
-      }
-
-      showFields.value = true
-      nextTick(generateSchedule)
     }
 
     watch(startDate, generateSchedule)
@@ -585,7 +531,6 @@ export default defineComponent({
     })
 
     watch(midExamDate, generateSchedule)
-
 
     const filteredInstructors = computed(() => {
       if (!matchInstructorSkills.value || !selectedCourseType.value?.skills) return instructors.value
@@ -629,138 +574,128 @@ export default defineComponent({
     }
 
     function generateSchedule () {
-  if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return
+      if (!(selectedCourseType.value && startDate.value && fromTime.value && toTime.value && selectedDays.value.length)) return
 
-  const totalLessons = +selectedCourseType.value.duration || 0
-  if (!totalLessons) return
+      const totalLessons = +selectedCourseType.value.duration || 0
+      if (!totalLessons) return
 
-  scheduleList.value     = []
-  progressTests.value    = []
-  storedSelectedDays.value = selectedDays.value.map(d => d.value)
+      scheduleList.value     = []
+      progressTests.value    = []
+      storedSelectedDays.value = selectedDays.value.map(d => d.value)
 
-  const occupied = new Set()
+      const occupied = new Set()
 
-  /* ────── Pre-test ────── */
-  if (showPreTest.value) {
-    if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
-      preTestDate.value = startDate.value
-    }
-    occupied.add(preTestDate.value)
-  } else {
-    preTestDate.value = ''
-  }
-
-  /* ────── First half of lectures ────── */
-  const half = Math.floor(totalLessons / 2)
-  let cur = new Date(startDate.value)
-  cur.setDate(cur.getDate() + 1)
-  skipFriday(cur)
-
-  const pushLecture = d => {
-    scheduleList.value.push({
-      day: days.value.find(x => x.value === d.getDay()).label,
-      date: fmtDate(d),
-      fromTime: fromTime.value,
-      toTime: toTime.value,
-      progress: false
-    })
-  }
-
-  let before = 0
-  while (before < half) {
-    if (storedSelectedDays.value.includes(cur.getDay())) {
-      pushLecture(cur)
-      occupied.add(fmtDate(cur))
-      before++
-    }
-    cur.setDate(cur.getDate() + 1)
-    skipFriday(cur)
-  }
-
-  /* ────── Mid-exam ────── */
-  if (showMidExam.value) {
-    let mid = midExamDate.value ? new Date(midExamDate.value) : null
-
-    const fits = d => d >= cur && !occupied.has(fmtDate(d)) && d.getDay() !== 5
-
-    if (!mid || !fits(mid)) {
-      mid = new Date(nextFreeDay(cur, occupied))
-    } else {
-      skipFriday(mid)
-      while (!fits(mid)) {
-        mid.setDate(mid.getDate() + 1)
-        skipFriday(mid)
+      /* ────── Pre-test ────── */
+      if (showPreTest.value) {
+        if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
+          preTestDate.value = startDate.value
+        }
+        occupied.add(preTestDate.value)
+      } else {
+        preTestDate.value = ''
       }
+
+      /* ────── First half of lectures ────── */
+      const half = Math.floor(totalLessons / 2)
+      let cur = new Date(startDate.value)
+      cur.setDate(cur.getDate() + 1)
+      skipFriday(cur)
+
+      let before = 0
+      while (before < half) {
+        if (storedSelectedDays.value.includes(cur.getDay())) {
+          pushLecture(cur)
+          occupied.add(fmtDate(cur))
+          before++
+        }
+        cur.setDate(cur.getDate() + 1)
+        skipFriday(cur)
+      }
+
+      /* ────── Mid-exam ────── */
+      if (showMidExam.value) {
+        let mid = midExamDate.value ? new Date(midExamDate.value) : null
+
+        const fits = d => d >= cur && !occupied.has(fmtDate(d)) && d.getDay() !== 5
+
+        if (!mid || !fits(mid)) {
+          mid = new Date(nextFreeDay(cur, occupied))
+        } else {
+          skipFriday(mid)
+          while (!fits(mid)) {
+            mid.setDate(mid.getDate() + 1)
+            skipFriday(mid)
+          }
+        }
+
+        midExamDate.value = fmtDate(mid)
+        occupied.add(midExamDate.value)
+
+        cur = new Date(midExamDate.value)
+        cur.setDate(cur.getDate() + 1)
+        skipFriday(cur)
+      } else {
+        midExamDate.value = ''
+      }
+
+      /* ────── Second half of lectures ────── */
+      while (scheduleList.value.filter(r => !r.progress).length < totalLessons) {
+        if (storedSelectedDays.value.includes(cur.getDay())) {
+          pushLecture(cur)
+          occupied.add(fmtDate(cur))
+        }
+        cur.setDate(cur.getDate() + 1)
+        skipFriday(cur)
+      }
+
+      /* ────── Final-exam ────── */
+      const lastLecture = new Date(
+        scheduleList.value
+          .filter(r => !r.progress)
+          .slice(-1)[0].date
+      )
+      lastLecture.setDate(lastLecture.getDate() + 1)
+      skipFriday(lastLecture)
+      finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
+
+      /* ────── Progress tests ────── */
+      if (progressTestDay.value !== null) {
+        let p = new Date(startDate.value)
+        while (p.getDay() !== progressTestDay.value) {
+          p.setDate(p.getDate() + 1)
+          skipFriday(p)
+        }
+
+        let week = 1
+        const end = new Date(finalExamDate.value || scheduleList.value.slice(-1)[0].date)
+
+        while (p <= end) {
+          const dStr = fmtDate(p)
+          const dayLabel = days.value.find(d => d.value === progressTestDay.value).label
+
+          progressTests.value.push({ week, date: dStr, day: dayLabel })
+          scheduleList.value.push({
+            progress: true,
+            week,
+            day: dayLabel,
+            date: dStr,
+            fromTime: fromTime.value,
+            toTime: toTime.value
+          })
+
+          p.setDate(p.getDate() + 7)
+          week++
+        }
+      }
+
+      /* ────── Sort everything ────── */
+      scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
     }
 
-    midExamDate.value = fmtDate(mid)
-    occupied.add(midExamDate.value)
+    const deletePreTest  = () => { showPreTest.value  = false; preTestDate.value  = ''; generateSchedule() }
+    const deleteMidExam  = () => { showMidExam.value  = false; midExamDate.value  = ''; generateSchedule() }
+    const deleteFinalExam= () => { showFinalExam.value= false; finalExamDate.value= ''; generateSchedule() }
 
-    cur = new Date(midExamDate.value)
-    cur.setDate(cur.getDate() + 1)
-    skipFriday(cur)
-  } else {
-    midExamDate.value = ''
-  }
-
-  /* ────── Second half of lectures ────── */
-  while (scheduleList.value.filter(r => !r.progress).length < totalLessons) {
-    if (storedSelectedDays.value.includes(cur.getDay())) {
-      pushLecture(cur)
-      occupied.add(fmtDate(cur))
-    }
-    cur.setDate(cur.getDate() + 1)
-    skipFriday(cur)
-  }
-
-  /* ────── Final-exam ────── */
-  const lastLecture = new Date(
-    scheduleList.value
-      .filter(r => !r.progress)
-      .slice(-1)[0].date
-  )
-  lastLecture.setDate(lastLecture.getDate() + 1)
-  skipFriday(lastLecture)
-  finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
-
-  /* ────── Progress tests ────── */
-  if (progressTestDay.value !== null) {
-    let p = new Date(startDate.value)
-    while (p.getDay() !== progressTestDay.value) {
-      p.setDate(p.getDate() + 1)
-      skipFriday(p)
-    }
-
-    let week = 1
-    const end = new Date(finalExamDate.value || scheduleList.value.slice(-1)[0].date)
-
-    while (p <= end) {
-      const dStr = fmtDate(p)
-      const dayLabel = days.value.find(d => d.value === progressTestDay.value).label
-
-      progressTests.value.push({ week, date: dStr, day: dayLabel })
-      scheduleList.value.push({
-        progress: true,
-        week,
-        day: dayLabel,
-        date: dStr,
-        fromTime: fromTime.value,
-        toTime: toTime.value
-      })
-
-      p.setDate(p.getDate() + 7)
-      week++
-    }
-  }
-
-  /* ────── Sort everything ────── */
-  scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
-}
-
-
-    const deletePreTest = () => { showPreTest.value = false; preTestDate.value = ''; generateSchedule() }
-    const deleteMidExam = () => { showMidExam.value = false; midExamDate.value = ''; generateSchedule() }
-    const deleteFinalExam = () => { showFinalExam.value = false; finalExamDate.value = ''; generateSchedule() }
     function removeSchedule (i) {
       if (scheduleList.value[i].progress) {
         const wk = scheduleList.value[i].week
@@ -782,6 +717,7 @@ export default defineComponent({
     }
 
     function onStudentSelected (v) { if (v) { studentsList.value.push({ ...v }); selectedStudent.value = null } }
+
     async function addStudent () {
       if (!newStudentName.value || !newStudentPhone.value) return
       globalLoading.value = true
@@ -804,6 +740,7 @@ export default defineComponent({
         newStudentBooksDue.value = false
       } finally { globalLoading.value = false }
     }
+
     function removeStudent (i) { studentsList.value.splice(i, 1) }
 
     async function saveCourse () {
@@ -840,14 +777,9 @@ export default defineComponent({
 
       try {
         globalLoading.value = true
-        if (props.id) {
-          await instance.put(`/courses/${props.id}`, payload)
-          $toastr.success('Course updated successfully')
-        } else {
-          const { data } = await instance.post('/courses', payload)
-          $toastr.success('Course created successfully')
-          if (data?.course?.id) window.location.href = `/admin/courses/${data.course.id}/print`
-        }
+        const { data } = await instance.post('/courses', payload)
+        $toastr.success('Course created successfully')
+        if (data?.course?.id) window.location.href = `/admin/courses/${data.course.id}/print`
       } catch (e) {
         $toastr.error(e.response?.data?.message || 'Save failed')
       } finally { globalLoading.value = false }

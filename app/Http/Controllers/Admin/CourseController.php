@@ -66,234 +66,235 @@ class CourseController extends Controller
     }
 
   
-        public function store(Request $request)
-        {
-
-            /* 1. validate -------------------------------------------------- */
-            $validator = Validator::make($request->all(), [
-                'course_type_id'        => 'required|exists:course_types,id',
-                'group_type_id'         => 'required|exists:group_types,id',
-                'instructor_id'         => 'required|exists:users,id',
-                'start_date'            => 'required|date',
-                'pre_test_date'         => 'nullable|date',
-                'mid_exam_date'         => 'nullable|date',
-                'final_exam_date'       => 'nullable|date',
-                'meeting_platform_id'   => 'nullable|exists:meeting_platforms,id',
-                'student_capacity'      => 'required|integer|min:1',
-                'schedule'              => 'required|array|min:1',
-                'schedule.*.day'        => 'required|string',
-                'schedule.*.date'       => 'required|date',
-                'schedule.*.fromTime'   => 'required',
-                'schedule.*.toTime'     => 'required',
-                'students'              => 'required|array|min:1',
-                'students.*'            => 'exists:students,id',
-                'whatsapp_group_link'   => 'nullable',
-                'levels'                => 'nullable|array',
-                'levels.*'              => 'exists:levels,id',
-                'progress_tests'       => 'nullable|array',
-            ]);
-
-
-
-            if ($validator->fails()) {
+    public function store(Request $request)
+    {
+        /* 1. validate -------------------------------------------------- */
+        $validator = Validator::make($request->all(), [
+            'course_type_id'        => 'required|exists:course_types,id',
+            'group_type_id'         => 'required|exists:group_types,id',
+            'instructor_id'         => 'required|exists:users,id',
+            'start_date'            => 'required|date',
+            'pre_test_date'         => 'nullable|date',
+            'mid_exam_date'         => 'nullable|date',
+            'final_exam_date'       => 'nullable|date',
+            'meeting_platform_id'   => 'nullable|exists:meeting_platforms,id',
+            'student_capacity'      => 'required|integer|min:1',
+            'schedule'              => 'required|array|min:1',
+            'schedule.*.day'        => 'required|string',
+            'schedule.*.date'       => 'required|date',
+            'schedule.*.fromTime'   => 'required',
+            'schedule.*.toTime'     => 'required',
+            'students'              => 'required|array|min:1',
+            'students.*'            => 'exists:students,id',
+            'whatsapp_group_link'   => 'nullable',
+            'levels'                => 'nullable|array',
+            'levels.*'              => 'exists:levels,id',
+            'progress_tests'        => 'nullable|array',
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+    
+        /* 2. sanitize dates  (Y-m-d for DATE columns) ------------------ */
+        $data = $validator->validated();
+        foreach (['start_date','pre_test_date','mid_exam_date','final_exam_date'] as $f) {
+            $data[$f] = empty($data[$f])
+                ? null
+                : Carbon::parse($data[$f])->toDateString();
+        }
+    
+        /* 3. always grab arrays safely -------------------------------- */
+        $students    = $data['students']   ?? [];
+        $levels      = $data['levels']     ?? [];
+        $rawSchedule = $data['schedule']   ?? [];
+        $selected    = $request->input('selected_days', []);
+    
+        /* guard: capacity */
+        if (count($students) > $data['student_capacity']) {
+            return response()->json([
+                'message' => 'The number of students exceeds the student capacity.',
+            ], 422);
+        }
+    
+        /* 4. derive helper fields ------------------------------------- */
+        $daysMap = [0=>'Sun',1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri',6=>'Sat'];
+        $daysStr = collect($selected)->map(fn($d) => $daysMap[$d])->implode('-');
+    
+        $today  = now();
+        $status = $today->lt($data['start_date'])
+            ? 'upcoming'
+            : ($data['final_exam_date'] && $today->gt($data['final_exam_date']) ? 'completed' : 'ongoing');
+    
+        /* remove duplicate/overlap schedule rows */
+        $examDates = collect([$data['pre_test_date'],$data['mid_exam_date'],$data['final_exam_date']])->filter();
+        $schedule  = collect($rawSchedule)
+            ->unique('date')
+            ->reject(fn($r) => $examDates->contains($r['date']))
+            ->values();
+    
+        if ($schedule->isEmpty()) {
+            return response()->json([
+                'message' => 'Schedule is empty or overlaps entirely with exam dates.',
+            ], 422);
+        }
+    
+        /* guard: instructor conflict ---------------------------------- */
+        foreach ($schedule as $row) {
+            $conflict = CourseSchedule::where('date', $row['date'])
+                ->whereHas('course', function ($q) use ($data) {
+                    $q->where('instructor_id', $data['instructor_id']);
+                })
+                ->where(function ($q) use ($row) {
+                    $q->where(function ($w) use ($row) {
+                        $w->where('from_time', '<', $row['toTime'])
+                          ->where('to_time',   '>', $row['fromTime']);
+                    });
+                })
+                ->exists();
+    
+            if ($conflict) {
                 return response()->json([
-                    'message' => 'Validation error',
-                    'errors'  => $validator->errors(),
+                    'message' => 'The instructor has another course scheduled at the same time.',
                 ], 422);
-            }
-
-            /* 2. sanitize dates  (Y‑m‑d for DATE columns) ------------------ */
-            $data = $validator->validated();
-            foreach (['start_date','pre_test_date','mid_exam_date','final_exam_date'] as $f) {
-                $data[$f] = empty($data[$f])
-                    ? null
-                    : Carbon::parse($data[$f])->toDateString();   // 2025‑04‑22
-            }
-
-            /* 3. always grab arrays safely -------------------------------- */
-            $students   = $data['students']   ?? [];
-            $levels     = $data['levels']     ?? [];
-            $rawSchedule= $data['schedule']   ?? [];
-            $selected   = $request->input('selected_days', []);
-
-
-         
-
-            /* guard: capacity */
-            if (count($students) > $data['student_capacity']) {
-                return response()->json([
-                    'message' => 'The number of students exceeds the student capacity.',
-                ], 422);
-            }
-
-            /* 4. derive helper fields ------------------------------------- */
-            $daysMap = [0=>'Sun',1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri',6=>'Sat'];
-            $daysStr = collect($selected)->map(fn($d) => $daysMap[$d])->implode('-');
-
-            $today  = now();
-            $status = $today->lt($data['start_date'])
-                ? 'upcoming'
-                : ($data['final_exam_date'] && $today->gt($data['final_exam_date']) ? 'completed' : 'ongoing');
-
-            /* remove duplicate/overlap schedule rows */
-            $examDates = collect([$data['pre_test_date'],$data['mid_exam_date'],$data['final_exam_date']])->filter();
-            $schedule  = collect($rawSchedule)
-                ->unique('date')
-                ->reject(fn($r) => $examDates->contains($r['date']))
-                ->values();
-
-            if ($schedule->isEmpty()) {
-                return response()->json([
-                    'message' => 'Schedule is empty or overlaps entirely with exam dates.',
-                ], 422);
-            }
-
-            /* 5. persist  -------------------------------------------------- */
-            DB::beginTransaction();
-            try {
-
-                $setting_allowed_abcences_instructor = Setting::where('key', 'Allowed instructor absence count per course')->first();
-                $setting_alert_abcences_instructor = Setting::where('key', 'Instructor absence warning threshold per course')->first();
-                $warnAbsent      = (int) Setting::where('key','Student’s absence alert')->value('value');
-                $warnHomework    = (int) Setting::where('key','Student’s missing homework’s alert')->value('value');
-                $stopAbsent      = (int) Setting::where('key','Dismissing the student because of absence')->value('value');
-                $stopHomework    = (int) Setting::where('key','Dismissing the student because of not delivering the homework.')->value('value');
-
-        
-                $course = Course::create([
-                    'course_type_id'       => $data['course_type_id'],
-                    'group_type_id'        => $data['group_type_id'],
-                    'instructor_id'        => $data['instructor_id'],
-                    'start_date'           => $data['start_date'],
-                    'pre_test_date'        => $data['pre_test_date'],
-                    'mid_exam_date'        => $data['mid_exam_date'],
-                    'final_exam_date'      => $data['final_exam_date'],
-                    'end_date'             => $data['final_exam_date'],
-                    'student_capacity'     => $data['student_capacity'],
-                    'status'               => $status,
-                    'days'                 => $daysStr,
-                    'time'                 => $request->time,
-                    'student_count'        => count($students),
-                    'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
-                    'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
-                    'progress_test_day'    => $request->progress_test_day,
-                    'allowed_abcences_instructor' => $setting_allowed_abcences_instructor ? $setting_allowed_abcences_instructor->value : '',
-                    'alert_abcences_instructor' => $setting_alert_abcences_instructor ? $setting_alert_abcences_instructor->value : '',
-                    'warn_absent'           => $warnAbsent,
-                    'warn_homework'         => $warnHomework,
-                    'stop_absent'           => $stopAbsent,
-                    'stop_homework'         => $stopHomework,
-                ]);
-
-
-
-                // 1) load the full close‐window in hours
-                $hoursForClose = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')
-                                            ->value('value');
-
-                // 2) convert that to minutes, then take half
-                $minutesForAlert = ($hoursForClose * 60) / 2;
-
-                foreach ($schedule as $row) {
-                    // 3) build a Carbon for the actual end of the session
-                    //    adjust the format string if your $row['toTime'] has seconds
-                    $endDateTime = Carbon::createFromFormat(
-                    'Y-m-d H:i',
-                    "{$row['date']} {$row['toTime']}"
-                    );
-
-                    // 4) compute the two timestamps
-                    $alertAt = $endDateTime->copy()->addMinutes($minutesForAlert);
-                    $closeAt = $endDateTime->copy()->addHours($hoursForClose);
-
-                    // 5) persist both
-                    $course->schedules()->create([
-                        'day'       => $row['day'],
-                        'date'      => $row['date'],
-                        'from_time' => $row['fromTime'],
-                        'to_time'   => $row['toTime'],
-                        'alert_at'  => $alertAt,   // halfway point
-                        'close_at'  => $closeAt,   // full window
-                    ]);
-                }
-     
-                
-                foreach ($request->progress_tests as $ptData) {
-                    // load settings
-                    $updateWindow = (int) Setting::where('key', 'Allow updating progress tests after class end time (hours)')
-                                                ->value('value');
-                    $alertDelay   = (int) Setting::where('key', 'Notify instructor after update grace period (hours)')
-                                                ->value('value');
-
-                    // find the matching schedule for this date
-                    $schedule = $course->schedules()->first();
-                    if (! $schedule) {
-                        throw new \Exception("No schedule found for {$ptData['date']}");
-                    }
-
-                    // use only the end time
-                    $toTime   = $schedule->to_time; // e.g. "17:44"
-                    $testEnd  = Carbon::createFromFormat('Y-m-d H:i', "{$ptData['date']} {$toTime}");
-
-                    // alert first, then hard close
-                    $willAlertAt = $testEnd->copy()->addHours($alertDelay);
-                    $closeAt     = $willAlertAt->copy()->addHours($updateWindow);
-
-                    // create the ProgressTest
-                    $progressTest = ProgressTest::create([
-                        'date'          => $ptData['date'],
-                        'time'          => $toTime,        // <-- now only the end-time
-                        'course_id'     => $course->id,
-                        'week'          => $ptData['week'],
-                        'will_alert_at' => $willAlertAt,
-                        'close_at'      => $closeAt,
-                    ]);
-
-                    // seed students
-                    foreach ($students as $student_id) {
-                        ProgressTestStudent::create([
-                            'progress_test_id' => $progressTest->id,
-                            'student_id'       => $student_id,
-                            'course_id'        => $course->id,
-                        ]);
-                    }
-                }
-                $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
-                foreach ($examMap as $type=>$field) {
-                    if ($data[$field]) {
-                        $course->exams()->create([
-                            'exam_type' => $type,
-                            'exam_date' => $data[$field],  // YYYY‑MM‑DD
-                            'status'    => 'new',
-                        ]);
-                    }
-                }
-
-                $course->students()->sync($students);
-                $course->levels()->sync($levels);
-
-                AuditLog::create([
-                    'user_id'     => Auth::id(),
-                    'description' => 'Created course: '.($course->courseType->name ?? 'Unnamed'),
-                    'type'        => 'create',
-                    'entity_id'   => $course->id,
-                    'entity_type' => Course::class,
-                ]);
-
-                DB::commit();
-                return response()->json([
-                    'message' => 'Course created successfully',
-                    'course'  => $course->load('schedules','exams','students','levels'),
-                ], 201);
-
-            } catch (\Throwable $e) {
-                DB::rollBack();
-                return response()->json([
-                    'message' => 'An error occurred while creating the course',
-                    'error'   => $e->getMessage(),
-                ], 500);
             }
         }
+    
+        /* 5. persist  -------------------------------------------------- */
+        DB::beginTransaction();
+        try {
+            $setting_allowed_abcences_instructor = Setting::where('key', 'Allowed instructor absence count per course')->first();
+            $setting_alert_abcences_instructor   = Setting::where('key', 'Instructor absence warning threshold per course')->first();
+            $warnAbsent      = (int) Setting::where('key','Student’s absence alert')->value('value');
+            $warnHomework    = (int) Setting::where('key','Student’s missing homework’s alert')->value('value');
+            $stopAbsent      = (int) Setting::where('key','Dismissing the student because of absence')->value('value');
+            $stopHomework    = (int) Setting::where('key','Dismissing the student because of not delivering the homework.')->value('value');
+    
+            $course = Course::create([
+                'course_type_id'       => $data['course_type_id'],
+                'group_type_id'        => $data['group_type_id'],
+                'instructor_id'        => $data['instructor_id'],
+                'start_date'           => $data['start_date'],
+                'pre_test_date'        => $data['pre_test_date'],
+                'mid_exam_date'        => $data['mid_exam_date'],
+                'final_exam_date'      => $data['final_exam_date'],
+                'end_date'             => $data['final_exam_date'],
+                'student_capacity'     => $data['student_capacity'],
+                'status'               => $status,
+                'days'                 => $daysStr,
+                'time'                 => $request->time,
+                'student_count'        => count($students),
+                'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
+                'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
+                'progress_test_day'    => $request->progress_test_day,
+                'allowed_abcences_instructor' => $setting_allowed_abcences_instructor ? $setting_allowed_abcences_instructor->value : '',
+                'alert_abcences_instructor'   => $setting_alert_abcences_instructor ? $setting_alert_abcences_instructor->value : '',
+                'warn_absent'          => $warnAbsent,
+                'warn_homework'        => $warnHomework,
+                'stop_absent'          => $stopAbsent,
+                'stop_homework'        => $stopHomework,
+            ]);
+    
+            // 1) load the full close‐window in hours
+            $hoursForClose = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')
+                                          ->value('value');
+            // 2) convert that to minutes, then take half
+            $minutesForAlert = ($hoursForClose * 60) / 2;
+    
+            foreach ($schedule as $row) {
+                // 3) build a Carbon for the actual end of the session
+                $endDateTime = Carbon::createFromFormat(
+                    'Y-m-d H:i',
+                    "{$row['date']} {$row['toTime']}"
+                );
+                // 4) compute the two timestamps
+                $alertAt = $endDateTime->copy()->addMinutes($minutesForAlert);
+                $closeAt = $endDateTime->copy()->addHours($hoursForClose);
+                // 5) persist both
+                $course->schedules()->create([
+                    'day'       => $row['day'],
+                    'date'      => $row['date'],
+                    'from_time' => $row['fromTime'],
+                    'to_time'   => $row['toTime'],
+                    'alert_at'  => $alertAt,
+                    'close_at'  => $closeAt,
+                ]);
+            }
+    
+            foreach ($request->progress_tests as $ptData) {
+                $updateWindow = (int) Setting::where('key', 'Allow updating progress tests after class end time (hours)')
+                                             ->value('value');
+                $alertDelay   = (int) Setting::where('key', 'Notify instructor after update grace period (hours)')
+                                             ->value('value');
+    
+                $scheduleRow = $course->schedules()->first();
+                if (!$scheduleRow) {
+                    throw new \Exception("No schedule found for {$ptData['date']}");
+                }
+    
+                $toTime   = $scheduleRow->to_time;
+                $testEnd  = Carbon::createFromFormat('Y-m-d H:i', "{$ptData['date']} {$toTime}");
+                $willAlertAt = $testEnd->copy()->addHours($alertDelay);
+                $closeAt     = $willAlertAt->copy()->addHours($updateWindow);
+    
+                $progressTest = ProgressTest::create([
+                    'date'          => $ptData['date'],
+                    'time'          => $toTime,
+                    'course_id'     => $course->id,
+                    'week'          => $ptData['week'],
+                    'will_alert_at' => $willAlertAt,
+                    'close_at'      => $closeAt,
+                ]);
+    
+                foreach ($students as $student_id) {
+                    ProgressTestStudent::create([
+                        'progress_test_id' => $progressTest->id,
+                        'student_id'       => $student_id,
+                        'course_id'        => $course->id,
+                    ]);
+                }
+            }
+    
+            $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
+            foreach ($examMap as $type => $field) {
+                if ($data[$field]) {
+                    $course->exams()->create([
+                        'exam_type' => $type,
+                        'exam_date' => $data[$field],
+                        'status'    => 'new',
+                    ]);
+                }
+            }
+    
+            $course->students()->sync($students);
+            $course->levels()->sync($levels);
+    
+            AuditLog::create([
+                'user_id'     => Auth::id(),
+                'description' => 'Created course: '.($course->courseType->name ?? 'Unnamed'),
+                'type'        => 'create',
+                'entity_id'   => $course->id,
+                'entity_type' => Course::class,
+            ]);
+    
+            DB::commit();
+            return response()->json([
+                'message' => 'Course created successfully',
+                'course'  => $course->load('schedules','exams','students','levels'),
+            ], 201);
+    
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'An error occurred while creating the course',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
 
 
     
@@ -407,13 +408,13 @@ class CourseController extends Controller
             $course->schedules()->delete();
 
 
+            $course->progressTests()->delete();
             foreach($request->progress_tests as $progress_test)
             {
                 ProgressTest::updateOrCreate([
+                    'date' => $progress_test['date'],
                     'course_id' => $course->id,
                     'week' => $progress_test['week'],
-                ], [
-                    'date' => $progress_test['date'],
                 ]);
             }
             
@@ -478,10 +479,7 @@ class CourseController extends Controller
     {
         $groupTypes = GroupType::where('status','active')->get();
         $courseTypes = CourseType::where('status','active')->with('skills')->get();
-        $instructors = User::role('instructor')->with('skills','levels')
-        ->whereDoesntHave('courses', function($q) {
-            $q->whereIn('status', ['ongoing', 'upcoming']);
-        })->get();
+        $instructors = User::role('instructor')->get();
         $students = Student::with('skills')->orderByDesc('id')->get();
         $levels = Level::all();
         $meeting_platforms = MeetingPlatform::all();
@@ -492,7 +490,7 @@ class CourseController extends Controller
             'students' => $students,
             'levels' => $levels,
             "meeting_platforms" => $meeting_platforms,
-            'course' => Course::with(['instructor','schedules','students','courseType','groupType','levels'])->find(request()->id),
+            'course' => Course::with(['instructor','schedules','students','courseType','groupType','levels','progressTests'])->find(request()->id),
         ]);
     }
 
@@ -501,7 +499,6 @@ class CourseController extends Controller
 
 
         $course = Course::with(['students','progressTests','courseType','groupType','courseType.skills'])->findOrFail($id);
-        
         if (request()->wantsJson()) {
             $schedule = CourseSchedule::with('attendances')->whereId(request()->schedule_id)->first();
         

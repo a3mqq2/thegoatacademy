@@ -6,10 +6,10 @@
 <div class="container">
   <div class="card mt-3">
     <div class="card-header">
-      <h4><i class="fa fa-plus"></i> Create Course</h4>
+      <h4><i class="fa fa-plus"></i> Edit Course</h4>
     </div>
     <div class="card-body" id="app">
-      <create-course id="{{$course->id}}" ></create-course>
+      <edit-course id="{{$course->id}}" ></edit-course>
     </div>
   </div>
 </div>
