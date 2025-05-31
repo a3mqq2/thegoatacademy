@@ -209,8 +209,7 @@
                   @endphp
                   <tr
                   @if ($sch->status == "absent")
-                  class="text-light"
-                  style="background:#ffc0c0"
+                  class="text-dark"
                   @endif
                   >
                     <td>{{ $lecCounter }}</td>
