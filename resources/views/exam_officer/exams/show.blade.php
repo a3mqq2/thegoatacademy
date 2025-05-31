@@ -8,7 +8,8 @@
     $examDateTime = Carbon::parse($exam->exam_date->format('Y-m-d').' '.$exam->time);
     $isExaminer   = $exam->examiner_id == auth()->id();
     $hasStarted   = $now->gte($examDateTime);
-    $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new']);
+    $hasTime      = !is_null($exam->time);
+    $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new']) && $hasTime;
     $skills  = $exam->course->courseType->skills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
 @endphp
@@ -31,7 +32,6 @@
         </div>
         <div class="card-body">
 
-            <!-- Exam & Course Info Row -->
             <div class="row g-3">
                 <div class="col-md-6">
                     <h5><i class="fas fa-book-open text-primary me-1"></i> Basic Exam Information</h5>
@@ -91,7 +91,12 @@
                 </div>
             </div>
 
-            @if(! $canEnter)
+            @if(!$hasTime)
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Exam time is not set. You cannot enter grades until the exam time is specified.
+                </div>
+            @elseif(! $canEnter)
                 <div class="alert alert-warning">
                     @unless($isExaminer)
                         You cannot enter grades because you are not the assigned examiner.
@@ -105,7 +110,6 @@
                 </div>
             @endif
 
-            <!-- Skills & Max Grades -->
             <h5 class="mt-4"><i class="fas fa-star text-primary me-1"></i> Skills & Maximum Grades</h5>
             <div class="table-responsive">
                 <table class="table table-bordered">
@@ -134,7 +138,6 @@
                 </table>
             </div>
 
-            <!-- Students & Grades -->
             <h5 class="mt-4"><i class="fas fa-user-graduate text-primary me-1"></i> Enrolled Students & Grades</h5>
 
             <form action="{{ route('exam_officer.exams.grades.store', $exam->id) }}" method="POST">
