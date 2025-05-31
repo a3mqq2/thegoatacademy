@@ -16,30 +16,31 @@ class UpdateCourseScheduleStatuses extends Command
     public function handle(WaapiService $waapi)
     {
         $now = Carbon::now();
+        $cutoffDate = Carbon::create(2025, 5, 31, 23, 59, 59);
 
-        // 1. Mark as done if attendance taken and time passed, and course is ongoing
         CourseSchedule::whereNotNull('attendance_taken_at')
             ->where('status', '!=', 'done')
+            ->where('scheduled_at', '>', $cutoffDate)
             ->whereHas('course', function ($q) {
                 $q->where('status', 'ongoing');
             })
             ->update(['status' => 'done']);
 
-        // 2. Mark as absent if close_at is passed and no attendance, and course is ongoing
         CourseSchedule::whereNull('attendance_taken_at')
             ->whereNotNull('close_at')
             ->where('close_at', '<=', $now)
             ->where('status', '!=', 'absent')
+            ->where('scheduled_at', '>', $cutoffDate)
             ->whereHas('course', function ($q) {
                 $q->where('status', 'ongoing');
             })
             ->update(['status' => 'absent']);
 
-        // 3. Pause courses and alert instructors (only ongoing)
         $courses = Course::where('status', 'ongoing')
             ->with([
-                'schedules' => function ($q) {
-                    $q->where('status', 'absent');
+                'schedules' => function ($q) use ($cutoffDate) {
+                    $q->where('status', 'absent')
+                      ->where('scheduled_at', '>', $cutoffDate);
                 },
                 'instructor'
             ])->get();
@@ -49,12 +50,10 @@ class UpdateCourseScheduleStatuses extends Command
             $alert   = (int) ($course->alert_abcences_instructor ?? 0);
             $absents = $course->schedules->count();
 
-            // 3.1 Pause course if absents exceed allowed
             if ($allowed > 0 && $absents > $allowed && $course->status !== 'paused') {
                 $course->update(['status' => 'paused']);
             }
 
-            // 3.2 Alert instructor if absents exceed alert threshold
             if (
                 $alert > 0 &&
                 $absents >= $alert &&
@@ -67,8 +66,6 @@ class UpdateCourseScheduleStatuses extends Command
                        . "You have been marked absent *$absents* times in course #{$course->id}.\n"
                        . "The allowed limit is *$allowed* absences.\n"
                        . "Please stay committed to avoid course suspension.";
-
-                // $waapi->sendText($phone, $msg);
             }
         }
 
