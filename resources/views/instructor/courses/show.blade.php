@@ -169,35 +169,33 @@
               @foreach($timeline as $row)
                 {{-- Progress Test --}}
                 @if($row['type'] === 'progress')
-                  @php
-                    $pt        = $row['pt'];
-                    $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
-                    $closed    = now()->gt(\Carbon\Carbon::parse($pt->close_at));
-                  @endphp
-                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades)  text-light @endif">
-                    <td colspan="2">Progress Test – Week {{ $row['week'] }}</td>
-                    <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                    <td colspan="2">{{ date('h:i A', strtotime($row['time'])) }}</td>
-                    <td>
-                      @if($hasGrades)
+                @php
+                $pt        = $row['pt'];
+                $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
+                $closed    = now()->gt(\Carbon\Carbon::parse($pt->close_at));
+            @endphp
+            <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) text-light @endif">
+                <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
+                <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
+                <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                <td>
+                    @if($hasGrades)
                         <i class="fa fa-check text-success"></i>
-                      @elseif($closed)
+                    @elseif($closed)
                         <i class="fa fa-times text-light"></i>
-                      @endif
-                    </td>
-                    <td>
-                        @php
-                          $testStart = \Carbon\Carbon::parse($pt->date . ' ' . $pt->time);
-                          $isStarted = now()->gt($testStart);
-                          $isClosed  = $closed;
-                        @endphp
-                        
-                        @if($course->status == "ongoing" && ($hasGrades || ($isStarted && ! $isClosed)))
-                          <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}"
-                            class="btn btn-info btn-sm">Edit Grades</a>
-                        @endif                    
-                    </td>
-                  </tr>
+                    @endif
+                </td>
+                <td>
+                    @if($hasGrades)
+                        @if(! $closed)
+                            <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" class="btn btn-info btn-sm">Grades</a>
+                        @endif
+                        <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" class="btn btn-danger text-light btn-sm">
+                            Download Results <i class="fa fa-print"></i>
+                        </a>
+                    @endif
+                </td>
+            </tr>
                 @else
                   {{-- Lecture --}}
                   @php
