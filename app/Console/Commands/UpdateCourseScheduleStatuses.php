@@ -16,7 +16,7 @@ class UpdateCourseScheduleStatuses extends Command
     public function handle(WaapiService $waapi)
     {
         $now = Carbon::now();
-        $cutoffDate = Carbon::create(2025, 5, 31, 23, 59, 59);
+        $cutoffDate = Carbon::create(2025, 6, 10, 23, 59, 59);
 
         CourseSchedule::whereNotNull('attendance_taken_at')
             ->where('status', '!=', 'done')
