@@ -108,7 +108,7 @@
 
                          @endphp
                          <td  class="{{ $isOverdue ? 'table-danger' : '' }}">
-                             <strong>(#{{ $course->id }})</strong>
+
                              @if($ctName) / {{ $ctName }} @endif
                              @if($gtName) / {{ $gtName }} @endif
                          </td>
