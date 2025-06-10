@@ -199,10 +199,6 @@
                           $showBtn = ($row['date'] === $today) && now()->lt($closeAt);
                         @endphp
                         <tr
-                        @if ($sch->status == "absent")
-                        class="text-light"
-                        style="background:#ffc0c0"
-                        @endif
                         >
                           <td>{{ $lecCounter }}</td>
                           <td>{{ $row['day'] }} 
