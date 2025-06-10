@@ -16,11 +16,11 @@ class UpdateCourseScheduleStatuses extends Command
     public function handle(WaapiService $waapi)
     {
         $now = Carbon::now();
-        $cutoffDate = Carbon::create(2025, 6, 9, 23, 59, 59);
+        $cutoffDate = Carbon::create(2025, 5, 31, 23, 59, 59);
 
         CourseSchedule::whereNotNull('attendance_taken_at')
             ->where('status', '!=', 'done')
-            ->where('scheduled_at', '>', $cutoffDate)
+            ->where('date', '>', $cutoffDate)
             ->whereHas('course', function ($q) {
                 $q->where('status', 'ongoing');
             })
@@ -30,7 +30,7 @@ class UpdateCourseScheduleStatuses extends Command
             ->whereNotNull('close_at')
             ->where('close_at', '<=', $now)
             ->where('status', '!=', 'absent')
-            ->where('scheduled_at', '>', $cutoffDate)
+            ->where('date', '>', $cutoffDate)
             ->whereHas('course', function ($q) {
                 $q->where('status', 'ongoing');
             })
@@ -40,7 +40,7 @@ class UpdateCourseScheduleStatuses extends Command
             ->with([
                 'schedules' => function ($q) use ($cutoffDate) {
                     $q->where('status', 'absent')
-                      ->where('scheduled_at', '>', $cutoffDate);
+                      ->where('date', '>', $cutoffDate);
                 },
                 'instructor'
             ])->get();
