@@ -115,6 +115,10 @@
               @php
                 $isOverdue = $exam->status == 'overdue';
                 $course = $exam->course;
+                if(!$course)
+                {
+                  dd($exam);
+                }
               @endphp
               <tr @class(['table-danger'=>$isOverdue])>
                 <td>{{ $exam->id }}</td>
