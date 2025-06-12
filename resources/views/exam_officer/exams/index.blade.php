@@ -119,6 +119,7 @@
               <tr @class(['table-danger'=>$isOverdue])>
                 <td>{{ $exam->id }}</td>
                 <td>
+                  <strong>(#{{ $course->id }})</strong>
                   @if($course->courseType) / {{ $course->courseType->name }} @endif
                   @if($course->groupType)  / {{ $course->groupType->name  }} @endif
                 </td>
