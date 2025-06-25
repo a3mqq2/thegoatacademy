@@ -649,6 +649,10 @@ class CourseController extends Controller
             $course->status = 'completed';
         }
 
+        $course->students()->update(['status' => 'ongoing']);
+
+
+
         $course->save();
 
         // Log the action in the audit log
@@ -764,7 +768,7 @@ class CourseController extends Controller
                         ])->count();
     
             if ($absences >= $course->stop_absent || $missHw >= $course->stop_homework) {
-                if ($stu->pivot->status !== 'excluded') {
+                if ($stu->pivot->status != 'excluded') {
                     $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
     
                     if ($course->groupType && strtolower($course->groupType->name) === 'private') {
