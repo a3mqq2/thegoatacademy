@@ -143,7 +143,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -285,7 +285,7 @@
     const forall = (xs, pred) => {
       for (let i = 0, len = xs.length; i < len; ++i) {
         const x = xs[i];
-        if (pred(x, i) !== true) {
+        if (pred(x, i) != true) {
           return false;
         }
       }
@@ -373,7 +373,7 @@
       return has$1(obj, key) ? Optional.from(obj[key]) : Optional.none();
     };
     const has$1 = (obj, key) => hasOwnProperty.call(obj, key);
-    const hasNonNullableKey = (obj, key) => has$1(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const hasNonNullableKey = (obj, key) => has$1(obj, key) && obj[key] != undefined && obj[key] != null;
     const isEmpty = r => {
       for (const x in r) {
         if (hasOwnProperty.call(r, x)) {
@@ -383,11 +383,11 @@
       return true;
     };
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const path = (parts, scope) => {
-      let o = scope !== undefined && scope !== null ? scope : Global;
-      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+      let o = scope != undefined && scope != null ? scope : Global;
+      for (let i = 0; i < parts.length && o != undefined && o != null; ++i) {
         o = o[parts[i]];
       }
       return o;
@@ -514,24 +514,24 @@
 
     const is$2 = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
         }
       }
     };
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all$1 = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map$1(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -559,7 +559,7 @@
       const stop = isFunction(isRoot) ? isRoot : never;
       let dom = element.dom;
       const ret = [];
-      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+      while (dom.parentNode != null && dom.parentNode != undefined) {
         const rawParent = dom.parentNode;
         const p = SugarElement.fromDom(rawParent);
         ret.push(p);
@@ -640,7 +640,7 @@
     };
     const remove$6 = element => {
       const dom = element.dom;
-      if (dom.parentNode !== null) {
+      if (dom.parentNode != null) {
         dom.parentNode.removeChild(dom);
       }
     };
@@ -876,13 +876,13 @@
       }
       return r;
     };
-    const bindFrom = (a, f) => a !== undefined && a !== null ? f(a) : Optional.none();
+    const bindFrom = (a, f) => a != undefined && a != null ? f(a) : Optional.none();
     const someIf = (b, a) => b ? Optional.some(a) : Optional.none();
 
     const checkRange = (str, substr, start) => substr === '' || str.length >= substr.length && str.substr(start, start + substr.length) === substr;
     const contains = (str, substr, start = 0, end) => {
       const idx = str.indexOf(substr, start);
-      if (idx !== -1) {
+      if (idx != -1) {
         return isUndefined(end) ? true : idx + substr.length <= end;
       } else {
         return false;
@@ -902,7 +902,7 @@
       return isNaN(num) ? Optional.none() : Optional.some(num);
     };
 
-    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const internalSet = (dom, property, value) => {
       if (!isString(value)) {
@@ -1522,7 +1522,7 @@
         const currentRow = [];
         each$2(rowData.cells, rowCell => {
           let start = 0;
-          while (access[key(rowCount, start)] !== undefined) {
+          while (access[key(rowCount, start)] != undefined) {
             start++;
           }
           const isLocked = hasNonNullableKey(lockedColumns, start.toString());
@@ -1667,10 +1667,10 @@
       return SugarPosition(box.left, box.top);
     };
     const firstDefinedOrZero = (a, b) => {
-      if (a !== undefined) {
+      if (a != undefined) {
         return a;
       } else {
-        return b !== undefined ? b : 0;
+        return b != undefined ? b : 0;
       }
     };
     const absolute = element => {
@@ -1859,7 +1859,7 @@
     };
     const normalizePixelSize = (value, cell, getter, setter) => {
       const number = parseFloat(value);
-      return endsWith(value, '%') && name(cell) !== 'table' ? convert(cell, number, getter, setter) : number;
+      return endsWith(value, '%') && name(cell) != 'table' ? convert(cell, number, getter, setter) : number;
     };
     const getTotalHeight = cell => {
       const value = getHeightValue(cell);
@@ -2048,7 +2048,7 @@
     };
     const chooseSize = (element, width) => {
       const percentMatch = percentageBasedSizeRegex().exec(width);
-      if (percentMatch !== null) {
+      if (percentMatch != null) {
         return percentageSize(element);
       } else {
         return pixelSize(element);
@@ -2112,7 +2112,7 @@
       f(row, td);
     };
     const fillInGaps = (list, house, stats, isSelected) => {
-      const rows = filter$2(list, row => row.section !== 'colgroup');
+      const rows = filter$2(list, row => row.section != 'colgroup');
       const totalColumns = house.grid.columns;
       const totalRows = house.grid.rows;
       for (let i = 0; i < totalRows; i++) {
@@ -2205,7 +2205,7 @@
     const set = (element, value) => api.set(element, value);
 
     const getEnd = element => name(element) === 'img' ? 1 : getOption(element).fold(() => children$2(element).length, v => v.length);
-    const isTextNodeWithCursorPosition = el => getOption(el).filter(text => text.trim().length !== 0 || text.indexOf(nbsp) > -1).isSome();
+    const isTextNodeWithCursorPosition = el => getOption(el).filter(text => text.trim().length != 0 || text.indexOf(nbsp) > -1).isSome();
     const isContentEditableFalse = elem => isHTMLElement(elem) && get$b(elem, 'contenteditable') === 'false';
     const elementsWithCursorPosition = [
       'img',
@@ -2291,7 +2291,7 @@
       const cloneCss = (prev, clone) => {
         copy$1(prev.element, clone);
         remove$5(clone, 'height');
-        if (prev.colspan !== 1) {
+        if (prev.colspan != 1) {
           remove$5(clone, 'width');
         }
       };
@@ -2361,7 +2361,7 @@
     const getPixelForcedWidth = editor => {
       var _a;
       const dom = editor.dom;
-      const parentBlock = (_a = dom.getParent(editor.selection.getStart(), dom.isBlock)) !== null && _a !== void 0 ? _a : editor.getBody();
+      const parentBlock = (_a = dom.getParent(editor.selection.getStart(), dom.isBlock)) != null && _a != void 0 ? _a : editor.getBody();
       return getInner(SugarElement.fromDom(parentBlock)) + 'px';
     };
     const determineDefaultTableStyles = (editor, defaultStyles) => {
@@ -2823,7 +2823,7 @@
     const identify = (start, finish, isRoot) => {
       const getIsRoot = rootTable => {
         return element => {
-          return isRoot !== undefined && isRoot(element) || eq$1(element, rootTable);
+          return isRoot != undefined && isRoot(element) || eq$1(element, rootTable);
         };
       };
       if (eq$1(start, finish)) {
@@ -3035,7 +3035,7 @@
           head(selectedCells).each(cell => {
             table(cell).each(table => {
               const elements = filter$2(fromHtml(e.content), content => {
-                return name(content) !== 'meta';
+                return name(content) != 'meta';
               });
               const isTable = isTag('table');
               if (shouldMergeContentOnPaste(editor) && elements.length === 1 && isTable(elements[0])) {
@@ -3286,12 +3286,12 @@
     });
 
     const transformCell = (cell, comparator, substitution) => elementnew(substitution(cell.element, comparator), true, cell.isLocked);
-    const transformRow = (row, section) => row.section !== section ? rowcells(row.element, row.cells, section, row.isNew) : row;
+    const transformRow = (row, section) => row.section != section ? rowcells(row.element, row.cells, section, row.isNew) : row;
     const section = () => ({
       transformRow,
       transformCell: (cell, comparator, substitution) => {
         const newCell = substitution(cell.element, comparator);
-        const fixedCell = name(newCell) !== 'td' ? mutate$1(newCell, 'td') : newCell;
+        const fixedCell = name(newCell) != 'td' ? mutate$1(newCell, 'td') : newCell;
         return elementnew(fixedCell, cell.isNew, cell.isLocked);
       }
     });
@@ -3813,7 +3813,7 @@
       const gridColLength = cellLength(grid[0]);
       const adjustedRowAddress = extractGridDetails(grid).cols.length + currentStartAddress.row;
       const possibleColAddresses = range$1(gridColLength - currentStartAddress.column, num => num + currentStartAddress.column);
-      const validColAddress = find$1(possibleColAddresses, num => forall(lockedColumns, col => col !== num)).getOr(gridColLength - 1);
+      const validColAddress = find$1(possibleColAddresses, num => forall(lockedColumns, col => col != num)).getOr(gridColLength - 1);
       return {
         row: adjustedRowAddress,
         column: validColAddress
@@ -3920,7 +3920,7 @@
       ];
     };
 
-    const notInStartRow = (grid, rowIndex, colIndex, comparator) => getCellElement(grid[rowIndex], colIndex) !== undefined && (rowIndex > 0 && comparator(getCellElement(grid[rowIndex - 1], colIndex), getCellElement(grid[rowIndex], colIndex)));
+    const notInStartRow = (grid, rowIndex, colIndex, comparator) => getCellElement(grid[rowIndex], colIndex) != undefined && (rowIndex > 0 && comparator(getCellElement(grid[rowIndex - 1], colIndex), getCellElement(grid[rowIndex], colIndex)));
     const notInStartColumn = (row, index, comparator) => index > 0 && comparator(getCellElement(row, index - 1), getCellElement(row, index));
     const isDuplicatedCell = (grid, rowIndex, colIndex, comparator) => notInStartRow(grid, rowIndex, colIndex, comparator) || notInStartColumn(grid[rowIndex], colIndex, comparator);
     const rowReplacerPredicate = (targetRow, columnHeaders) => {
@@ -4023,12 +4023,12 @@
       const adt = {};
       each$2(cases, (acase, count) => {
         const keys$1 = keys(acase);
-        if (keys$1.length !== 1) {
+        if (keys$1.length != 1) {
           throw new Error('one and only one name per case');
         }
         const key = keys$1[0];
         const value = acase[key];
-        if (adt[key] !== undefined) {
+        if (adt[key] != undefined) {
           throw new Error('duplicate key detected:' + key);
         } else if (key === 'cata') {
           throw new Error('cannot have a case named cata (sorry)');
@@ -4038,12 +4038,12 @@
         constructors.push(key);
         adt[key] = (...args) => {
           const argLength = args.length;
-          if (argLength !== value.length) {
+          if (argLength != value.length) {
             throw new Error('Wrong number of arguments to case ' + key + '. Expected ' + value.length + ' (' + value + '), got ' + argLength);
           }
           const match = branches => {
             const branchKeys = keys(branches);
-            if (constructors.length !== branchKeys.length) {
+            if (constructors.length != branchKeys.length) {
               throw new Error('Wrong number of arguments to match. Expected: ' + constructors.join(',') + '\nActual: ' + branchKeys.join(','));
             }
             const allReqd = forall(constructors, reqKey => {
@@ -4056,7 +4056,7 @@
           };
           return {
             fold: (...foldArgs) => {
-              if (foldArgs.length !== cases.length) {
+              if (foldArgs.length != cases.length) {
                 throw new Error('Wrong number of arguments to fold. Expected ' + cases.length + ', got ' + foldArgs.length);
               }
               const target = foldArgs[count];
@@ -4134,7 +4134,7 @@
     const total = (start, end, measures) => {
       let r = 0;
       for (let i = start; i < end; i++) {
-        r += measures[i] !== undefined ? measures[i] : 0;
+        r += measures[i] != undefined ? measures[i] : 0;
       }
       return r;
     };
@@ -4338,7 +4338,7 @@
               'col'
             ];
             const isMixed = exists(stringAttributes, attribute => {
-              return attribute !== baseScope && contains$2(scopes, attribute);
+              return attribute != baseScope && contains$2(scopes, attribute);
             });
             return isMixed ? Optional.none() : Optional.from(baseScope);
           }
@@ -5211,7 +5211,7 @@
     const createRows = (rows, columns, rowHeaders, columnHeaders) => range$1(rows, r => createRow(columns, rowHeaders, columnHeaders, r));
     const render = (rows, columns, rowHeaders, columnHeaders, headerType, renderOpts = DefaultRenderOptions) => {
       const table = SugarElement.fromTag('table');
-      const rowHeadersGoInThead = headerType !== 'cells';
+      const rowHeadersGoInThead = headerType != 'cells';
       setAll(table, renderOpts.styles);
       setAll$1(table, renderOpts.attributes);
       if (renderOpts.colGroups) {
@@ -5257,7 +5257,7 @@
         });
       });
     };
-    const isPercentage = width => isString(width) && width.indexOf('%') !== -1;
+    const isPercentage = width => isString(width) && width.indexOf('%') != -1;
     const insert = (editor, columns, rows, colHeaders, rowHeaders) => {
       const defaultStyles = getTableDefaultStyles(editor);
       const options = {
@@ -5310,7 +5310,7 @@
     };
     const getData = type => {
       var _a;
-      const items = (_a = global.read()) !== null && _a !== void 0 ? _a : [];
+      const items = (_a = global.read()) != null && _a != void 0 ? _a : [];
       return findMap(items, item => Optional.from(item.getType(type)));
     };
     const clearData = type => {
@@ -6378,13 +6378,13 @@
     };
 
     const get$3 = _DOC => {
-      const doc = _DOC !== undefined ? _DOC.dom : document;
+      const doc = _DOC != undefined ? _DOC.dom : document;
       const x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
       const y = doc.body.scrollTop || doc.documentElement.scrollTop;
       return SugarPosition(x, y);
     };
     const by = (x, y, _DOC) => {
-      const doc = _DOC !== undefined ? _DOC.dom : document;
+      const doc = _DOC != undefined ? _DOC.dom : document;
       const win = doc.defaultView;
       if (win) {
         win.scrollBy(x, y);
@@ -6783,7 +6783,7 @@
       return true;
     };
     const remove$4 = (element, attr, id) => {
-      const nu = filter$2(read(element, attr), v => v !== id);
+      const nu = filter$2(read(element, attr), v => v != id);
       if (nu.length > 0) {
         set$2(element, attr, nu.join(' '));
       } else {
@@ -6792,7 +6792,7 @@
       return false;
     };
 
-    const supports = element => element.dom.classList !== undefined;
+    const supports = element => element.dom.classList != undefined;
     const get$1 = element => read(element, 'class');
     const add$1 = (element, clazz) => add$2(element, 'class', clazz);
     const remove$3 = (element, clazz) => remove$4(element, 'class', clazz);
@@ -7064,7 +7064,7 @@
           if (raw.buttons === undefined) {
             return true;
           }
-          return (raw.buttons & 1) !== 0;
+          return (raw.buttons & 1) != 0;
         };
         const dragStart = _e => {
           mouseHandlers.clearstate();
@@ -7136,7 +7136,7 @@
       };
       const unbind = handler => {
         handlers = filter$2(handlers, h => {
-          return h !== handler;
+          return h != handler;
         });
       };
       const trigger = (...args) => {
@@ -7490,7 +7490,7 @@
 
     const transform = (mutation, settings = {}) => {
       var _a;
-      const mode = (_a = settings.mode) !== null && _a !== void 0 ? _a : MouseDrag;
+      const mode = (_a = settings.mode) != null && _a != void 0 ? _a : MouseDrag;
       return setup(mutation, mode, settings);
     };
 
@@ -7867,7 +7867,7 @@
 
     const isTable = node => isNonNullable(node) && node.nodeName === 'TABLE';
     const barResizerPrefix = 'bar-';
-    const isResizable = elm => get$b(elm, 'data-mce-resize') !== 'false';
+    const isResizable = elm => get$b(elm, 'data-mce-resize') != 'false';
     const syncPixels = table => {
       const warehouse = Warehouse.fromTable(table);
       if (!Warehouse.hasColumns(warehouse)) {
@@ -7892,7 +7892,7 @@
         if (startRawW === '') {
           convertToPercentSize(table);
         }
-        if (width !== startW && startRawW !== '') {
+        if (width != startW && startRawW != '') {
           set$1(table, 'width', startRawW);
           const resizing = lazyResizingBehaviour();
           const tableSize = lazySizing(table);

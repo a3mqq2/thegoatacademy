@@ -43,12 +43,12 @@ class CourseAttendance extends Model
 
     public function isPresent()
     {
-        return $this->attendance === 'present';
+        return $this->attendance == 'present';
     }
 
     public function isAbsent()
     {
-        return $this->attendance === 'absent';
+        return $this->attendance == 'absent';
     }
 
     public function hasHomework()

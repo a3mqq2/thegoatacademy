@@ -81,10 +81,10 @@
             <div class="text-uppercase fw-semibold text-primary mb-1">Status:</div>
             <span 
               class="align-self-start badge rounded-pill bg-{{ 
-                $course->status === 'upcoming'  ? 'warning' : (
-                $course->status === 'ongoing'   ? 'info'    : (
-                $course->status === 'completed' ? 'success' : (
-                $course->status === 'canceled' ? 'danger'  : 'secondary')))
+                $course->status == 'upcoming'  ? 'warning' : (
+                $course->status == 'ongoing'   ? 'info'    : (
+                $course->status == 'completed' ? 'success' : (
+                $course->status == 'canceled' ? 'danger'  : 'secondary')))
               }} px-3 py-2"
               style="cursor: pointer;"
               data-bs-toggle="modal" 
@@ -253,7 +253,7 @@
         <i class="fa fa-users"></i> Enrolled Students
       </h5>
       <div class="d-flex align-items-center">
-        @if($course->status !== 'completed' && $course->status !== 'cancelled')
+        @if($course->status != 'completed' && $course->status != 'cancelled')
           <a href="#" class="btn btn-dark btn-sm me-2" data-bs-toggle="modal" data-bs-target="#enrollStudentModal">
             <i class="fa fa-user-plus"></i> Enroll Student
           </a>
@@ -292,18 +292,18 @@
                     </td>
                     <td>
                       <span class="badge bg-{{ 
-                        $student->pivot->status === 'ongoing'   ? 'info' : (
-                        $student->pivot->status === 'withdrawn' ? 'warning' : 'danger')
+                        $student->pivot->status == 'ongoing'   ? 'info' : (
+                        $student->pivot->status == 'withdrawn' ? 'warning' : 'danger')
                       }}">
                         {{ ucfirst($student->pivot->status) }}
                       </span>
                     </td>
                     <td>
-                      @if($student->pivot->status === 'excluded' && $student->pivot->exclude_reason_id)
+                      @if($student->pivot->status == 'excluded' && $student->pivot->exclude_reason_id)
                         <span class="text-danger">
                           {{ \App\Models\ExcludeReason::find($student->pivot->exclude_reason_id)?->name ?? 'N/A' }}
                         </span>
-                      @elseif($student->pivot->status === 'withdrawn' && $student->pivot->withdrawn_reason_id)
+                      @elseif($student->pivot->status == 'withdrawn' && $student->pivot->withdrawn_reason_id)
                         <span class="text-warning">
                           {{ \App\Models\WithdrawnReason::find($student->pivot->withdrawn_reason_id)?->name ?? 'N/A' }}
                         </span>
@@ -312,7 +312,7 @@
                       @endif
                     </td>
                     <td>
-                      @if($student->pivot->status === 'ongoing')
+                      @if($student->pivot->status == 'ongoing')
                         <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#excludeStudentModal" data-student-id="{{ $student->id }}" data-course-id="{{ $course->id }}">
                           <i class="fa fa-user-slash"></i> Exclude
                         </button>
@@ -337,7 +337,7 @@
   <!-- End Enrolled Students Section -->
 
   <!-- Cancel Course Button -->
-  @if($course->status === 'ongoing')
+  @if($course->status == 'ongoing')
     <div class="mt-4 text-end">
       <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelCourseModal" data-course-id="{{ $course->id }}">
         <i class="fa fa-ban"></i> Cancel Course

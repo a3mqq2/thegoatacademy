@@ -21,7 +21,7 @@
       var _a;
       let headHtml = '';
       const encode = editor.dom.encode;
-      const contentStyle = (_a = getContentStyle(editor)) !== null && _a !== void 0 ? _a : '';
+      const contentStyle = (_a = getContentStyle(editor)) != null && _a != void 0 ? _a : '';
       headHtml += '<base href="' + encode(editor.documentBaseURI.getURI()) + '">';
       const cors = shouldUseContentCssCors(editor) ? ' crossorigin="anonymous"' : '';
       global.each(editor.contentCSS, url => {

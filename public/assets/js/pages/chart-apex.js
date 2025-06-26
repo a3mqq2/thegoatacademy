@@ -1020,7 +1020,7 @@ setTimeout(function () {
         intersect: false,
         y: {
           formatter: function (y) {
-            if (typeof y !== 'undefined') {
+            if (typeof y != 'undefined') {
               return y.toFixed(0) + ' views';
             }
             return y;

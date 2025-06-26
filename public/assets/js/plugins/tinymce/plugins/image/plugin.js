@@ -122,7 +122,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -174,7 +174,7 @@
       return t;
     };
     const has = (obj, key) => hasOwnProperty.call(obj, key);
-    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] != undefined && obj[key] != null;
 
     const nativePush = Array.prototype.push;
     const flatten = xs => {
@@ -199,7 +199,7 @@
       return Optional.none();
     };
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    typeof window != 'undefined' ? window : Function('return this;')();
 
     const rawSet = (dom, key, value) => {
       if (isString(value) || isBoolean(value) || isNumber(value)) {
@@ -471,12 +471,12 @@
     const getAttrib = (image, name) => {
       var _a;
       if (image.hasAttribute(name)) {
-        return (_a = image.getAttribute(name)) !== null && _a !== void 0 ? _a : '';
+        return (_a = image.getAttribute(name)) != null && _a != void 0 ? _a : '';
       } else {
         return '';
       }
     };
-    const hasCaption = image => image.parentNode !== null && image.parentNode.nodeName === 'FIGURE';
+    const hasCaption = image => image.parentNode != null && image.parentNode.nodeName === 'FIGURE';
     const updateAttrib = (image, name, value) => {
       if (value === '' || value === null) {
         image.removeAttribute(name);
@@ -507,7 +507,7 @@
     };
     const normalizeStyle = (image, normalizeCss) => {
       const attrValue = image.getAttribute('style');
-      const value = normalizeCss(attrValue !== null ? attrValue : '');
+      const value = normalizeCss(attrValue != null ? attrValue : '');
       if (value.length > 0) {
         image.setAttribute('style', value);
         image.setAttribute('data-mce-style', value);
@@ -550,7 +550,7 @@
     };
     const getBorderStyle = image => {
       var _a;
-      return (_a = image.style.borderStyle) !== null && _a !== void 0 ? _a : '';
+      return (_a = image.style.borderStyle) != null && _a != void 0 ? _a : '';
     };
     const isFigure = elm => isNonNullable(elm) && elm.nodeName === 'FIGURE';
     const isImage = elm => elm.nodeName === 'IMG';
@@ -581,19 +581,19 @@
       var _a;
       const image = document.createElement('img');
       updateAttrib(image, 'style', data.style);
-      if (getHspace(image) || data.hspace !== '') {
+      if (getHspace(image) || data.hspace != '') {
         setHspace(image, data.hspace);
       }
-      if (getVspace(image) || data.vspace !== '') {
+      if (getVspace(image) || data.vspace != '') {
         setVspace(image, data.vspace);
       }
-      if (getBorder(image) || data.border !== '') {
+      if (getBorder(image) || data.border != '') {
         setBorder(image, data.border);
       }
-      if (getBorderStyle(image) || data.borderStyle !== '') {
+      if (getBorderStyle(image) || data.borderStyle != '') {
         setBorderStyle(image, data.borderStyle);
       }
-      return normalizeCss((_a = image.getAttribute('style')) !== null && _a !== void 0 ? _a : '');
+      return normalizeCss((_a = image.getAttribute('style')) != null && _a != void 0 ? _a : '');
     };
     const create = (normalizeCss, data) => {
       const image = document.createElement('img');
@@ -628,7 +628,7 @@
       isDecorative: getIsDecorative(image)
     });
     const updateProp = (image, oldData, newData, name, set) => {
-      if (newData[name] !== oldData[name]) {
+      if (newData[name] != oldData[name]) {
         set(image, name, String(newData[name]));
       }
     };
@@ -651,7 +651,7 @@
       }
     };
     const updateAlt = (image, oldData, newData) => {
-      if (newData.alt !== oldData.alt || newData.isDecorative !== oldData.isDecorative) {
+      if (newData.alt != oldData.alt || newData.isDecorative != oldData.isDecorative) {
         setAlt(image, newData.alt, newData.isDecorative);
       }
     };
@@ -687,7 +687,7 @@
       if (figureElm) {
         return editor.dom.select('img', figureElm)[0];
       }
-      if (imgElm && (imgElm.nodeName !== 'IMG' || isPlaceholderImage(imgElm))) {
+      if (imgElm && (imgElm.nodeName != 'IMG' || isPlaceholderImage(imgElm))) {
         return null;
       }
       return imgElm;
@@ -698,7 +698,7 @@
       const textBlockElements = filter(editor.schema.getTextBlockElements(), (_, parentElm) => !editor.schema.isValidChild(parentElm, 'figure'));
       const textBlock = dom.getParent(figure.parentNode, node => hasNonNullableKey(textBlockElements, node.nodeName), editor.getBody());
       if (textBlock) {
-        return (_a = dom.split(textBlock, figure)) !== null && _a !== void 0 ? _a : figure;
+        return (_a = dom.split(textBlock, figure)) != null && _a != void 0 ? _a : figure;
       } else {
         return figure;
       }
@@ -821,7 +821,7 @@
       const out = [];
       global.each(list, item => {
         const text = getText(item);
-        if (item.menu !== undefined) {
+        if (item.menu != undefined) {
           const items = sanitizeList(item.menu, extractValue);
           out.push({
             text,
@@ -1128,7 +1128,7 @@
     const addPrependUrl2 = (info, srcURL) => {
       if (!/^(?:[a-zA-Z]+:)?\/\//.test(srcURL)) {
         return info.prependURL.bind(prependUrl => {
-          if (srcURL.substring(0, prependUrl.length) !== prependUrl) {
+          if (srcURL.substring(0, prependUrl.length) != prependUrl) {
             return Optional.some(prependUrl + srcURL);
           }
           return Optional.none();
@@ -1196,7 +1196,7 @@
     const formFillFromMeta = (info, api) => {
       const data = api.getData();
       const meta = data.src.meta;
-      if (meta !== undefined) {
+      if (meta != undefined) {
         const newData = deepMerge({}, data);
         formFillFromMeta2(info, newData, meta);
         api.setData(newData);

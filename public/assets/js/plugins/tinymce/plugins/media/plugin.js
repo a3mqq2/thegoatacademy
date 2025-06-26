@@ -99,7 +99,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -285,7 +285,7 @@
         ogg: 'video/ogg',
         swf: 'application/x-shockwave-flash'
       };
-      const fileEnd = (_a = url.toLowerCase().split('.').pop()) !== null && _a !== void 0 ? _a : '';
+      const fileEnd = (_a = url.toLowerCase().split('.').pop()) != null && _a != void 0 ? _a : '';
       return get$1(mimes, fileEnd).getOr('');
     };
 
@@ -336,7 +336,7 @@
             case 'embed':
             case 'img':
             case 'iframe':
-              if (data.height !== undefined && data.width !== undefined) {
+              if (data.height != undefined && data.width != undefined) {
                 node.attr('width', data.width);
                 node.attr('height', data.height);
               }
@@ -538,7 +538,7 @@
       var _a;
       const data = global$5.extend({}, dataIn);
       if (!data.source) {
-        global$5.extend(data, htmlToData((_a = data.embed) !== null && _a !== void 0 ? _a : '', editor.schema));
+        global$5.extend(data, htmlToData((_a = data.embed) != null && _a != void 0 ? _a : '', editor.schema));
         if (!data.source) {
           return '';
         }
@@ -577,7 +577,7 @@
           return getIframeHtml(data, iframeTemplateCallback);
         } else if (data.sourcemime === 'application/x-shockwave-flash') {
           return getFlashHtml(data);
-        } else if (data.sourcemime.indexOf('audio') !== -1) {
+        } else if (data.sourcemime.indexOf('audio') != -1) {
           return getAudioHtml(data, audioTemplateCallback);
         } else {
           return getVideoHtml(data, videoTemplateCallback);
@@ -662,7 +662,7 @@
       return dimensions;
     };
     const unwrap = (data, sourceInput) => {
-      const metaData = sourceInput && sourceInput !== 'dimensions' ? extractMeta(sourceInput, data).getOr({}) : {};
+      const metaData = sourceInput && sourceInput != 'dimensions' ? extractMeta(sourceInput, data).getOr({}) : {};
       const get = getValue(data, metaData, sourceInput);
       return {
         ...get('source'),
@@ -751,7 +751,7 @@
     };
     const isEmbedIframe = (url, mediaDataType) => isNonNullable(mediaDataType) && mediaDataType === 'ephox-embed-iri' && isNonNullable(matchPattern(url));
     const shouldInsertAsNewIframe = (prevData, newData) => {
-      const hasDimensionsChanged = (prevData, newData) => prevData.width !== newData.width || prevData.height !== newData.height;
+      const hasDimensionsChanged = (prevData, newData) => prevData.width != newData.width || prevData.height != newData.height;
       return hasDimensionsChanged(prevData, newData) && isEmbedIframe(newData.source, prevData.type);
     };
     const submitForm = (prevData, newData, editor) => {
@@ -759,7 +759,7 @@
       newData.embed = shouldInsertAsNewIframe(prevData, newData) && hasDimensions(editor) ? dataToHtml(editor, {
         ...newData,
         embed: ''
-      }) : updateHtml((_a = newData.embed) !== null && _a !== void 0 ? _a : '', newData, false, editor.schema);
+      }) : updateHtml((_a = newData.embed) != null && _a != void 0 ? _a : '', newData, false, editor.schema);
       if (newData.embed && (prevData.source === newData.source || isCached(newData.source))) {
         handleInsert(editor, newData.embed);
       } else {
@@ -774,7 +774,7 @@
       const initialData = wrap(editorData);
       const handleSource = (prevData, api) => {
         const serviceData = unwrap(api.getData(), 'source');
-        if (prevData.source !== serviceData.source) {
+        if (prevData.source != serviceData.source) {
           addEmbedHtml(win, editor)({
             url: serviceData.source,
             html: ''
@@ -785,7 +785,7 @@
       const handleEmbed = api => {
         var _a;
         const data = unwrap(api.getData());
-        const dataFromEmbed = htmlToData((_a = data.embed) !== null && _a !== void 0 ? _a : '', editor.schema);
+        const dataFromEmbed = htmlToData((_a = data.embed) != null && _a != void 0 ? _a : '', editor.schema);
         api.setData(wrap(dataFromEmbed));
       };
       const handleUpdate = (api, sourceInput, prevData) => {
@@ -980,7 +980,7 @@
         'class': 'mce-preview-object mce-object-' + name
       });
       retainAttributesAndInnerHtml(editor, node, previewWrapper);
-      const styles = editor.dom.parseStyle((_a = node.attr('style')) !== null && _a !== void 0 ? _a : '');
+      const styles = editor.dom.parseStyle((_a = node.attr('style')) != null && _a != void 0 ? _a : '');
       const previewNode = new global$2(name, 1);
       setDimensions(node, previewNode, styles);
       previewNode.attr({
@@ -1020,12 +1020,12 @@
     };
     const retainAttributesAndInnerHtml = (editor, sourceNode, targetNode) => {
       var _a;
-      const attribs = (_a = sourceNode.attributes) !== null && _a !== void 0 ? _a : [];
+      const attribs = (_a = sourceNode.attributes) != null && _a != void 0 ? _a : [];
       let ai = attribs.length;
       while (ai--) {
         const attrName = attribs[ai].name;
         let attrValue = attribs[ai].value;
-        if (attrName !== 'width' && attrName !== 'height' && attrName !== 'style' && !startsWith(attrName, 'data-mce-')) {
+        if (attrName != 'width' && attrName != 'height' && attrName != 'style' && !startsWith(attrName, 'data-mce-')) {
           if (attrName === 'data' || attrName === 'src') {
             attrValue = editor.convertURL(attrValue, attrName);
           }
@@ -1114,9 +1114,9 @@
             }
             const realElmName = node.attr(name);
             const realElm = new global$2(realElmName, 1);
-            if (realElmName !== 'audio') {
+            if (realElmName != 'audio') {
               const className = node.attr('class');
-              if (className && className.indexOf('mce-preview-object') !== -1 && node.firstChild) {
+              if (className && className.indexOf('mce-preview-object') != -1 && node.firstChild) {
                 realElm.attr({
                   width: node.firstChild.attr('width'),
                   height: node.firstChild.attr('height')
@@ -1129,7 +1129,7 @@
               }
             }
             realElm.attr({ style: node.attr('style') });
-            const attribs = (_a = node.attributes) !== null && _a !== void 0 ? _a : [];
+            const attribs = (_a = node.attributes) != null && _a != void 0 ? _a : [];
             let ai = attribs.length;
             while (ai--) {
               const attrName = attribs[ai].name;

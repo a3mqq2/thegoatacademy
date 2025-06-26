@@ -186,9 +186,9 @@
                 </small>
               </div>
               <span class="badge
-                @if($exam->status === 'assigned') bg-warning text-dark
-                @elseif($exam->status === 'new') bg-secondary
-                @elseif($exam->status === 'completed') bg-success
+                @if($exam->status == 'assigned') bg-warning text-dark
+                @elseif($exam->status == 'new') bg-secondary
+                @elseif($exam->status == 'completed') bg-success
                 @endif
               ">
                 {{ ucfirst($exam->status) }}

@@ -109,7 +109,7 @@
     const isWordBoundary = (map, index) => {
       const type = map[index];
       const nextType = map[index + 1];
-      if (index < 0 || index > map.length - 1 && index !== 0) {
+      if (index < 0 || index > map.length - 1 && index != 0) {
         return false;
       }
       if (type === characterIndices.ALETTER && nextType === characterIndices.ALETTER) {

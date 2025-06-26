@@ -60,7 +60,7 @@
     };
     const parseCssValueToInt = (dom, elm, name, computed) => {
       var _a;
-      const value = parseInt((_a = dom.getStyle(elm, name, computed)) !== null && _a !== void 0 ? _a : '', 10);
+      const value = parseInt((_a = dom.getStyle(elm, name, computed)) != null && _a != void 0 ? _a : '', 10);
       return isNaN(value) ? 0 : value;
     };
     const shouldScrollIntoView = trigger => {
@@ -84,7 +84,7 @@
       }
       const docEle = doc.documentElement;
       const resizeBottomMargin = getExtraMarginBottom ? getExtraMarginBottom() : getAutoResizeOverflowPadding(editor);
-      const minHeight = (_a = getMinHeight(editor)) !== null && _a !== void 0 ? _a : editor.getElement().offsetHeight;
+      const minHeight = (_a = getMinHeight(editor)) != null && _a != void 0 ? _a : editor.getElement().offsetHeight;
       let resizeHeight = minHeight;
       const marginTop = parseCssValueToInt(dom, docEle, 'margin-top', true);
       const marginBottom = parseCssValueToInt(dom, docEle, 'margin-bottom', true);
@@ -105,7 +105,7 @@
       } else {
         toggleScrolling(editor, false);
       }
-      if (resizeHeight !== oldSize.get()) {
+      if (resizeHeight != oldSize.get()) {
         const deltaSize = resizeHeight - oldSize.get();
         dom.setStyle(editor.getContainer(), 'height', resizeHeight + 'px');
         oldSize.set(resizeHeight);

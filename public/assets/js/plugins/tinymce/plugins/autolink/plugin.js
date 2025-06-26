@@ -62,7 +62,7 @@
   const checkRange = (str, substr, start) => substr === '' || str.length >= substr.length && str.substr(start, start + substr.length) === substr;
   const contains = (str, substr, start = 0, end) => {
     const idx = str.indexOf(substr, start);
-    if (idx !== -1) {
+    if (idx != -1) {
       return isUndefined(end) ? true : idx + substr.length <= end;
     } else {
       return false;
@@ -110,7 +110,7 @@
     const voidElements = editor.schema.getVoidElements();
     const autoLinkPattern = getAutoLinkPattern(editor);
     const {dom, selection} = editor;
-    if (dom.getParent(selection.getNode(), 'a[href]') !== null) {
+    if (dom.getParent(selection.getNode(), 'a[href]') != null) {
       return null;
     }
     const rng = selection.getRng();
@@ -121,7 +121,7 @@
       container: endContainer,
       offset: endOffset
     } = freefallRtl(rng.endContainer, rng.endOffset);
-    const root = (_a = dom.getParent(endContainer, dom.isBlock)) !== null && _a !== void 0 ? _a : dom.getRoot();
+    const root = (_a = dom.getParent(endContainer, dom.isBlock)) != null && _a != void 0 ? _a : dom.getRoot();
     const endSpot = textSeeker.backwards(endContainer, endOffset + offset, (node, offset) => {
       const text = node.data;
       const idx = findChar(text, offset, not(isBracketOrSpace));

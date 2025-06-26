@@ -87,7 +87,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -259,7 +259,7 @@
     const checkRange = (str, substr, start) => substr === '' || str.length >= substr.length && str.substr(start, start + substr.length) === substr;
     const contains = (str, substr, start = 0, end) => {
       const idx = str.indexOf(substr, start);
-      if (idx !== -1) {
+      if (idx != -1) {
         return isUndefined(end) ? true : idx + substr.length <= end;
       } else {
         return false;
@@ -344,7 +344,7 @@
             char: getEmoji(lib),
             category: translateCategory(categoryNameMap, lib.category)
           };
-          const current = cats[entry.category] !== undefined ? cats[entry.category] : [];
+          const current = cats[entry.category] != undefined ? cats[entry.category] : [];
           cats[entry.category] = current.concat([entry]);
           everything.push(entry);
         });

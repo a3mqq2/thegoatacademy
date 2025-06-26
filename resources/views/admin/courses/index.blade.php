@@ -135,10 +135,10 @@
         <td>{{ $course->meetingPlatform->name ?? 'N/A' }}</td>
         <td>
             <span class="badge bg-{{ 
-                $course->status === 'upcoming' ? 'warning' 
-                : ($course->status === 'ongoing'   ? 'info' 
-                : ($course->status === 'completed' ? 'success' 
-                : ($course->status === 'cancelled' ? 'danger' : 'secondary')))
+                $course->status == 'upcoming' ? 'warning' 
+                : ($course->status == 'ongoing'   ? 'info' 
+                : ($course->status == 'completed' ? 'success' 
+                : ($course->status == 'cancelled' ? 'danger' : 'secondary')))
             }}">
                 {{ ucfirst($course->status) }}
             </span>
@@ -158,7 +158,7 @@
                     <i class="fa fa-ban"></i> Cancel
                 </button>
             @endif
-            @if($course->status === 'paused')
+            @if($course->status == 'paused')
                 <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#reactiveModal" data-course-id="{{ $course->id }}">
                     <i class="fa fa-play"></i> Reactivate
                 </button>

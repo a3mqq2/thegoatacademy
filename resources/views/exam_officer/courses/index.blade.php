@@ -105,13 +105,13 @@
                 $classes = [];
                 foreach ($dates as $key => $d) {
                     $cls = '';
-                    if ($schedule === 'daily' && $d === $today->toDateString()) {
+                    if ($schedule == 'daily' && $d == $today->toDateString()) {
                         $cls = 'table-danger';
-                    } elseif ($schedule === 'weekly' && $d && Carbon::parse($d)->between($startWeek, $endWeek)) {
+                    } elseif ($schedule == 'weekly' && $d && Carbon::parse($d)->between($startWeek, $endWeek)) {
                         $cls = 'table-danger';
-                    } elseif ($schedule === 'afterTwoDays' && $d === $afterTwo) {
+                    } elseif ($schedule == 'afterTwoDays' && $d == $afterTwo) {
                         $cls = 'table-danger';
-                    } elseif ($schedule === 'afterADay' && $d === $afterOne) {
+                    } elseif ($schedule == 'afterADay' && $d == $afterOne) {
                         $cls = 'table-danger';
                     }
                     $classes[$key] = $cls;

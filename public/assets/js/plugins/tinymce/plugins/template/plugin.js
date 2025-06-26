@@ -204,7 +204,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -354,7 +354,7 @@
       let previewHtml = parseAndSerialize(editor, html);
       if (html.indexOf('<html>') === -1) {
         let contentCssEntries = '';
-        const contentStyle = (_a = getContentStyle(editor)) !== null && _a !== void 0 ? _a : '';
+        const contentStyle = (_a = getContentStyle(editor)) != null && _a != void 0 ? _a : '';
         const cors = shouldUseContentCssCors(editor) ? ' crossorigin="anonymous"' : '';
         global$2.each(editor.contentCSS, url => {
           contentCssEntries += '<link type="text/css" rel="stylesheet" href="' + editor.documentBaseURI.toAbsolute(url) + '"' + cors + '>';
@@ -383,7 +383,7 @@
           return Optional.none();
         }
         return Optional.from(global$2.map(templateList, (template, index) => {
-          const isUrlTemplate = t => t.url !== undefined;
+          const isUrlTemplate = t => t.url != undefined;
           return {
             selected: index === 0,
             text: template.title,

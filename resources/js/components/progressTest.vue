@@ -143,7 +143,7 @@ export default {
 
           skills.value.forEach((sk) => {
             const grade = rec.grades.find(
-              (g) => g.course_type_skill_id === sk.pivot.id
+              (g) => g.course_type_skill_id == sk.pivot.id
             )
             if (grade) hasGrades = true
             scores[sk.pivot.id] = grade

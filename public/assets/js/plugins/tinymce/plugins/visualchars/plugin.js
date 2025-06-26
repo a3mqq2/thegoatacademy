@@ -128,7 +128,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -192,11 +192,11 @@
       }
     };
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const path = (parts, scope) => {
-      let o = scope !== undefined && scope !== null ? scope : Global;
-      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+      let o = scope != undefined && scope != null ? scope : Global;
+      for (let i = 0; i < parts.length && o != undefined && o != null; ++i) {
         o = o[parts[i]];
       }
       return o;
@@ -266,7 +266,7 @@
       return true;
     };
     const remove$2 = (element, attr, id) => {
-      const nu = filter(read(element, attr), v => v !== id);
+      const nu = filter(read(element, attr), v => v != id);
       if (nu.length > 0) {
         set(element, attr, nu.join(' '));
       } else {
@@ -275,7 +275,7 @@
       return false;
     };
 
-    const supports = element => element.dom.classList !== undefined;
+    const supports = element => element.dom.classList != undefined;
     const get = element => read(element, 'class');
     const add$1 = (element, clazz) => add$2(element, 'class', clazz);
     const remove$1 = (element, clazz) => remove$2(element, 'class', clazz);
@@ -419,7 +419,7 @@
         if (isWrappedNbsp(parent)) {
           add(SugarElement.fromDom(parent), nbspClass);
         } else {
-          const withSpans = replaceWithSpans(dom.encode((_a = value(n)) !== null && _a !== void 0 ? _a : ''));
+          const withSpans = replaceWithSpans(dom.encode((_a = value(n)) != null && _a != void 0 ? _a : ''));
           const div = dom.create('div', {}, withSpans);
           let node;
           while (node = div.lastChild) {
@@ -443,7 +443,7 @@
       const body = editor.getBody();
       const bookmark = editor.selection.getBookmark();
       let parentNode = findParentElm(editor.selection.getNode(), body);
-      parentNode = parentNode !== undefined ? parentNode : body;
+      parentNode = parentNode != undefined ? parentNode : body;
       hide(editor, parentNode);
       show(editor, parentNode);
       editor.selection.moveToBookmark(bookmark);

@@ -48,7 +48,7 @@
       padding: 11mm 10mm;
     }
 
-    /* ========== TOP WAVE ========== */
+    /* ======= TOP WAVE ======= */
     .header-wave {
       position: absolute;
       top: 0;
@@ -63,7 +63,7 @@
       height: 100%;
     }
 
-    /* ========== BOTTOM WAVE ========== */
+    /* ======= BOTTOM WAVE ======= */
     .footer-wave {
       position: absolute;
       bottom: 0;
@@ -79,7 +79,7 @@
       height: 100%;
     }
 
-    /* ========== HEADER ========== */
+    /* ======= HEADER ======= */
     .header {
       position: relative;
       margin-bottom: 20px;
@@ -198,10 +198,10 @@
                 <td>{{ $course->instructor?->name ?? 'N/A' }}</td>
                 <td>
                   <span class="badge bg-{{ 
-                    $course->status === 'upcoming'  ? 'warning' : (
-                    $course->status === 'ongoing'   ? 'info'    : (
-                    $course->status === 'completed' ? 'success' : (
-                    $course->status === 'cancelled' ? 'danger'  : 'secondary')))
+                    $course->status == 'upcoming'  ? 'warning' : (
+                    $course->status == 'ongoing'   ? 'info'    : (
+                    $course->status == 'completed' ? 'success' : (
+                    $course->status == 'cancelled' ? 'danger'  : 'secondary')))
                   }}">
                     {{ ucfirst($course->status) }}
                   </span>

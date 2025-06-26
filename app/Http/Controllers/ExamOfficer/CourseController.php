@@ -28,13 +28,13 @@ class CourseController extends Controller
         // 2. Schedule Filter (unchanged)…
         $schedule = $request->schedule;
         $today = Carbon::today();
-        if ($schedule === 'daily') {
+        if ($schedule == 'daily') {
             $coursesQuery->where(fn($q) => $q
                 ->whereDate('pre_test_date', $today)
                 ->orWhereDate('mid_exam_date', $today)
                 ->orWhereDate('final_exam_date', $today)
             );
-        } elseif ($schedule === 'weekly') {
+        } elseif ($schedule == 'weekly') {
             $startOfWeek = $today->copy()->startOfWeek(Carbon::SATURDAY);
             $endOfWeek   = $today->copy()->endOfWeek(Carbon::FRIDAY);
             $coursesQuery->where(fn($q) => $q
@@ -42,14 +42,14 @@ class CourseController extends Controller
                 ->orWhereBetween('mid_exam_date', [$startOfWeek, $endOfWeek])
                 ->orWhereBetween('final_exam_date', [$startOfWeek, $endOfWeek])
             );
-        } elseif ($schedule === 'afterTwoDays') {
+        } elseif ($schedule == 'afterTwoDays') {
             $afterTwo = $today->copy()->addDays(2);
             $coursesQuery->where(fn($q) => $q
                 ->whereDate('pre_test_date', $afterTwo)
                 ->orWhereDate('mid_exam_date', $afterTwo)
                 ->orWhereDate('final_exam_date', $afterTwo)
             );
-        } elseif ($schedule === "afterADay")
+        } elseif ($schedule == "afterADay")
         {
             $afterOne = $today->copy()->addDay();
             $coursesQuery->where(fn($q) => $q

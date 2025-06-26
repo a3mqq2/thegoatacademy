@@ -103,10 +103,10 @@
                     <td>{{ $course->groupType?->name }}</td>
                     <td>
                       <span class="badge bg-{{ 
-                        $course->pivot->status === 'upcoming'  ? 'warning' : (
-                        $course->pivot->status === 'ongoing'   ? 'info'    : (
-                        $course->pivot->status === 'completed' ? 'success' : (
-                        $course->pivot->status === 'cancelled' ? 'danger'  : 'secondary')))
+                        $course->pivot->status == 'upcoming'  ? 'warning' : (
+                        $course->pivot->status == 'ongoing'   ? 'info'    : (
+                        $course->pivot->status == 'completed' ? 'success' : (
+                        $course->pivot->status == 'cancelled' ? 'danger'  : 'secondary')))
                       }}">
                         {{ ucfirst($course->pivot->status) }}
                       </span>
@@ -115,7 +115,7 @@
                     <td>{{ $course->start_date }}</td>
                     <td>{{ $course->end_date }}</td>
                     <td>
-                      @if($course->pivot->status === 'ongoing')
+                      @if($course->pivot->status == 'ongoing')
                         <!-- زر استبعاد الطالب -->
                         <button class="btn btn-warning btn-sm"
                           data-bs-toggle="modal"
@@ -369,7 +369,7 @@
     if(courseSelect) {
       courseSelect.addEventListener('change', function() {
         const selectedId = this.value;
-        if(selectedId === "") {
+        if(selectedId == "") {
           previewContainer.innerHTML = "";
           return;
         }

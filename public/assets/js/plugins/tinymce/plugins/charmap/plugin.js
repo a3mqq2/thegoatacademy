@@ -118,7 +118,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -1490,7 +1490,7 @@
 
     const contains = (str, substr, start = 0, end) => {
       const idx = str.indexOf(substr, start);
-      if (idx !== -1) {
+      if (idx != -1) {
         return isUndefined(end) ? true : idx + substr.length <= end;
       } else {
         return false;

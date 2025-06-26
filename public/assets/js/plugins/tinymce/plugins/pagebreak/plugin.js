@@ -44,7 +44,7 @@
           while (i--) {
             node = nodes[i];
             className = node.attr('class');
-            if (className && className.indexOf(pageBreakClass) !== -1) {
+            if (className && className.indexOf(pageBreakClass) != -1) {
               const parentNode = node.parent;
               if (parentNode && editor.schema.getBlockElements()[parentNode.name] && shouldSplitBlock$1()) {
                 parentNode.type = 3;

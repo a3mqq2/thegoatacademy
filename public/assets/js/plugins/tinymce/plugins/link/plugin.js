@@ -126,7 +126,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -308,7 +308,7 @@
       const out = [];
       global$4.each(list, item => {
         const text = getText(item);
-        if (item.menu !== undefined) {
+        if (item.menu != undefined) {
           const items = sanitizeList(item.menu, extractValue);
           out.push({
             text,
@@ -363,7 +363,7 @@
       return t;
     };
     const has = (obj, key) => hasOwnProperty.call(obj, key);
-    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] != undefined && obj[key] != null;
 
     var global$3 = tinymce.util.Tools.resolve('tinymce.dom.TreeWalker');
 
@@ -391,7 +391,7 @@
     const hasProtocol = url => /^\w+:/i.test(url);
     const getHref = elm => {
       var _a, _b;
-      return (_b = (_a = elm.getAttribute('data-mce-href')) !== null && _a !== void 0 ? _a : elm.getAttribute('href')) !== null && _b !== void 0 ? _b : '';
+      return (_b = (_a = elm.getAttribute('data-mce-href')) != null && _a != void 0 ? _a : elm.getAttribute('href')) != null && _b != void 0 ? _b : '';
     };
     const applyRelTargetRules = (rel, isUnsafe) => {
       const rules = ['noopener'];
@@ -607,7 +607,7 @@
     const getDelta = (persistentText, fieldName, catalog, data) => {
       const value = data[fieldName];
       const hasPersistentText = persistentText.length > 0;
-      return value !== undefined ? findTextByValue(value, catalog).map(i => ({
+      return value != undefined ? findTextByValue(value, catalog).map(i => ({
         url: {
           value: i.value,
           meta: {
@@ -815,7 +815,7 @@
 
     const nonEmptyAttr = (dom, elem, name) => {
       const val = dom.getAttrib(elem, name);
-      return val !== null && val.length > 0 ? Optional.some(val) : Optional.none();
+      return val != null && val.length > 0 ? Optional.some(val) : Optional.none();
     };
     const extractFromAnchor = (editor, anchor) => {
       const dom = editor.dom;
@@ -870,7 +870,7 @@
       };
       const attachState = {
         href: data.url.value,
-        attach: data.url.meta !== undefined && data.url.meta.attach ? data.url.meta.attach : noop
+        attach: data.url.meta != undefined && data.url.meta.attach ? data.url.meta.attach : noop
       };
       DialogConfirms.preprocess(editor, changedData).then(pData => {
         link(editor, attachState, pData);

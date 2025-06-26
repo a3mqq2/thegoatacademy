@@ -50,7 +50,7 @@ class UpdateCourseScheduleStatuses extends Command
             $alert   = (int) ($course->alert_abcences_instructor ?? 0);
             $absents = $course->schedules->count();
 
-            if ($allowed > 0 && $absents > $allowed && $course->status !== 'paused') {
+            if ($allowed > 0 && $absents > $allowed && $course->status != 'paused') {
                 $course->update(['status' => 'paused']);
             }
 

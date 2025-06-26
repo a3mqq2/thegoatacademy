@@ -209,7 +209,7 @@ class Course extends Model
              $final       = $this->final_exam_date
                  ? Carbon::parse($this->final_exam_date)->startOfDay()
                  : $lastLecture->copy()->addDay();
-             while ($final->dayOfWeek === Carbon::FRIDAY || $final->lte($lastLecture)) {
+             while ($final->dayOfWeek == Carbon::FRIDAY || $final->lte($lastLecture)) {
                  $final->addDay();
              }
              $this->final_exam_date            = $final->toDateString();

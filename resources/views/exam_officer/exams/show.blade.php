@@ -48,13 +48,13 @@
                             <tr>
                                 <th class="bg-light text-dark">Status:</th>
                                 <td>
-                                    @if($exam->status === 'new')
+                                    @if($exam->status == 'new')
                                         <span class="badge bg-info text-dark">New</span>
-                                    @elseif($exam->status === 'assigned')
+                                    @elseif($exam->status == 'assigned')
                                         <span class="badge bg-warning text-dark">Assigned</span>
-                                    @elseif($exam->status === 'completed')
+                                    @elseif($exam->status == 'completed')
                                         <span class="badge bg-success">Completed</span>
-                                    @elseif($exam->status === 'overdue')
+                                    @elseif($exam->status == 'overdue')
                                         <span class="badge bg-danger">Overdue</span>
                                     @endif
                                 </td>
@@ -124,9 +124,9 @@
                         <tr>
                             @foreach($skills as $skill)
                                 <td class="text-center">
-                                    @if($exam->exam_type === 'pre')
+                                    @if($exam->exam_type == 'pre')
                                         {{ $skill->pivot->final_max }}
-                                    @elseif($exam->exam_type === 'mid')
+                                    @elseif($exam->exam_type == 'mid')
                                         {{ $skill->pivot->mid_max }}
                                     @else
                                         {{ $skill->pivot->final_max }}
@@ -153,7 +153,7 @@
                                     <th class="text-center">
                                         {{ $skill->name }}<br>
                                         <small>
-                                            @if($exam->exam_type === 'mid')
+                                            @if($exam->exam_type == 'mid')
                                                 (Max: {{ $skill->pivot->mid_max }})
                                             @else
                                                 (Max: {{ $skill->pivot->final_max }})
@@ -183,7 +183,7 @@
                                                 $es?->grades->firstWhere('course_type_skill_id', $pivotId)
                                             )->grade ?: 0;
             
-                                            $maxValue   = $exam->exam_type === 'mid'
+                                            $maxValue   = $exam->exam_type == 'mid'
                                                 ? $skill->pivot->mid_max
                                                 : $skill->pivot->final_max;
             

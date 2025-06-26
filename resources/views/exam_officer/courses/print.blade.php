@@ -103,10 +103,10 @@
 
               // helper to decide if a given date matches the schedule
               $match = fn($d) => match($schedule) {
-                'daily'      => $d === $today,
+                'daily'      => $d == $today,
                 'weekly'     => $d >= $startWeek && $d <= $endWeek,
-                'afterADay'  => $d === $afterOne,
-                'afterTwoDays' => $d === $afterTwo,
+                'afterADay'  => $d == $afterOne,
+                'afterTwoDays' => $d == $afterTwo,
                 default      => false,
               };
 

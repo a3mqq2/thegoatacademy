@@ -22,7 +22,7 @@ class NotifyLateAttendanceCommand extends Command
         $limitHrs = (int) Setting::where('key','Updating the students’ Attendance after the class.')
                                  ->value('value');
 
-        if ($limitHrs === 0) {
+        if ($limitHrs == 0) {
             $this->warn('لم يتم ضبط قيمة (Updating the students’ Attendance after the class.) أو أنها = 0');
             return self::SUCCESS;
         }

@@ -25,7 +25,7 @@
       ratioInput.disabled = false;
       var value = ratioInput.value;
       if (!isNumber(value)) {
-        if (value !== '') {
+        if (value != '') {
           ratioInput.classList.add('is-danger');
         }
         return;
@@ -157,9 +157,9 @@
   // parce value
   function parseElementValues(element) {
     var value = element.value;
-    if (element.tagName !== 'SELECT') {
+    if (element.tagName != 'SELECT') {
       if (!isNumber(value)) {
-        if (value !== '') {
+        if (value != '') {
           element.classList.add('is-danger');
         }
         return null;

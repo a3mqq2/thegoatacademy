@@ -79,7 +79,7 @@ public function studentStats(\App\Models\Course $course, \App\Models\Student $st
 
     // دالة مساعدة لحساب النسبة المئوية لكل امتحان (pre, mid, final)
     $computeExam = function(string $examType) use ($course, $student, $ct) {
-        $exam = $course->exams->first(fn($e) => $e->exam_type === $examType);
+        $exam = $course->exams->first(fn($e) => $e->exam_type == $examType);
         if (! $exam) return null;
 
         // سجّل الطالب في هذا الامتحان
@@ -96,7 +96,7 @@ public function studentStats(\App\Models\Course $course, \App\Models\Student $st
             default => 'final_max',  // pre & final
         };
         // في حالة الـ pre نستخدم pivot.progress_test_max
-        if ($examType === 'pre') {
+        if ($examType == 'pre') {
             $pivotField = 'progress_test_max';
         }
 
@@ -107,7 +107,7 @@ public function studentStats(\App\Models\Course $course, \App\Models\Student $st
     };
 
     // 3) Pre-Test
-    if ($course->exams->contains(fn($e) => $e->exam_type === 'pre')) {
+    if ($course->exams->contains(fn($e) => $e->exam_type == 'pre')) {
         $timeline->push([
             'label' => 'Pre-Test',
             'score' => $computeExam('pre'),
@@ -129,7 +129,7 @@ public function studentStats(\App\Models\Course $course, \App\Models\Student $st
     }
 
     // 5) Mid-Exam
-    if ($course->exams->contains(fn($e) => $e->exam_type === 'mid')) {
+    if ($course->exams->contains(fn($e) => $e->exam_type == 'mid')) {
         $timeline->push([
             'label' => 'Mid-Exam',
             'score' => $computeExam('mid'),
@@ -137,7 +137,7 @@ public function studentStats(\App\Models\Course $course, \App\Models\Student $st
     }
 
     // 6) Final-Exam
-    if ($course->exams->contains(fn($e) => $e->exam_type === 'final')) {
+    if ($course->exams->contains(fn($e) => $e->exam_type == 'final')) {
         $timeline->push([
             'label' => 'Final-Exam',
             'score' => $computeExam('final'),

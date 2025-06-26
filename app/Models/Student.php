@@ -18,17 +18,17 @@ class Student extends Model
 
     public function isOngoing(): bool
     {
-        return $this->status === 'ongoing';
+        return $this->status == 'ongoing';
     }
 
     public function isExcluded(): bool
     {
-        return $this->status === 'excluded';
+        return $this->status == 'excluded';
     }
 
     public function isWithdrawn(): bool
     {
-        return $this->status === 'withdrawn';
+        return $this->status == 'withdrawn';
     }
 
     public function courses()

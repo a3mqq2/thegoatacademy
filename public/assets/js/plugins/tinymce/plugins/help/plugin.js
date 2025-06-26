@@ -33,7 +33,7 @@
     const get$1 = customTabs => {
       const addTab = spec => {
         var _a;
-        const name = (_a = spec.name) !== null && _a !== void 0 ? _a : generate('tab-name');
+        const name = (_a = spec.name) != null && _a != void 0 ? _a : generate('tab-name');
         const currentCustomTabs = customTabs.get();
         currentCustomTabs[name] = spec;
         customTabs.set(currentCustomTabs);
@@ -168,7 +168,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -820,7 +820,7 @@
           }
           return t;
         } else {
-          const name = (_a = t.name) !== null && _a !== void 0 ? _a : generate('tab-name');
+          const name = (_a = t.name) != null && _a != void 0 ? _a : generate('tab-name');
           newTabs[name] = t;
           return name;
         }
@@ -833,7 +833,7 @@
     const getNamesFromTabs = tabs => {
       const names = keys(tabs);
       const idx = names.indexOf('versions');
-      if (idx !== -1) {
+      if (idx != -1) {
         names.splice(idx, 1);
         names.push('versions');
       }

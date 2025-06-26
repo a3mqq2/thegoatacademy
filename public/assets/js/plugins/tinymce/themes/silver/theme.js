@@ -156,7 +156,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -310,7 +310,7 @@
     const forall = (xs, pred) => {
       for (let i = 0, len = xs.length; i < len; ++i) {
         const x = xs[i];
-        if (pred(x, i) !== true) {
+        if (pred(x, i) != true) {
           return false;
         }
       }
@@ -421,7 +421,7 @@
       return has$2(obj, key) ? Optional.from(obj[key]) : Optional.none();
     };
     const has$2 = (obj, key) => hasOwnProperty.call(obj, key);
-    const hasNonNullableKey = (obj, key) => has$2(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const hasNonNullableKey = (obj, key) => has$2(obj, key) && obj[key] != undefined && obj[key] != null;
 
     const is$1 = (lhs, rhs, comparator = tripleEquals) => lhs.exists(left => comparator(left, rhs));
     const equals = (lhs, rhs, comparator = tripleEquals) => lift2(lhs, rhs, comparator).getOr(lhs.isNone() && rhs.isNone());
@@ -449,7 +449,7 @@
     };
     const lift2 = (oa, ob, f) => oa.isSome() && ob.isSome() ? Optional.some(f(oa.getOrDie(), ob.getOrDie())) : Optional.none();
     const lift3 = (oa, ob, oc, f) => oa.isSome() && ob.isSome() && oc.isSome() ? Optional.some(f(oa.getOrDie(), ob.getOrDie(), oc.getOrDie())) : Optional.none();
-    const mapFrom = (a, f) => a !== undefined && a !== null ? Optional.some(f(a)) : Optional.none();
+    const mapFrom = (a, f) => a != undefined && a != null ? Optional.some(f(a)) : Optional.none();
     const someIf = (b, a) => b ? Optional.some(a) : Optional.none();
 
     const addToEnd = (str, suffix) => {
@@ -468,7 +468,7 @@
     };
     const contains$1 = (str, substr, start = 0, end) => {
       const idx = str.indexOf(substr, start);
-      if (idx !== -1) {
+      if (idx != -1) {
         return isUndefined(end) ? true : idx + substr.length <= end;
       } else {
         return false;
@@ -485,7 +485,7 @@
     const isNotEmpty = s => s.length > 0;
     const isEmpty = s => !isNotEmpty(s);
 
-    const isSupported$1 = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported$1 = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const fromHtml$2 = (html, scope) => {
       const doc = scope || document;
@@ -523,11 +523,11 @@
       fromPoint
     };
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const path$1 = (parts, scope) => {
-      let o = scope !== undefined && scope !== null ? scope : Global;
-      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+      let o = scope != undefined && scope != null ? scope : Global;
+      for (let i = 0; i < parts.length && o != undefined && o != null; ++i) {
         o = o[parts[i]];
       }
       return o;
@@ -577,24 +577,24 @@
 
     const is = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
         }
       }
     };
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all$3 = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map$2(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -622,7 +622,7 @@
       const stop = isFunction(isRoot) ? isRoot : never;
       let dom = element.dom;
       const ret = [];
-      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+      while (dom.parentNode != null && dom.parentNode != undefined) {
         const rawParent = dom.parentNode;
         const p = SugarElement.fromDom(rawParent);
         ret.push(p);
@@ -873,10 +873,10 @@
       return SugarPosition(box.left, box.top);
     };
     const firstDefinedOrZero = (a, b) => {
-      if (a !== undefined) {
+      if (a != undefined) {
         return a;
       } else {
-        return b !== undefined ? b : 0;
+        return b != undefined ? b : 0;
       }
     };
     const absolute$3 = element => {
@@ -1333,19 +1333,19 @@
     };
     const remove$5 = element => {
       const dom = element.dom;
-      if (dom.parentNode !== null) {
+      if (dom.parentNode != null) {
         dom.parentNode.removeChild(dom);
       }
     };
 
     const get$b = _DOC => {
-      const doc = _DOC !== undefined ? _DOC.dom : document;
+      const doc = _DOC != undefined ? _DOC.dom : document;
       const x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
       const y = doc.body.scrollTop || doc.documentElement.scrollTop;
       return SugarPosition(x, y);
     };
     const to = (x, y, _DOC) => {
-      const doc = _DOC !== undefined ? _DOC.dom : document;
+      const doc = _DOC != undefined ? _DOC.dom : document;
       const win = doc.defaultView;
       if (win) {
         win.scrollTo(x, y);
@@ -1823,7 +1823,7 @@
       };
     };
     const oneOf = (props, rawF) => {
-      const f = rawF !== undefined ? rawF : identity;
+      const f = rawF != undefined ? rawF : identity;
       const extract = (path, val) => {
         const errors = [];
         for (const prop of props) {
@@ -1883,7 +1883,7 @@
     const boolean = typedValue(isBoolean, 'boolean');
     const functionProcessor = typedValue(isFunction, 'function');
     const isPostMessageable = val => {
-      if (Object(val) !== val) {
+      if (Object(val) != val) {
         return true;
       }
       switch ({}.toString.call(val).slice(8, -1)) {
@@ -2011,12 +2011,12 @@
       const adt = {};
       each$1(cases, (acase, count) => {
         const keys$1 = keys(acase);
-        if (keys$1.length !== 1) {
+        if (keys$1.length != 1) {
           throw new Error('one and only one name per case');
         }
         const key = keys$1[0];
         const value = acase[key];
-        if (adt[key] !== undefined) {
+        if (adt[key] != undefined) {
           throw new Error('duplicate key detected:' + key);
         } else if (key === 'cata') {
           throw new Error('cannot have a case named cata (sorry)');
@@ -2026,12 +2026,12 @@
         constructors.push(key);
         adt[key] = (...args) => {
           const argLength = args.length;
-          if (argLength !== value.length) {
+          if (argLength != value.length) {
             throw new Error('Wrong number of arguments to case ' + key + '. Expected ' + value.length + ' (' + value + '), got ' + argLength);
           }
           const match = branches => {
             const branchKeys = keys(branches);
-            if (constructors.length !== branchKeys.length) {
+            if (constructors.length != branchKeys.length) {
               throw new Error('Wrong number of arguments to match. Expected: ' + constructors.join(',') + '\nActual: ' + branchKeys.join(','));
             }
             const allReqd = forall(constructors, reqKey => {
@@ -2044,7 +2044,7 @@
           };
           return {
             fold: (...foldArgs) => {
-              if (foldArgs.length !== cases.length) {
+              if (foldArgs.length != cases.length) {
                 throw new Error('Wrong number of arguments to fold. Expected ' + cases.length + ', got ' + foldArgs.length);
               }
               const target = foldArgs[count];
@@ -2802,7 +2802,7 @@
       return true;
     };
     const remove$4 = (element, attr, id) => {
-      const nu = filter$2(read(element, attr), v => v !== id);
+      const nu = filter$2(read(element, attr), v => v != id);
       if (nu.length > 0) {
         set$9(element, attr, nu.join(' '));
       } else {
@@ -2811,7 +2811,7 @@
       return false;
     };
 
-    const supports = element => element.dom.classList !== undefined;
+    const supports = element => element.dom.classList != undefined;
     const get$8 = element => read(element, 'class');
     const add$3 = (element, clazz) => add$4(element, 'class', clazz);
     const remove$3 = (element, clazz) => remove$4(element, 'class', clazz);
@@ -2873,7 +2873,7 @@
       const r = new Array(classList.length);
       for (let i = 0; i < classList.length; i++) {
         const item = classList.item(i);
-        if (item !== null) {
+        if (item != null) {
           r[i] = item;
         }
       }
@@ -2936,7 +2936,7 @@
       const oldKeys = keys(oldObj);
       const toRemove = difference(oldKeys, newKeys);
       const toSet = bifilter(newObj, (v, k) => {
-        return !has$2(oldObj, k) || v !== oldObj[k];
+        return !has$2(oldObj, k) || v != oldObj[k];
       }).t;
       return {
         toRemove,
@@ -2983,8 +2983,8 @@
       const updateValue = () => {
         const valueElement = obsoleted;
         const value = definition.value.getOrUndefined();
-        if (value !== get$6(valueElement)) {
-          set$5(valueElement, value !== null && value !== void 0 ? value : '');
+        if (value != get$6(valueElement)) {
+          set$5(valueElement, value != null && value != void 0 ? value : '');
         }
       };
       updateAttrs();
@@ -3234,7 +3234,7 @@
           return false;
         }
         const id = get$f(elem, 'id');
-        return id !== undefined && id.indexOf(attribute) > -1;
+        return id != undefined && id.indexOf(attribute) > -1;
       });
       return dependent.bind(dep => {
         const id = get$f(dep, 'id');
@@ -3359,7 +3359,7 @@
     ];
     const getTrace = () => {
       const err = new Error();
-      if (err.stack !== undefined) {
+      if (err.stack != undefined) {
         const lines = err.stack.split('\n');
         return find$5(lines, line => line.indexOf('alloy') > 0 && !exists(path, p => line.indexOf(p) > -1)).getOr(unknown);
       } else {
@@ -4001,7 +4001,7 @@
     const shouldApplyTransitionCss = (transition, decision, lastPlacement) => {
       return lastPlacement.exists(placer => {
         const mode = transition.mode;
-        return mode === 'all' ? true : placer[mode] !== decision[mode];
+        return mode === 'all' ? true : placer[mode] != decision[mode];
       });
     };
     const hasChanges = (position, intermediate) => {
@@ -4039,7 +4039,7 @@
       let timer;
       const isSourceTransition = e => {
         var _a;
-        const pseudoElement = (_a = e.raw.pseudoElement) !== null && _a !== void 0 ? _a : '';
+        const pseudoElement = (_a = e.raw.pseudoElement) != null && _a != void 0 ? _a : '';
         return eq(e.target, element) && isEmpty(pseudoElement) && contains$2(properties, e.raw.propertyName);
       };
       const transitionDone = e => {
@@ -4708,7 +4708,7 @@
     };
 
     const descendOnce = (element, offset) => isText(element) ? point(element, offset) : descendOnce$1(element, offset);
-    const isSimRange = detail => detail.foffset !== undefined;
+    const isSimRange = detail => detail.foffset != undefined;
     const getAnchorSelection = (win, anchorInfo) => {
       const getSelection = anchorInfo.getSelection.getOrThunk(() => () => getExact(win));
       return getSelection().map(sel => {
@@ -5473,7 +5473,7 @@
     ]);
     const isSubstituted = spec => has$2(spec, 'uiType');
     const subPlaceholder = (owner, detail, compSpec, placeholders) => {
-      if (owner.exists(o => o !== compSpec.owner)) {
+      if (owner.exists(o => o != compSpec.owner)) {
         return adt$3.single(true, constant$1(compSpec));
       }
       return get$g(placeholders, compSpec.name).fold(() => {
@@ -5768,7 +5768,7 @@
     };
 
     const isSketchSpec = spec => {
-      return spec.uid !== undefined;
+      return spec.uid != undefined;
     };
     const singleSchema = objOfOnly([
       required$1('name'),
@@ -5815,7 +5815,7 @@
       };
     };
 
-    const inside = target => isTag('input')(target) && get$f(target, 'type') !== 'radio' || isTag('textarea')(target);
+    const inside = target => isTag('input')(target) && get$f(target, 'type') != 'radio' || isTag('textarea')(target);
 
     const getCurrent = (component, composeConfig, _composeState) => composeConfig.find(component);
 
@@ -6141,7 +6141,7 @@
         return choose(rules, simulatedEvent.event).bind(rule => rule(component, simulatedEvent, keyingConfig, keyingState));
       };
       const toEvents = (keyingConfig, keyingState) => {
-        const onFocusHandler = keyingConfig.focusInside !== FocusInsideModes.OnFocusMode ? Optional.none() : optFocusIn(keyingConfig).map(focusIn => run$1(focus$4(), (component, simulatedEvent) => {
+        const onFocusHandler = keyingConfig.focusInside != FocusInsideModes.OnFocusMode ? Optional.none() : optFocusIn(keyingConfig).map(focusIn => run$1(focus$4(), (component, simulatedEvent) => {
           focusIn(component, keyingConfig, keyingState);
           simulatedEvent.stop();
         }));
@@ -6873,7 +6873,7 @@
       toggleState.set(state);
       updateClass(component, toggleConfig, toggleState);
       updateAriaState(component, toggleConfig, toggleState);
-      if (initialState !== state) {
+      if (initialState != state) {
         toggleConfig.onToggled(component, state);
       }
     };
@@ -7008,7 +7008,7 @@
     const getItemRole = detail => detail.toggling.map(toggling => toggling.exclusive ? 'menuitemradio' : 'menuitemcheckbox').getOr('menuitem');
     const getTogglingSpec = tConfig => ({
       aria: { mode: 'checked' },
-      ...filter$1(tConfig, (_value, name) => name !== 'exclusive'),
+      ...filter$1(tConfig, (_value, name) => name != 'exclusive'),
       onToggled: (component, state) => {
         if (isFunction(tConfig.onToggled)) {
           tConfig.onToggled(component, state);
@@ -8059,7 +8059,7 @@
     });
 
     const getAttrs = elem => {
-      const attributes = elem.dom.attributes !== undefined ? elem.dom.attributes : [];
+      const attributes = elem.dom.attributes != undefined ? elem.dom.attributes : [];
       return foldl(attributes, (b, attr) => {
         if (attr.name === 'class') {
           return b;
@@ -8103,7 +8103,7 @@
 
     const {entries, setPrototypeOf, isFrozen, getPrototypeOf, getOwnPropertyDescriptor} = Object;
     let {freeze, seal, create: create$1} = Object;
-    let {apply, construct} = typeof Reflect !== 'undefined' && Reflect;
+    let {apply, construct} = typeof Reflect != 'undefined' && Reflect;
     if (!apply) {
       apply = function apply(fun, thisValue, args) {
         return fun.apply(thisValue, args);
@@ -8153,7 +8153,7 @@
     }
     function addToSet(set, array, transformCaseFunc) {
       var _transformCaseFunc;
-      transformCaseFunc = (_transformCaseFunc = transformCaseFunc) !== null && _transformCaseFunc !== void 0 ? _transformCaseFunc : stringToLowerCase;
+      transformCaseFunc = (_transformCaseFunc = transformCaseFunc) != null && _transformCaseFunc != void 0 ? _transformCaseFunc : stringToLowerCase;
       if (setPrototypeOf) {
         setPrototypeOf(set, null);
       }
@@ -8162,7 +8162,7 @@
         let element = array[l];
         if (typeof element === 'string') {
           const lcElement = transformCaseFunc(element);
-          if (lcElement !== element) {
+          if (lcElement != element) {
             if (!isFrozen(array)) {
               array[l] = lcElement;
             }
@@ -8181,7 +8181,7 @@
       return newObject;
     }
     function lookupGetter(object, prop) {
-      while (object !== null) {
+      while (object != null) {
         const desc = getOwnPropertyDescriptor(object, prop);
         if (desc) {
           if (desc.get) {
@@ -8844,7 +8844,7 @@
     });
     const getGlobal = () => typeof window === 'undefined' ? null : window;
     const _createTrustedTypesPolicy = function _createTrustedTypesPolicy(trustedTypes, purifyHostElement) {
-      if (typeof trustedTypes !== 'object' || typeof trustedTypes.createPolicy !== 'function') {
+      if (typeof trustedTypes != 'object' || typeof trustedTypes.createPolicy != 'function') {
         return null;
       }
       let suffix = null;
@@ -8868,11 +8868,11 @@
       }
     };
     function createDOMPurify() {
-      let window = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getGlobal();
+      let window = arguments.length > 0 && arguments[0] != undefined ? arguments[0] : getGlobal();
       const DOMPurify = root => createDOMPurify(root);
       DOMPurify.version = '3.0.5';
       DOMPurify.removed = [];
-      if (!window || !window.document || window.document.nodeType !== 9) {
+      if (!window || !window.document || window.document.nodeType != 9) {
         DOMPurify.isSupported = false;
         return DOMPurify;
       }
@@ -8896,7 +8896,7 @@
       const {implementation, createNodeIterator, createDocumentFragment, getElementsByTagName} = document;
       const {importNode} = originalDocument;
       let hooks = {};
-      DOMPurify.isSupported = typeof entries === 'function' && typeof getParentNode === 'function' && implementation && implementation.createHTMLDocument !== undefined;
+      DOMPurify.isSupported = typeof entries === 'function' && typeof getParentNode === 'function' && implementation && implementation.createHTMLDocument != undefined;
       const {MUSTACHE_EXPR, ERB_EXPR, TMPLIT_EXPR, DATA_ATTR, ARIA_ATTR, IS_SCRIPT_OR_DATA, ATTR_WHITESPACE} = EXPRESSIONS;
       let {IS_ALLOWED_URI: IS_ALLOWED_URI$1} = EXPRESSIONS;
       let ALLOWED_TAGS = null;
@@ -9034,7 +9034,7 @@
         if (CONFIG && CONFIG === cfg) {
           return;
         }
-        if (!cfg || typeof cfg !== 'object') {
+        if (!cfg || typeof cfg != 'object') {
           cfg = {};
         }
         cfg = clone(cfg);
@@ -9049,19 +9049,19 @@
         FORBID_TAGS = 'FORBID_TAGS' in cfg ? addToSet({}, cfg.FORBID_TAGS, transformCaseFunc) : {};
         FORBID_ATTR = 'FORBID_ATTR' in cfg ? addToSet({}, cfg.FORBID_ATTR, transformCaseFunc) : {};
         USE_PROFILES = 'USE_PROFILES' in cfg ? cfg.USE_PROFILES : false;
-        ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR !== false;
-        ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false;
+        ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR != false;
+        ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR != false;
         ALLOW_UNKNOWN_PROTOCOLS = cfg.ALLOW_UNKNOWN_PROTOCOLS || false;
-        ALLOW_SELF_CLOSE_IN_ATTR = cfg.ALLOW_SELF_CLOSE_IN_ATTR !== false;
+        ALLOW_SELF_CLOSE_IN_ATTR = cfg.ALLOW_SELF_CLOSE_IN_ATTR != false;
         SAFE_FOR_TEMPLATES = cfg.SAFE_FOR_TEMPLATES || false;
         WHOLE_DOCUMENT = cfg.WHOLE_DOCUMENT || false;
         RETURN_DOM = cfg.RETURN_DOM || false;
         RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false;
         RETURN_TRUSTED_TYPE = cfg.RETURN_TRUSTED_TYPE || false;
         FORCE_BODY = cfg.FORCE_BODY || false;
-        SANITIZE_DOM = cfg.SANITIZE_DOM !== false;
+        SANITIZE_DOM = cfg.SANITIZE_DOM != false;
         SANITIZE_NAMED_PROPS = cfg.SANITIZE_NAMED_PROPS || false;
-        KEEP_CONTENT = cfg.KEEP_CONTENT !== false;
+        KEEP_CONTENT = cfg.KEEP_CONTENT != false;
         IN_PLACE = cfg.IN_PLACE || false;
         IS_ALLOWED_URI$1 = cfg.ALLOWED_URI_REGEXP || IS_ALLOWED_URI;
         NAMESPACE = cfg.NAMESPACE || HTML_NAMESPACE;
@@ -9140,10 +9140,10 @@
           delete FORBID_TAGS.tbody;
         }
         if (cfg.TRUSTED_TYPES_POLICY) {
-          if (typeof cfg.TRUSTED_TYPES_POLICY.createHTML !== 'function') {
+          if (typeof cfg.TRUSTED_TYPES_POLICY.createHTML != 'function') {
             throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');
           }
-          if (typeof cfg.TRUSTED_TYPES_POLICY.createScriptURL !== 'function') {
+          if (typeof cfg.TRUSTED_TYPES_POLICY.createScriptURL != 'function') {
             throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');
           }
           trustedTypesPolicy = cfg.TRUSTED_TYPES_POLICY;
@@ -9152,7 +9152,7 @@
           if (trustedTypesPolicy === undefined) {
             trustedTypesPolicy = _createTrustedTypesPolicy(trustedTypes, currentScript);
           }
-          if (trustedTypesPolicy !== null && typeof emptyHTML === 'string') {
+          if (trustedTypesPolicy != null && typeof emptyHTML === 'string') {
             emptyHTML = trustedTypesPolicy.createHTML('');
           }
         }
@@ -9305,7 +9305,7 @@
         return createNodeIterator.call(root.ownerDocument || root, root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT, null, false);
       };
       const _isClobbered = function _isClobbered(elm) {
-        return elm instanceof HTMLFormElement && (typeof elm.nodeName !== 'string' || typeof elm.textContent !== 'string' || typeof elm.removeChild !== 'function' || !(elm.attributes instanceof NamedNodeMap) || typeof elm.removeAttribute !== 'function' || typeof elm.setAttribute !== 'function' || typeof elm.namespaceURI !== 'string' || typeof elm.insertBefore !== 'function' || typeof elm.hasChildNodes !== 'function');
+        return elm instanceof HTMLFormElement && (typeof elm.nodeName != 'string' || typeof elm.textContent != 'string' || typeof elm.removeChild != 'function' || !(elm.attributes instanceof NamedNodeMap) || typeof elm.removeAttribute != 'function' || typeof elm.setAttribute != 'function' || typeof elm.namespaceURI != 'string' || typeof elm.insertBefore != 'function' || typeof elm.hasChildNodes != 'function');
       };
       const _isNode = function _isNode(object) {
         return typeof Node === 'object' ? object instanceof Node : object && typeof object === 'object' && typeof object.nodeType === 'number' && typeof object.nodeName === 'string';
@@ -9367,7 +9367,7 @@
           content = stringReplace(content, MUSTACHE_EXPR, ' ');
           content = stringReplace(content, ERB_EXPR, ' ');
           content = stringReplace(content, TMPLIT_EXPR, ' ');
-          if (currentNode.textContent !== content) {
+          if (currentNode.textContent != content) {
             arrayPush(DOMPurify.removed, { element: currentNode.cloneNode() });
             currentNode.textContent = content;
           }
@@ -9388,7 +9388,7 @@
           }
         } else if (URI_SAFE_ATTRIBUTES[lcName]);
         else if (regExpTest(IS_ALLOWED_URI$1, stringReplace(value, ATTR_WHITESPACE, '')));
-        else if ((lcName === 'src' || lcName === 'xlink:href' || lcName === 'href') && lcTag !== 'script' && stringIndexOf(value, 'data:') === 0 && DATA_URI_TAGS[lcTag]);
+        else if ((lcName === 'src' || lcName === 'xlink:href' || lcName === 'href') && lcTag != 'script' && stringIndexOf(value, 'data:') === 0 && DATA_URI_TAGS[lcTag]);
         else if (ALLOW_UNKNOWN_PROTOCOLS && !regExpTest(IS_SCRIPT_OR_DATA, stringReplace(value, ATTR_WHITESPACE, '')));
         else if (value) {
           return false;
@@ -9467,7 +9467,7 @@
               }
             }
           }
-          if (value !== initValue) {
+          if (value != initValue) {
             try {
               if (namespaceURI) {
                 currentNode.setAttributeNS(namespaceURI, name, value);
@@ -9498,7 +9498,7 @@
         _executeHook('afterSanitizeShadowDOM', fragment, null);
       };
       DOMPurify.sanitize = function (dirty) {
-        let cfg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        let cfg = arguments.length > 1 && arguments[1] != undefined ? arguments[1] : {};
         let body;
         let importedNode;
         let currentNode;
@@ -9507,10 +9507,10 @@
         if (IS_EMPTY_INPUT) {
           dirty = '<!-->';
         }
-        if (typeof dirty !== 'string' && !_isNode(dirty)) {
+        if (typeof dirty != 'string' && !_isNode(dirty)) {
           if (typeof dirty.toString === 'function') {
             dirty = dirty.toString();
-            if (typeof dirty !== 'string') {
+            if (typeof dirty != 'string') {
               throw typeErrorCreate('dirty is not a string, aborting');
             }
           } else {
@@ -9611,7 +9611,7 @@
         return _isValidAttribute(lcTag, lcName, value);
       };
       DOMPurify.addHook = function (entryPoint, hookFunction) {
-        if (typeof hookFunction !== 'function') {
+        if (typeof hookFunction != 'function') {
           return;
         }
         hooks[entryPoint] = hooks[entryPoint] || [];
@@ -9681,12 +9681,12 @@
       return {
         dom: {
           tag: spec.tag,
-          attributes: (_a = spec.attributes) !== null && _a !== void 0 ? _a : {},
+          attributes: (_a = spec.attributes) != null && _a != void 0 ? _a : {},
           classes: spec.classes.concat(rtlIconClasses),
           innerHtml: iconHtml
         },
         behaviours: derive$1([
-          ...(_b = spec.behaviours) !== null && _b !== void 0 ? _b : [],
+          ...(_b = spec.behaviours) != null && _b != void 0 ? _b : [],
           addFocusableBehaviour()
         ])
       };
@@ -10190,7 +10190,7 @@
     const useHelpAccessibility = option$2('help_accessibility');
     const getDefaultFontStack = option$2('default_font_stack');
     const isSkinDisabled = editor => editor.options.get('skin') === false;
-    const isMenubarEnabled = editor => editor.options.get('menubar') !== false;
+    const isMenubarEnabled = editor => editor.options.get('menubar') != false;
     const getSkinUrl = editor => {
       const skinUrl = editor.options.get('skin_url');
       if (isSkinDisabled(editor)) {
@@ -10227,7 +10227,7 @@
       if (!editor.inline) {
         return Optional.none();
       }
-      const selector = (_a = fixedContainerSelector(editor)) !== null && _a !== void 0 ? _a : '';
+      const selector = (_a = fixedContainerSelector(editor)) != null && _a != void 0 ? _a : '';
       if (selector.length > 0) {
         return descendant(body(), selector);
       }
@@ -10478,7 +10478,7 @@
             },
             setValue: (input, data) => {
               const current = get$6(input.element);
-              if (current !== data) {
+              if (current != data) {
                 set$5(input.element, data);
               }
             }
@@ -10605,7 +10605,7 @@
           dom: {
             ...item.dom,
             attributes: {
-              ...(_a = item.dom.attributes) !== null && _a !== void 0 ? _a : {},
+              ...(_a = item.dom.attributes) != null && _a != void 0 ? _a : {},
               'id': generate$6('aria-item-search-result-id'),
               'aria-selected': 'false'
             }
@@ -10637,7 +10637,7 @@
             classes: ['tox-swatches']
           },
           components: [Menu.parts.items({
-              preprocess: columns !== 'auto' ? chunk({
+              preprocess: columns != 'auto' ? chunk({
                 tag: 'div',
                 classes: ['tox-swatches__row']
               }, columns) : identity
@@ -10692,7 +10692,7 @@
       return Menu.parts.items({
         preprocess: rawItems => {
           const enrichedItems = map$2(rawItems, onItem);
-          if (columns !== 'auto' && columns > 1) {
+          if (columns != 'auto' && columns > 1) {
             return chunk({
               tag: 'div',
               classes: ['tox-collection__group']
@@ -10768,7 +10768,7 @@
       components: [Menu.parts.items({ preprocess: items => preprocessCollection(items, (_item, i) => initItems[i].type === 'separator') })]
     });
 
-    const menuHasIcons = xs => exists(xs, item => 'icon' in item && item.icon !== undefined);
+    const menuHasIcons = xs => exists(xs, item => 'icon' in item && item.icon != undefined);
     const handleError = error => {
       console.error(formatError(error));
       console.log(error);
@@ -10785,7 +10785,7 @@
     };
     const createPartialMenuWithAlloyItems = (value, hasIcons, items, columns, menuLayout) => {
       const getNormalStructure = () => {
-        if (menuLayout.menuType !== 'searchable') {
+        if (menuLayout.menuType != 'searchable') {
           return forCollection(columns, items);
         } else {
           return menuLayout.searchMode.searchMode === 'search-with-field' ? forCollectionWithSearchField(columns, items, menuLayout.searchMode) : forCollectionWithSearchResults(columns, items);
@@ -10815,7 +10815,7 @@
           components: structure.components,
           items
         };
-      } else if (menuLayout.menuType === 'listpreview' && columns !== 'auto') {
+      } else if (menuLayout.menuType === 'listpreview' && columns != 'auto') {
         const structure = forToolbar(columns);
         return {
           value,
@@ -11845,11 +11845,11 @@
         return Optional.some(rgbaColour(0, 0, 0, 0));
       }
       const rgbMatch = rgbRegex.exec(rgbaString);
-      if (rgbMatch !== null) {
+      if (rgbMatch != null) {
         return Optional.some(fromStringValues(rgbMatch[1], rgbMatch[2], rgbMatch[3], '1'));
       }
       const rgbaMatch = rgbaRegex.exec(rgbaString);
-      if (rgbaMatch !== null) {
+      if (rgbaMatch != null) {
         return Optional.some(fromStringValues(rgbaMatch[1], rgbaMatch[2], rgbaMatch[3], rgbaMatch[4]));
       }
       return Optional.none();
@@ -12203,7 +12203,7 @@
     const getDefaultBackgroundColor = option$1('color_default_background');
 
     const defaultBackgroundColor = 'rgba(0, 0, 0, 0)';
-    const isValidBackgroundColor = value => fromString(value).exists(c => c.alpha !== 0);
+    const isValidBackgroundColor = value => fromString(value).exists(c => c.alpha != 0);
     const getClosestCssBackgroundColorValue = scope => {
       return closest$4(scope, node => {
         if (isElement$1(node)) {
@@ -12434,7 +12434,7 @@
 
     const createPartialChoiceMenu = (value, items, onItemValueHandler, columns, presets, itemResponse, select, providersBackstage) => {
       const hasIcons = menuHasIcons(items);
-      const presetItemTypes = presets !== 'color' ? 'normal' : 'color';
+      const presetItemTypes = presets != 'color' ? 'normal' : 'color';
       const alloyItems = createChoiceItems(items, onItemValueHandler, columns, presetItemTypes, itemResponse, select, providersBackstage);
       const menuLayout = { menuType: presets };
       return createPartialMenuWithAlloyItems(value, hasIcons, alloyItems, columns, menuLayout);
@@ -13062,13 +13062,13 @@
           matchWidth(anchor.hotspot, menu, detail.useMinWidth);
         }
         detail.onOpen(anchor, component, menu);
-        if (extras !== undefined && extras.onOpen !== undefined) {
+        if (extras != undefined && extras.onOpen != undefined) {
           extras.onOpen(component, menu);
         }
       };
       const onClose = (component, menu) => {
         ariaControls.unlink(hotspot.element);
-        if (extras !== undefined && extras.onClose !== undefined) {
+        if (extras != undefined && extras.onClose != undefined) {
           extras.onClose(component, menu);
         }
       };
@@ -13424,7 +13424,7 @@
         data: createTieredDataFrom({
           ...partialMenu,
           movement,
-          menuBehaviours: SimpleBehaviours.unnamedEvents(columns !== 'auto' ? [] : [runOnAttached((comp, _se) => {
+          menuBehaviours: SimpleBehaviours.unnamedEvents(columns != 'auto' ? [] : [runOnAttached((comp, _se) => {
               detectSize(comp, 4, menuMarkers.item).each(({numColumns, numRows}) => {
                 Keying.setGridSize(comp, numRows, numColumns);
               });
@@ -13617,7 +13617,7 @@
         }, delay);
       };
       const cancel = () => {
-        if (ref !== null) {
+        if (ref != null) {
           clearTimeout(ref);
           ref = null;
         }
@@ -13632,7 +13632,7 @@
     const LONGPRESS_DELAY = 400;
     const getTouch = event => {
       const raw = event.raw;
-      if (raw.touches === undefined || raw.touches.length !== 1) {
+      if (raw.touches === undefined || raw.touches.length != 1) {
         return Optional.none();
       }
       return Optional.some(raw.touches[0]);
@@ -13913,7 +13913,7 @@
       const registry = {};
       const registerId = (extraArgs, id, events) => {
         each(events, (v, k) => {
-          const handlers = registry[k] !== undefined ? registry[k] : {};
+          const handlers = registry[k] != undefined ? registry[k] : {};
           handlers[id] = curryArgs(v, extraArgs);
           registry[k] = handlers;
         });
@@ -14320,7 +14320,7 @@
       const icons = providersBackstage.icons();
       const getIcon = icon => {
         var _a;
-        return (_a = icons[icon]) !== null && _a !== void 0 ? _a : icon;
+        return (_a = icons[icon]) != null && _a != void 0 ? _a : icon;
       };
       const runOnItem = f => (comp, se) => {
         closest$1(se.event.target, '[data-collection-item-value]').each(target => {
@@ -14341,7 +14341,7 @@
           const disabledClass = providersBackstage.isDisabled() ? ' tox-collection__item--state-disabled' : '';
           return `<div class="tox-collection__item${ disabledClass }" tabindex="-1" data-collection-item-value="${ global$3.encodeAllRaw(item.value) }" title="${ ariaLabel }" aria-label="${ ariaLabel }">${ iconContent }${ textContent }</div>`;
         });
-        const chunks = spec.columns !== 'auto' && spec.columns > 1 ? chunk$1(htmlLines, spec.columns) : [htmlLines];
+        const chunks = spec.columns != 'auto' && spec.columns > 1 ? chunk$1(htmlLines, spec.columns) : [htmlLines];
         const html = map$2(chunks, ch => `<div class="tox-collection__group">${ ch.join('') }</div>`);
         set$6(comp.element, html.join(''));
       };
@@ -14382,7 +14382,7 @@
       const pField = FormField.parts.field({
         dom: {
           tag: 'div',
-          classes: ['tox-collection'].concat(spec.columns !== 1 ? ['tox-collection--grid'] : ['tox-collection--list'])
+          classes: ['tox-collection'].concat(spec.columns != 1 ? ['tox-collection--grid'] : ['tox-collection--list'])
         },
         components: [],
         factory: { sketch: identity },
@@ -14802,15 +14802,15 @@
 
     const _sliderChangeEvent = 'slider.change.value';
     const sliderChangeEvent = constant$1(_sliderChangeEvent);
-    const isTouchEvent$2 = evt => evt.type.indexOf('touch') !== -1;
+    const isTouchEvent$2 = evt => evt.type.indexOf('touch') != -1;
     const getEventSource = simulatedEvent => {
       const evt = simulatedEvent.event.raw;
       if (isTouchEvent$2(evt)) {
         const touchEvent = evt;
-        return touchEvent.touches !== undefined && touchEvent.touches.length === 1 ? Optional.some(touchEvent.touches[0]).map(t => SugarPosition(t.clientX, t.clientY)) : Optional.none();
+        return touchEvent.touches != undefined && touchEvent.touches.length === 1 ? Optional.some(touchEvent.touches[0]).map(t => SugarPosition(t.clientX, t.clientY)) : Optional.none();
       } else {
         const mouseEvent = evt;
-        return mouseEvent.clientX !== undefined ? Optional.some(mouseEvent).map(me => SugarPosition(me.clientX, me.clientY)) : Optional.none();
+        return mouseEvent.clientX != undefined ? Optional.some(mouseEvent).map(me => SugarPosition(me.clientX, me.clientY)) : Optional.none();
       }
     };
 
@@ -14832,7 +14832,7 @@
     const snap = detail => detail.snapToGrid;
     const snapStart = detail => detail.snapStart;
     const rounded = detail => detail.rounded;
-    const hasEdge = (detail, edgeName) => detail[edgeName + '-edge'] !== undefined;
+    const hasEdge = (detail, edgeName) => detail[edgeName + '-edge'] != undefined;
     const hasLEdge = detail => hasEdge(detail, l);
     const hasREdge = detail => hasEdge(detail, r);
     const hasTEdge = detail => hasEdge(detail, t);
@@ -15635,7 +15635,7 @@
           pLabel,
           pField
         ];
-        const concats = name !== 'hex' ? [FormField.parts['aria-descriptor']({ text: helptext })] : [];
+        const concats = name != 'hex' ? [FormField.parts['aria-descriptor']({ text: helptext })] : [];
         const components = comps.concat(concats);
         return {
           dom: {
@@ -15704,7 +15704,7 @@
         };
         const onInvalidInput = (form, simulatedEvent) => {
           const data = simulatedEvent.event;
-          if (data.type !== 'hex') {
+          if (data.type != 'hex') {
             set(data.type, Optional.none());
           } else {
             onInvalidHexx(form);
@@ -16452,7 +16452,7 @@
     const scrollToY = (win, y) => win.scrollTo(0, y === 'bottom' ? 99999999 : y);
     const getScrollingElement = (doc, html) => {
       const body = doc.body;
-      return Optional.from(!/^<!DOCTYPE (html|HTML)/.test(html) && (!isChromium && !isSafari || isNonNullable(body) && (body.scrollTop !== 0 || Math.abs(body.scrollHeight - body.clientHeight) > 1)) ? body : doc.documentElement);
+      return Optional.from(!/^<!DOCTYPE (html|HTML)/.test(html) && (!isChromium && !isSafari || isNonNullable(body) && (body.scrollTop != 0 || Math.abs(body.scrollHeight - body.clientHeight) > 1)) ? body : doc.documentElement);
     };
     const writeValue = (iframeElement, html, fallbackFn) => {
       const iframe = iframeElement.dom;
@@ -16467,7 +16467,7 @@
           if (isNonNullable(win)) {
             if (isScrollAtBottom) {
               scrollToY(win, 'bottom');
-            } else if (!isScrollAtBottom && isSafariOrFirefox && lastScrollTop !== 0) {
+            } else if (!isScrollAtBottom && isSafariOrFirefox && lastScrollTop != 0) {
               scrollToY(win, lastScrollTop);
             }
           }
@@ -16490,7 +16490,7 @@
       return {
         getValue: _frameComponent => cachedValue.get(),
         setValue: (frameComponent, html) => {
-          if (cachedValue.get() !== html) {
+          if (cachedValue.get() != html) {
             const iframeElement = frameComponent.element;
             const setSrcdocValue = () => set$9(iframeElement, 'srcdoc', html);
             if (stream) {
@@ -16621,7 +16621,7 @@
         };
         memImage.getOpt(frameComponent).each(imageComponent => {
           const img = imageComponent.element;
-          if (data.url !== get$f(img, 'src')) {
+          if (data.url != get$f(img, 'src')) {
             set$9(img, 'src', data.url);
             remove$2(frameComponent.element, 'tox-imagepreview__loaded');
           }
@@ -17296,7 +17296,7 @@
       };
       const maxDecimal = unit => unit in unitDec ? unitDec[unit] : 1;
       let numText = size.value.toFixed(maxDecimal(size.unit));
-      if (numText.indexOf('.') !== -1) {
+      if (numText.indexOf('.') != -1) {
         numText = numText.replace(/\.?0*$/, '');
       }
       return numText + size.unit;
@@ -17304,7 +17304,7 @@
     const parseSize = sizeText => {
       const numPattern = /^\s*(\d+(?:\.\d+)?)\s*(|cm|mm|in|px|pt|pc|em|ex|ch|rem|vw|vh|vmin|vmax|%)\s*$/;
       const match = numPattern.exec(sizeText);
-      if (match !== null) {
+      if (match != null) {
         const value = parseFloat(match[1]);
         const unit = match[2];
         return Result.value({
@@ -17580,7 +17580,7 @@
         receivingConfig(),
         Keying.config({
           mode: 'execution',
-          useEnter: spec.multiline !== true,
+          useEnter: spec.multiline != true,
           useControlEnter: spec.multiline === true,
           execute: comp => {
             emit(comp, formSubmitEvent);
@@ -18216,7 +18216,7 @@
               expandedIdsCell.set(expanded ? [
                 ...expandedIdsCell.get(),
                 node
-              ] : expandedIdsCell.get().filter(id => id !== node));
+              ] : expandedIdsCell.get().filter(id => id != node));
             })
           ]),
           Toggling.config({
@@ -18280,7 +18280,7 @@
               expandedIds.set(expanded ? [
                 ...expandedIds.get(),
                 node
-              ] : expandedIds.get().filter(id => id !== node));
+              ] : expandedIds.get().filter(id => id != node));
               onToggleExpand(expandedIds.get(), {
                 expanded,
                 node
@@ -18317,13 +18317,13 @@
 
     const throttle = _config => {
       const state = Cell(null);
-      const readState = () => ({ timer: state.get() !== null ? 'set' : 'unset' });
+      const readState = () => ({ timer: state.get() != null ? 'set' : 'unset' });
       const setTimer = t => {
         state.set(t);
       };
       const cancel = () => {
         const t = state.get();
-        if (t !== null) {
+        if (t != null) {
           t.cancel();
         }
       };
@@ -18384,7 +18384,7 @@
       const el = input.element;
       const value = get$6(el);
       const node = el.dom;
-      if (get$f(el, 'type') !== 'number') {
+      if (get$f(el, 'type') != 'number') {
         f(node, value);
       }
     };
@@ -18610,7 +18610,7 @@
       defaulted('layouts', Optional.none()),
       defaulted('eventOrder', {}),
       defaultedObjOf('model', {}, [
-        defaulted('getDisplayText', itemData => itemData.meta !== undefined && itemData.meta.text !== undefined ? itemData.meta.text : itemData.value),
+        defaulted('getDisplayText', itemData => itemData.meta != undefined && itemData.meta.text != undefined ? itemData.meta.text : itemData.value),
         defaulted('selectsOver', true),
         defaulted('populateFromBrowse', true)
       ]),
@@ -18884,17 +18884,17 @@
       const buttonType = spec.buttonType.getOr(!spec.primary ? 'secondary' : 'primary');
       const buttonSpec = {
         ...spec,
-        name: (_a = spec.name) !== null && _a !== void 0 ? _a : '',
+        name: (_a = spec.name) != null && _a != void 0 ? _a : '',
         primary: buttonType === 'primary',
         tooltip: Optional.from(spec.tooltip),
-        enabled: (_b = spec.enabled) !== null && _b !== void 0 ? _b : false,
+        enabled: (_b = spec.enabled) != null && _b != void 0 ? _b : false,
         borderless: false
       };
       const tooltipAttributes = buttonSpec.tooltip.map(tooltip => ({
         'aria-label': providers.translate(tooltip),
         'title': providers.translate(tooltip)
       })).getOr({});
-      const buttonTypeClasses = calculateClassesFromButtonType(buttonType !== null && buttonType !== void 0 ? buttonType : 'secondary');
+      const buttonTypeClasses = calculateClassesFromButtonType(buttonType != null && buttonType != void 0 ? buttonType : 'secondary');
       const showIconAndText = spec.icon.isSome() && spec.text.isSome();
       const dom = {
         tag: 'button',
@@ -18990,8 +18990,8 @@
       const lowerCaseTerm = term.toLowerCase();
       return filter$2(menuItems, item => {
         var _a;
-        const text = item.meta !== undefined && item.meta.text !== undefined ? item.meta.text : item.text;
-        const value = (_a = item.value) !== null && _a !== void 0 ? _a : '';
+        const text = item.meta != undefined && item.meta.text != undefined ? item.meta.text : item.text;
+        const value = (_a = item.value) != null && _a != void 0 ? _a : '';
         return contains$1(text.toLowerCase(), lowerCaseTerm) || contains$1(value.toLowerCase(), lowerCaseTerm);
       });
     };
@@ -18999,7 +18999,7 @@
     const getItems = (fileType, input, urlBackstage) => {
       var _a, _b;
       const urlInputValue = Representing.getValue(input);
-      const term = (_b = (_a = urlInputValue === null || urlInputValue === void 0 ? void 0 : urlInputValue.meta) === null || _a === void 0 ? void 0 : _a.text) !== null && _b !== void 0 ? _b : urlInputValue.value;
+      const term = (_b = (_a = urlInputValue === null || urlInputValue === void 0 ? void 0 : urlInputValue.meta) === null || _a === void 0 ? void 0 : _a.text) != null && _b != void 0 ? _b : urlInputValue.value;
       const info = urlBackstage.getLinkInformation();
       return info.fold(() => [], linkInfo => {
         const history = filterByQuery(term, historyTargets(urlBackstage.getHistory(fileType)));
@@ -19084,7 +19084,7 @@
             run$1(input(), comp => {
               const currentValue = get$6(comp.element);
               const trimmedValue = currentValue.trim();
-              if (trimmedValue !== currentValue) {
+              if (trimmedValue != currentValue) {
                 set$5(comp.element, trimmedValue);
               }
               if (spec.filetype === 'file') {
@@ -19886,7 +19886,7 @@
       const isSelectedFor = format => () => editor.formatter.match(format);
       const getPreviewFor = format => () => {
         const fmt = editor.formatter.get(format);
-        return fmt !== undefined ? Optional.some({
+        return fmt != undefined ? Optional.some({
           tag: fmt.length > 0 ? fmt[0].inline || fmt[0].block || 'div' : 'div',
           styles: editor.dom.parseStyle(editor.formatter.getCssText(format))
         }) : Optional.none();
@@ -19940,7 +19940,7 @@
       let tempNode = node;
       while (tempNode = tempNode.parentNode) {
         const value = tempNode.contentEditable;
-        if (value && value !== 'inherit') {
+        if (value && value != 'inherit') {
           return isContentEditableTrue(tempNode);
         }
       }
@@ -19958,7 +19958,7 @@
       return elm.id ? elm.id : generate$6('h');
     };
     const isAnchor = elm => {
-      return elm && elm.nodeName === 'A' && (elm.id || elm.name) !== undefined;
+      return elm && elm.nodeName === 'A' && (elm.id || elm.name) != undefined;
     };
     const isValidAnchor = elm => {
       return isAnchor(elm) && isEditable(elm);
@@ -19981,7 +19981,7 @@
       const attach = () => {
         elm.id = headerId;
       };
-      return create('header', (_a = getElementText(elm)) !== null && _a !== void 0 ? _a : '', '#' + headerId, getLevel(elm), attach);
+      return create('header', (_a = getElementText(elm)) != null && _a != void 0 ? _a : '', '#' + headerId, getLevel(elm), attach);
     };
     const anchorTarget = elm => {
       const anchorId = elm.id || elm.name;
@@ -20049,7 +20049,7 @@
       }
       const history = getAllHistory();
       const items = get$g(history, fileType).getOr([]);
-      const itemsWithoutUrl = filter$2(items, item => item !== url);
+      const itemsWithoutUrl = filter$2(items, item => item != url);
       history[fileType] = [url].concat(itemsWithoutUrl).slice(0, HISTORY_LENGTH);
       setAllHistory(history);
     };
@@ -20074,7 +20074,7 @@
         if (!isString(value)) {
           throw new Error('Expected value to be string');
         }
-        if (meta !== undefined && !isObject(meta)) {
+        if (meta != undefined && !isObject(meta)) {
           throw new Error('Expected meta to be a object');
         }
         const r = {
@@ -20197,7 +20197,7 @@
       };
       const onContentMousedown = () => {
         each$1(editor.editorManager.get(), loopEditor => {
-          if (editor !== loopEditor) {
+          if (editor != loopEditor) {
             loopEditor.dispatch('DismissPopups', { relatedTarget: editor });
           }
         });
@@ -20211,7 +20211,7 @@
       const onElementScroll = capture(dos, 'scroll', evt => {
         requestAnimationFrame(() => {
           const c = editor.getContainer();
-          if (c !== undefined && c !== null) {
+          if (c != undefined && c != null) {
             const optScrollingContext = detectWhenSplitUiMode(editor, mothership.element);
             const scrollers = optScrollingContext.map(sc => [
               sc.element,
@@ -20505,7 +20505,7 @@
       case 'absolute':
         const offsetParent = getOffsetParent(elem).getOr(body());
         const offsetBox = box$1(offsetParent);
-        const scrollDelta = (_a = offsetParent.dom.scrollTop) !== null && _a !== void 0 ? _a : 0;
+        const scrollDelta = (_a = offsetParent.dom.scrollTop) != null && _a != void 0 ? _a : 0;
         return Optional.some({
           morph: 'absolute',
           positionCss: NuPositionCss('absolute', get$g(position.style, 'left').map(_left => box.x - offsetBox.x), get$g(position.style, 'top').map(_top => box.y - offsetBox.y + scrollDelta), get$g(position.style, 'right').map(_right => offsetBox.right - box.right), get$g(position.style, 'bottom').map(_bottom => offsetBox.bottom - box.bottom))
@@ -20607,7 +20607,7 @@
       config.contextual.each(contextInfo => {
         contextInfo.lazyContext(component).each(box => {
           const isVisible = isPartiallyVisible(box, viewport.bounds);
-          if (isVisible !== state.isVisible()) {
+          if (isVisible != state.isVisible()) {
             state.setVisible(isVisible);
             if (morphToDocked && !isVisible) {
               add$1(component.element, [contextInfo.fadeOutClass]);
@@ -21205,7 +21205,7 @@
       const onSlots = f => (container, keys) => {
         each$1(keys, key => f(container, key));
       };
-      const doShowing = (comp, _key) => get$f(comp.element, 'aria-hidden') !== 'true';
+      const doShowing = (comp, _key) => get$f(comp.element, 'aria-hidden') != 'true';
       const doShow = (comp, key) => {
         if (!doShowing(comp)) {
           const element = comp.element;
@@ -21607,14 +21607,14 @@
         editor.on('PreInit', () => {
           editor.dom.bind(editor.getWin(), 'focusin', stealFocus);
           editor.on('BeforeExecCommand', e => {
-            if (e.command.toLowerCase() === 'mcefocus' && e.value !== true) {
+            if (e.command.toLowerCase() === 'mcefocus' && e.value != true) {
               stealFocus(e);
             }
           });
         });
       }
       const toggle = state => {
-        if (state !== throbberState.get()) {
+        if (state != throbberState.get()) {
           throbberState.set(state);
           toggleThrobber(editor, lazyThrobber(), state, sharedBackstage.providers);
           fireAfterProgressState(editor, state);
@@ -22461,7 +22461,7 @@
       const action = getAction();
       const buttonSpec = {
         ...spec,
-        name: isToggleButton ? spec.text.getOr(spec.icon.getOr('')) : (_a = spec.text) !== null && _a !== void 0 ? _a : spec.icon.getOr(''),
+        name: isToggleButton ? spec.text.getOr(spec.icon.getOr('')) : (_a = spec.text) != null && _a != void 0 ? _a : spec.icon.getOr(''),
         primary: spec.buttonType === 'primary',
         buttonType: Optional.from(spec.buttonType),
         tooltip: spec.tooltip,
@@ -22469,7 +22469,7 @@
         enabled: true,
         borderless: spec.borderless
       };
-      const buttonTypeClasses = calculateClassesFromButtonType((_b = spec.buttonType) !== null && _b !== void 0 ? _b : 'secondary');
+      const buttonTypeClasses = calculateClassesFromButtonType((_b = spec.buttonType) != null && _b != void 0 ? _b : 'secondary');
       const optTranslatedText = isToggleButton ? spec.text.map(providers.translate) : Optional.some(providers.translate(spec.text));
       const optTranslatedTextComponed = optTranslatedText.map(text$2);
       const tooltipAttributes = buttonSpec.tooltip.or(optTranslatedText).map(tooltip => ({
@@ -23109,7 +23109,7 @@
         }, registry, editor);
       });
       return filter$2(menus, menu => {
-        const isNotSeparator = item => isString(item) || item.type !== 'separator';
+        const isNotSeparator = item => isString(item) || item.type != 'separator';
         return menu.getItems().length > 0 && exists(menu.getItems(), isNotSeparator);
       });
     };
@@ -23930,7 +23930,7 @@
         ch: { step: 0.1 },
         rem: { step: 0.1 }
       };
-      return (_a = configs[unit]) !== null && _a !== void 0 ? _a : baseConfig;
+      return (_a = configs[unit]) != null && _a != void 0 ? _a : baseConfig;
     };
     const defaultValue = 16;
     const isValidValue = value => value >= 0;
@@ -23955,10 +23955,10 @@
           ]));
           const value = parsedText.map(res => res.value).getOr(defaultValue);
           const defaultUnit = getFontSizeInputDefaultUnit(editor);
-          const unit = parsedText.map(res => res.unit).filter(u => u !== '').getOr(defaultUnit);
+          const unit = parsedText.map(res => res.unit).filter(u => u != '').getOr(defaultUnit);
           const newValue = updateFunction(value, getConfigFromUnit(unit).step);
           const res = `${ isValidValue(newValue) ? newValue : value }${ unit }`;
-          if (res !== currentValue) {
+          if (res != currentValue) {
             fireFontSizeInputTextUpdate(editor, { value: res });
           }
           return res;
@@ -23982,7 +23982,7 @@
       const isSelectedFor = format => () => editor.formatter.match(format);
       const getPreviewFor = format => () => {
         const fmt = editor.formatter.get(format);
-        return fmt !== undefined ? Optional.some({
+        return fmt != undefined ? Optional.some({
           tag: fmt.length > 0 ? fmt[0].inline || fmt[0].block || 'div' : 'div',
           styles: editor.dom.parseStyle(editor.formatter.getCssText(format))
         }) : Optional.none();
@@ -24386,7 +24386,7 @@
       spec.onItemAction(getApi(comp), value);
     }, spec.columns, spec.presets, ItemResponse$1.CLOSE_ON_EXECUTE, spec.select.getOr(never), providersBackstage), {
       movement: deriveMenuMovement(spec.columns, spec.presets),
-      menuBehaviours: SimpleBehaviours.unnamedEvents(spec.columns !== 'auto' ? [] : [runOnAttached((comp, _se) => {
+      menuBehaviours: SimpleBehaviours.unnamedEvents(spec.columns != 'auto' ? [] : [runOnAttached((comp, _se) => {
           detectSize(comp, 4, classForPreset(spec.presets)).each(({numRows, numColumns}) => {
             Keying.setGridSize(comp, numRows, numColumns);
           });
@@ -24657,7 +24657,7 @@
       const lastDocumentDimensions = Cell(SugarPosition(initialDocEle.offsetWidth, initialDocEle.offsetHeight));
       const resizeWindow = () => {
         const outer = lastWindowDimensions.get();
-        if (outer.left !== contentWindow.innerWidth || outer.top !== contentWindow.innerHeight) {
+        if (outer.left != contentWindow.innerWidth || outer.top != contentWindow.innerHeight) {
           lastWindowDimensions.set(SugarPosition(contentWindow.innerWidth, contentWindow.innerHeight));
           fireResizeContent(editor);
         }
@@ -24665,7 +24665,7 @@
       const resizeDocument = () => {
         const docEle = editor.getDoc().documentElement;
         const inner = lastDocumentDimensions.get();
-        if (inner.left !== docEle.offsetWidth || inner.top !== docEle.offsetHeight) {
+        if (inner.left != docEle.offsetWidth || inner.top != docEle.offsetHeight) {
           lastDocumentDimensions.set(SugarPosition(docEle.offsetWidth, docEle.offsetHeight));
           fireResizeContent(editor);
         }
@@ -24736,7 +24736,7 @@
       });
       editor.addQueryValueHandler('ToggleSidebar', () => {
         var _a;
-        return (_a = OuterContainer.whichSidebar(outerContainer)) !== null && _a !== void 0 ? _a : '';
+        return (_a = OuterContainer.whichSidebar(outerContainer)) != null && _a != void 0 ? _a : '';
       });
       editor.addCommand('ToggleView', (_ui, value) => {
         if (OuterContainer.toggleView(outerContainer, value)) {
@@ -24754,7 +24754,7 @@
       });
       editor.addQueryValueHandler('ToggleView', () => {
         var _a;
-        return (_a = OuterContainer.whichView(outerContainer)) !== null && _a !== void 0 ? _a : '';
+        return (_a = OuterContainer.whichView(outerContainer)) != null && _a != void 0 ? _a : '';
       });
       const toolbarMode = getToolbarMode(editor);
       const refreshDrawer = () => {
@@ -24763,7 +24763,7 @@
       if (toolbarMode === ToolbarMode$1.sliding || toolbarMode === ToolbarMode$1.floating) {
         editor.on('ResizeWindow ResizeEditor ResizeContent', () => {
           const width = editor.getWin().innerWidth;
-          if (width !== lastToolbarWidth.get()) {
+          if (width != lastToolbarWidth.get()) {
             refreshDrawer();
             lastToolbarWidth.set(width);
           }
@@ -24896,7 +24896,7 @@
           }, offsetParent => {
             var _a;
             const offsetBox = box$1(offsetParent);
-            const scrollDelta = (_a = offsetParent.dom.scrollTop) !== null && _a !== void 0 ? _a : 0;
+            const scrollDelta = (_a = offsetParent.dom.scrollTop) != null && _a != void 0 ? _a : 0;
             const isOffsetParentBody = eq(offsetParent, body());
             const topValue = isOffsetParentBody ? Math.max(targetBounds.y - get$d(container.element) + offset, 0) : targetBounds.y - offsetBox.y + scrollDelta - get$d(container.element) + offset;
             return {
@@ -24970,7 +24970,7 @@
         return floatContainer.get().exists(fc => {
           const currentMode = headerBackstage.getDockingMode();
           const newMode = calcMode(fc);
-          if (newMode !== currentMode) {
+          if (newMode != currentMode) {
             setupMode(newMode);
             return true;
           } else {
@@ -25032,7 +25032,7 @@
           pos: prevPos,
           bounds: prevBounds
         } = prevPosAndBounds.get();
-        const hasResized = bounds.height !== prevBounds.height || bounds.width !== prevBounds.width;
+        const hasResized = bounds.height != prevBounds.height || bounds.width != prevBounds.width;
         prevPosAndBounds.set({
           pos,
           bounds
@@ -25041,7 +25041,7 @@
           fireResizeContent(editor, e);
         }
         if (ui.isVisible()) {
-          if (prevPos !== pos) {
+          if (prevPos != pos) {
             ui.update(Docking.reset);
           } else if (hasResized) {
             ui.updateMode();
@@ -25061,7 +25061,7 @@
       const updateUi = last(() => ui.update(Docking.refresh), 33);
       editor.on('ScrollWindow', () => {
         const newScrollX = get$b().left;
-        if (newScrollX !== lastScrollX) {
+        if (newScrollX != lastScrollX) {
           lastScrollX = newScrollX;
           updateUi.throttle();
         }
@@ -25841,7 +25841,7 @@
         editor.on(showContextToolbarEvent, e => {
           const scopes = getScopes();
           get$g(scopes.lookupTable, e.toolbarKey).each(ctx => {
-            launchContext([ctx], someIf(e.target !== editor, e.target));
+            launchContext([ctx], someIf(e.target != editor, e.target));
             InlineView.getContent(contextbar).each(Keying.focusIn);
           });
         });
@@ -25988,7 +25988,7 @@
           var _a;
           return editor.formatter.formatChanged('lang', callback, false, {
             value: value.code,
-            customValue: (_a = value.customCode) !== null && _a !== void 0 ? _a : null
+            customValue: (_a = value.customCode) != null && _a != void 0 ? _a : null
           }).unbind;
         },
         getCurrent: editor => {
@@ -26667,7 +26667,7 @@
         const items = buildMenu();
         show(editor, e, items, backstage, contextmenu, anchorType, shouldHighlightImmediately());
       };
-      if ((isMacOS || isiOS) && anchorType !== 'node') {
+      if ((isMacOS || isiOS) && anchorType != 'node') {
         const openiOS = () => {
           setupiOSOverrides(editor);
           open();
@@ -26750,7 +26750,7 @@
     };
     const isNativeOverrideKeyEvent = (editor, e) => e.ctrlKey && !shouldNeverUseNative(editor);
     const isTouchEvent = e => e.type === 'longpress' || has$2(e, 'touches');
-    const isTriggeredByKeyboard = (editor, e) => !isTouchEvent(e) && (e.button !== 2 || e.target === editor.getBody() && e.pointerType === '');
+    const isTriggeredByKeyboard = (editor, e) => !isTouchEvent(e) && (e.button != 2 || e.target === editor.getBody() && e.pointerType === '');
     const getSelectedElement = (editor, e) => isTriggeredByKeyboard(editor, e) ? editor.selection.getStart(true) : e.target;
     const getAnchorType = (editor, e) => {
       const selector = getAvoidOverlapSelector(editor);
@@ -27143,7 +27143,7 @@
 
     const events$3 = (dragConfig, dragState, updateStartState) => [run$1(mousedown(), (component, simulatedEvent) => {
         const raw = simulatedEvent.event.raw;
-        if (raw.button !== 0) {
+        if (raw.button != 0) {
           return;
         }
         simulatedEvent.stop();
@@ -27466,7 +27466,7 @@
     const isHidden = elm => elm.nodeName === 'BR' || !!elm.getAttribute('data-mce-bogus') || elm.getAttribute('data-mce-type') === 'bookmark';
     const renderElementPath = (editor, settings, providersBackstage) => {
       var _a;
-      const delimiter = (_a = settings.delimiter) !== null && _a !== void 0 ? _a : '\u203A';
+      const delimiter = (_a = settings.delimiter) != null && _a != void 0 ? _a : '\u203A';
       const renderElement = (name, element, index) => Button.sketch({
         dom: {
           tag: 'div',
@@ -28782,7 +28782,7 @@
       var _a;
       const internalDialog = getOrDie(createDialog(structure));
       const dataValidator = createDataValidator(structure);
-      const initialData = (_a = structure.initialData) !== null && _a !== void 0 ? _a : {};
+      const initialData = (_a = structure.initialData) != null && _a != void 0 ? _a : {};
       return {
         internalDialog,
         dataValidator,
@@ -30064,7 +30064,7 @@
       }, dialogId, backstage);
       const storedMenuButtons = mapMenuButtons(internalDialog.buttons);
       const objOfCells = extractCellsToObject(storedMenuButtons);
-      const footer = someIf(storedMenuButtons.length !== 0, renderModalFooter({ buttons: storedMenuButtons }, dialogId, backstage));
+      const footer = someIf(storedMenuButtons.length != 0, renderModalFooter({ buttons: storedMenuButtons }, dialogId, backstage));
       const dialogEvents = initDialog(() => instanceApi, getEventExtras(() => dialog, backstage.shared.providers, extra), backstage.shared.getSink);
       const spec = {
         id: dialogId,
@@ -30127,7 +30127,7 @@
       }, dialogId, dialogContentId, backstage, ariaAttrs));
       const storagedMenuButtons = mapMenuButtons(internalDialog.buttons);
       const objOfCells = extractCellsToObject(storagedMenuButtons);
-      const optMemFooter = someIf(storagedMenuButtons.length !== 0, record(renderInlineFooter({ buttons: storagedMenuButtons }, dialogId, backstage)));
+      const optMemFooter = someIf(storagedMenuButtons.length != 0, record(renderInlineFooter({ buttons: storagedMenuButtons }, dialogId, backstage)));
       const dialogEvents = initDialog(() => instanceApi, {
         onBlock: event => {
           Blocking.block(dialog, (_comp, bs) => {
@@ -30172,7 +30172,7 @@
               emit(c, formCloseEvent);
               return Optional.some(true);
             },
-            useTabstopAt: elem => !isPseudoStop(elem) && (name$3(elem) !== 'button' || get$f(elem, 'disabled') !== 'disabled'),
+            useTabstopAt: elem => !isPseudoStop(elem) && (name$3(elem) != 'button' || get$f(elem, 'disabled') != 'disabled'),
             firstTabstop: 1
           }),
           Reflecting.config({
@@ -30266,7 +30266,7 @@
       'block',
       'unblock'
     ];
-    const isSupportedMessage = data => isObject(data) && SUPPORTED_MESSAGE_ACTIONS.indexOf(data.mceAction) !== -1;
+    const isSupportedMessage = data => isObject(data) && SUPPORTED_MESSAGE_ACTIONS.indexOf(data.mceAction) != -1;
     const isCustomMessage = data => !isSupportedMessage(data) && isObject(data) && has$2(data, 'mceAction');
     const handleMessage = (editor, api, data) => {
       switch (data.mceAction) {

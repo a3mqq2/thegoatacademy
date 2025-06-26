@@ -242,7 +242,7 @@
 
                 <!-- Mid Exam -->
                 <tr
-                  v-if="showMidExam && midExamDate && idx === Math.floor(scheduleList.length / 2) - 1"
+                  v-if="showMidExam && midExamDate && idx == Math.floor(scheduleList.length / 2) - 1"
                   class="bg-primary text-center text-light align-middle"
                 >
                   <td colspan="6">
@@ -413,7 +413,7 @@ import instance from '../instance'
 
 const pad = n => String(n).padStart(2, '0')
 const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const skipFriday = d => { if (d.getDay() === 5) d.setDate(d.getDate() + 1); return d }
+const skipFriday = d => { if (d.getDay() == 5) d.setDate(d.getDate() + 1); return d }
 function nextFreeDay (base, occupied) {
   const d = new Date(base)
   while (true) {
@@ -467,7 +467,7 @@ export default defineComponent({
       { label: 'Thu', value: 4 },
       { label: 'Fri', value: 5 }
     ])
-    const selectableDays = computed(() => days.value.filter(d => d.value !== 5))
+    const selectableDays = computed(() => days.value.filter(d => d.value != 5))
 
     const selectedDays       = ref([])
     const storedSelectedDays = ref([])
@@ -499,7 +499,7 @@ export default defineComponent({
     const dateConfigPre = ref({ dateFormat: 'Y-m-d', allowInput: true })
 
     onMounted(() => {
-      selectedDays.value = days.value.filter(d => d.value !== 5)
+      selectedDays.value = days.value.filter(d => d.value != 5)
       fetchRequirements()
     })
 
@@ -539,7 +539,7 @@ export default defineComponent({
     })
 
     const filteredStudents = computed(() => {
-      const available = allStudents.value.filter(s => !studentsList.value.some(ss => ss.id === s.id))
+      const available = allStudents.value.filter(s => !studentsList.value.some(ss => ss.id == s.id))
       if (!matchStudentSkills.value || !selectedCourseType.value?.skills) return available
       const ids = selectedCourseType.value.skills.map(s => s.id)
       return available.filter(s => s.skills?.some(sk => ids.includes(sk.id)))
@@ -565,7 +565,7 @@ export default defineComponent({
 
     function pushLecture (d) {
       scheduleList.value.push({
-        day: days.value.find(x => x.value === d.getDay()).label,
+        day: days.value.find(x => x.value == d.getDay()).label,
         date: fmtDate(d),
         fromTime: fromTime.value,
         toTime: toTime.value,
@@ -616,7 +616,7 @@ export default defineComponent({
       if (showMidExam.value) {
         let mid = midExamDate.value ? new Date(midExamDate.value) : null
 
-        const fits = d => d >= cur && !occupied.has(fmtDate(d)) && d.getDay() !== 5
+        const fits = d => d >= cur && !occupied.has(fmtDate(d)) && d.getDay() != 5
 
         if (!mid || !fits(mid)) {
           mid = new Date(nextFreeDay(cur, occupied))
@@ -659,9 +659,9 @@ export default defineComponent({
       finalExamDate.value = showFinalExam.value ? fmtDate(lastLecture) : ''
 
       /* ────── Progress tests ────── */
-      if (progressTestDay.value !== null) {
+      if (progressTestDay.value != null) {
         let p = new Date(startDate.value)
-        while (p.getDay() !== progressTestDay.value) {
+        while (p.getDay() != progressTestDay.value) {
           p.setDate(p.getDate() + 1)
           skipFriday(p)
         }
@@ -671,7 +671,7 @@ export default defineComponent({
 
         while (p <= end) {
           const dStr = fmtDate(p)
-          const dayLabel = days.value.find(d => d.value === progressTestDay.value).label
+          const dayLabel = days.value.find(d => d.value == progressTestDay.value).label
 
           progressTests.value.push({ week, date: dStr, day: dayLabel })
           scheduleList.value.push({
@@ -699,7 +699,7 @@ export default defineComponent({
     function removeSchedule (i) {
       if (scheduleList.value[i].progress) {
         const wk = scheduleList.value[i].week
-        progressTests.value = progressTests.value.filter(t => t.week !== wk)
+        progressTests.value = progressTests.value.filter(t => t.week != wk)
       }
       scheduleList.value.splice(i, 1)
     }
@@ -708,7 +708,7 @@ export default defineComponent({
       const cur = new Date(scheduleList.value[idx].date)
       cur.setDate(cur.getDate() + 1); skipFriday(cur)
       scheduleList.value.splice(idx + 1, 0, {
-        day: days.value.find(d => d.value === cur.getDay()).label,
+        day: days.value.find(d => d.value == cur.getDay()).label,
         date: fmtDate(cur),
         fromTime: fromTime.value,
         toTime: toTime.value,

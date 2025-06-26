@@ -106,7 +106,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -159,7 +159,7 @@
       const style = editor.dom.getStyle(listElm, 'listStyleType');
       return Optional.from(style);
     };
-    const isWithinNonEditable = (editor, element) => element !== null && !editor.dom.isEditable(element);
+    const isWithinNonEditable = (editor, element) => element != null && !editor.dom.isEditable(element);
     const isWithinNonEditableList = (editor, element) => {
       const parentList = editor.dom.getParent(element, 'ol,ul,dl');
       return isWithinNonEditable(editor, parentList) && editor.selection.isEditable();

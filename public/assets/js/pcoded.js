@@ -224,7 +224,7 @@ function setLayout() {
   main_layout_change(layout);
 
   // Load corresponding scripts or perform actions based on the layout value
-  if (layout !== null && layout !== '') {
+  if (layout != null && layout != '') {
     var script = document.createElement('script');
     if (layout === 'horizontal') {
       document.querySelector('.pc-sidebar').classList.add('d-none');
@@ -374,7 +374,7 @@ for (var t = 0; t < tc.length; t++) {
 var rtl_flag = false;
 var dark_flag = false;
 document.addEventListener('DOMContentLoaded', function () {
-  if (typeof Storage !== 'undefined') {
+  if (typeof Storage != 'undefined') {
     layout_change(localStorage.getItem('theme'));
   }
 });

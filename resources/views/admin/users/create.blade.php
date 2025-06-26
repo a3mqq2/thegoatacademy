@@ -413,7 +413,7 @@
 
       function createDaySelect(selectedDay = "") {
         let optionsHtml = daysList.map(day => {
-          const isSelected = (day === selectedDay) ? 'selected' : '';
+          const isSelected = (day == selectedDay) ? 'selected' : '';
           return `<option value="${day}" ${isSelected}>${day}</option>`;
         }).join("");
         return `

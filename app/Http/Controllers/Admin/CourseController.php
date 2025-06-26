@@ -771,7 +771,7 @@ class CourseController extends Controller
                 if ($stu->pivot->status != 'excluded') {
                     $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
     
-                    if ($course->groupType && strtolower($course->groupType->name) === 'private') {
+                    if ($course->groupType && strtolower($course->groupType->name) == 'private') {
                         $course->update(['status' => 'paused']);
                     }
     
@@ -792,7 +792,7 @@ class CourseController extends Controller
             }
     
             if (
-                $stu->pivot->status === 'excluded' &&
+                $stu->pivot->status == 'excluded' &&
                 $absences < $course->stop_absent &&
                 $missHw  < $course->stop_homework
             ) {

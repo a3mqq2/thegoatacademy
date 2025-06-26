@@ -113,7 +113,7 @@
     };
     const hasDraft = editor => {
       var _a;
-      const time = parseInt((_a = global$2.getItem(getAutoSavePrefix(editor) + 'time')) !== null && _a !== void 0 ? _a : '0', 10) || 0;
+      const time = parseInt((_a = global$2.getItem(getAutoSavePrefix(editor) + 'time')) != null && _a != void 0 ? _a : '0', 10) || 0;
       if (new Date().getTime() - time > getAutoSaveRetention(editor)) {
         removeDraft(editor, false);
         return false;
@@ -124,7 +124,7 @@
       const prefix = getAutoSavePrefix(editor);
       global$2.removeItem(prefix + 'draft');
       global$2.removeItem(prefix + 'time');
-      if (fire !== false) {
+      if (fire != false) {
         fireRemoveDraft(editor);
       }
     };
@@ -143,7 +143,7 @@
       var _a;
       const prefix = getAutoSavePrefix(editor);
       if (hasDraft(editor)) {
-        editor.setContent((_a = global$2.getItem(prefix + 'draft')) !== null && _a !== void 0 ? _a : '', { format: 'raw' });
+        editor.setContent((_a = global$2.getItem(prefix + 'draft')) != null && _a != void 0 ? _a : '', { format: 'raw' });
         fireRestoreDraft(editor);
       }
     };

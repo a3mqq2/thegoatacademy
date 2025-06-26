@@ -118,7 +118,7 @@
                      <button v-if="isScheduleIncomplete" class="btn btn-sm btn-success" @click="addScheduleAfter(idx)">+ Day</button>
                    </td>
                  </tr>
-                 <tr v-if="showMidExam && midExamDate && idx===Math.floor(scheduleList.length/2)-1" class="bg-primary text-light align-middle">
+                 <tr v-if="showMidExam && midExamDate && idx==Math.floor(scheduleList.length/2)-1" class="bg-primary text-light align-middle">
                    <td colspan="6">
                      <div class="d-flex justify-content-between align-items-center">
                        <span>MID exam: <flatpickr v-model="midExamDate" :config="dateConfig" class="mx-2" /> ({{ getDayName(midExamDate) }})</span>
@@ -203,7 +203,7 @@
  const pad=n=>String(n).padStart(2,'0')
  const fmtDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`
  const getLabel=(d)=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]
- const skipFriday=d=>{if(d.getDay()===5)d.setDate(d.getDate()+1);return d}
+ const skipFriday=d=>{if(d.getDay()==5)d.setDate(d.getDate()+1);return d}
  function nextFreeDay(base,occ){const d=new Date(base);while(true){skipFriday(d);const s=fmtDate(d);if(!occ.has(s))return s;d.setDate(d.getDate()+1)}}
  
  export default defineComponent({
@@ -218,7 +218,7 @@
      const showPreTest=ref(true),showMidExam=ref(true),showFinalExam=ref(true)
      const studentCapacity=ref(''),whatsappGroupLink=ref('')
      const days=ref([{label:'Sat',value:6},{label:'Sun',value:0},{label:'Mon',value:1},{label:'Tue',value:2},{label:'Wed',value:3},{label:'Thu',value:4},{label:'Fri',value:5}])
-     const selectableDays=computed(()=>days.value.filter(d=>d.value!==5))
+     const selectableDays=computed(()=>days.value.filter(d=>d.value!=5))
      const selectedDays=ref([]),storedSelectedDays=ref([]),scheduleList=ref([]),progressTests=ref([])
      const matchInstructorSkills=ref(false),matchStudentSkills=ref(false),showFields=ref(false),loading=ref(true),globalLoading=ref(false)
      const studentsList=ref([]),selectedStudent=ref(null),showStudentModal=ref(false)
@@ -226,22 +226,22 @@
      const progressTestDay=ref(null),dateConfig=ref({dateFormat:'Y-m-d',allowInput:true}),dateConfigPre=ref({dateFormat:'Y-m-d',allowInput:true})
      const initialized=ref(false)
  
-     onMounted(()=>{selectedDays.value=days.value.filter(d=>d.value!==5);fetchRequirements()})
+     onMounted(()=>{selectedDays.value=days.value.filter(d=>d.value!=5);fetchRequirements()})
      async function fetchRequirements(){globalLoading.value=true
        try{const{data}=await instance.get('/course-requirements',{params:{id:props.id}})
          courseTypes.value=data.courseTypes||[];groupTypes.value=data.groupTypes||[];instructors.value=data.instructors||[];meetingPlatforms.value=data.meeting_platforms||[];levels.value=data.levels||[];allStudents.value=data.students||[]
          if(data.course)populateCourse(data.course)
        }finally{loading.value=false;globalLoading.value=false}}
      function populateCourse(c){
-       selectedCourseType.value=courseTypes.value.find(x=>x.id===c.course_type_id)||null
-       selectedGroupType.value=groupTypes.value.find(x=>x.id===c.group_type_id)||null
-       selectedInstructor.value=instructors.value.find(x=>x.id===c.instructor_id)||null
-       selectedMeetingPlatform.value=meetingPlatforms.value.find(x=>x.id===c.meeting_platform_id)||null
+       selectedCourseType.value=courseTypes.value.find(x=>x.id==c.course_type_id)||null
+       selectedGroupType.value=groupTypes.value.find(x=>x.id==c.group_type_id)||null
+       selectedInstructor.value=instructors.value.find(x=>x.id==c.instructor_id)||null
+       selectedMeetingPlatform.value=meetingPlatforms.value.find(x=>x.id==c.meeting_platform_id)||null
        startDate.value=c.start_date||'';[fromTime.value,toTime.value]=c.time.split(' - ')
        preTestDate.value=c.pre_test_date||'';midExamDate.value=c.mid_exam_date||'';finalExamDate.value=c.final_exam_date||''
        showPreTest.value=!!c.pre_test_date;showMidExam.value=!!c.mid_exam_date;showFinalExam.value=!!c.final_exam_date
        progressTestDay.value=c.progress_test_day||null;studentCapacity.value=c.student_capacity||'';whatsappGroupLink.value=c.whatsapp_group_link||''
-       if(c.days){const parts=c.days.split('-');selectedDays.value=days.value.filter(d=>parts.includes(d.label));storedSelectedDays.value=parts.map(l=>days.value.find(d=>d.label===l).value)}
+       if(c.days){const parts=c.days.split('-');selectedDays.value=days.value.filter(d=>parts.includes(d.label));storedSelectedDays.value=parts.map(l=>days.value.find(d=>d.label==l).value)}
        scheduleList.value=[]
        if(c.schedules){c.schedules.forEach(s=>scheduleList.value.push({day:s.day,date:s.date,fromTime:s.from_time,toTime:s.to_time,progress:false}))}
        if(c.progress_tests){progressTests.value=c.progress_tests.map(pt=>({week:pt.week,date:pt.date,day:getLabel(new Date(pt.date))}))
@@ -254,7 +254,7 @@
      watch(preTestDate,val=>{if(initialized.value&&startDate.value&&new Date(val)>new Date(startDate.value)){preTestDate.value=startDate.value;$toastr.error('Pre-test date cannot be after the course start date')}})
      watch(midExamDate,()=>{if(initialized.value)generateSchedule()})
      const filteredInstructors=computed(()=>{if(!matchInstructorSkills.value||!selectedCourseType.value?.skills)return instructors.value;const ids=selectedCourseType.value.skills.map(s=>s.id);return instructors.value.filter(i=>i.skills?.some(s=>ids.includes(s.id)))})
-     const filteredStudents=computed(()=>{const available=allStudents.value.filter(s=>!studentsList.value.some(ss=>ss.id===s.id));if(!matchStudentSkills.value||!selectedCourseType.value?.skills)return available;const ids=selectedCourseType.value.skills.map(s=>s.id);return available.filter(s=>s.skills?.some(sk=>ids.includes(sk.id)))})
+     const filteredStudents=computed(()=>{const available=allStudents.value.filter(s=>!studentsList.value.some(ss=>ss.id==s.id));if(!matchStudentSkills.value||!selectedCourseType.value?.skills)return available;const ids=selectedCourseType.value.skills.map(s=>s.id);return available.filter(s=>s.skills?.some(sk=>ids.includes(sk.id)))})
      const isScheduleIncomplete=computed(()=>scheduleList.value.filter(r=>!r.progress).length<+(selectedCourseType.value?.duration||0))
      function updateToTime(){if(!fromTime.value||!selectedGroupType.value?.lesson_duration){toTime.value='';return}const plus=+selectedGroupType.value.lesson_duration;const[h,m]=fromTime.value.split(':').map(Number);const tot=h*60+m+plus;toTime.value=`${pad(Math.floor(tot/60)%24)}:${pad(tot%60)}`}
      function lectureIndex(idx){let n=0;for(let i=0;i<=idx;i++)if(!scheduleList.value[i].progress)n++;return n}
@@ -276,7 +276,7 @@
        if(showPreTest.value){if(!preTestDate.value||new Date(preTestDate.value)>new Date(startDate.value)){preTestDate.value=startDate.value}occupied.add(preTestDate.value)}else preTestDate.value=''
        const half=Math.floor(totalLessons/2);let cur=new Date(startDate.value);cur.setDate(cur.getDate()+1);skipFriday(cur)
        let before=0;while(before<half){if(storedSelectedDays.value.includes(cur.getDay())&&!occupied.has(fmtDate(cur))){pushLecture(cur);occupied.add(fmtDate(cur));before++}cur.setDate(cur.getDate()+1);skipFriday(cur)}
-       if(showMidExam.value){let mid=midExamDate.value?new Date(midExamDate.value):null;const fits=d=>d>=cur&&!occupied.has(fmtDate(d))&&d.getDay()!==5
+       if(showMidExam.value){let mid=midExamDate.value?new Date(midExamDate.value):null;const fits=d=>d>=cur&&!occupied.has(fmtDate(d))&&d.getDay()!=5
          if(!mid||!fits(mid)){mid=new Date(nextFreeDay(cur,occupied))}midExamDate.value=fmtDate(mid);occupied.add(midExamDate.value);cur=new Date(midExamDate.value);cur.setDate(cur.getDate()+1);skipFriday(cur)}else midExamDate.value=''
        while(scheduleList.value.filter(r=>!r.progress).length<totalLessons){if(storedSelectedDays.value.includes(cur.getDay())&&!occupied.has(fmtDate(cur))){pushLecture(cur);occupied.add(fmtDate(cur))}cur.setDate(cur.getDate()+1);skipFriday(cur)}
        const lastLecture=new Date(scheduleList.value.filter(r=>!r.progress).slice(-1)[0].date);lastLecture.setDate(lastLecture.getDate()+1);skipFriday(lastLecture);finalExamDate.value=showFinalExam.value?fmtDate(lastLecture):''
@@ -286,7 +286,7 @@
      const deletePreTest=()=>{showPreTest.value=false;preTestDate.value='';generateSchedule()}
      const deleteMidExam=()=>{showMidExam.value=false;midExamDate.value='';generateSchedule()}
      const deleteFinalExam=()=>{showFinalExam.value=false;finalExamDate.value='';generateSchedule()}
-     function removeSchedule(i){if(scheduleList.value[i].progress){const wk=scheduleList.value[i].week;progressTests.value=progressTests.value.filter(t=>t.week!==wk)}scheduleList.value.splice(i,1)}
+     function removeSchedule(i){if(scheduleList.value[i].progress){const wk=scheduleList.value[i].week;progressTests.value=progressTests.value.filter(t=>t.week!=wk)}scheduleList.value.splice(i,1)}
      function addScheduleAfter(idx){if(!isScheduleIncomplete.value)return;const cur=new Date(scheduleList.value[idx].date);cur.setDate(cur.getDate()+1);skipFriday(cur)
        scheduleList.value.splice(idx+1,0,{day:getLabel(cur),date:fmtDate(cur),fromTime:fromTime.value,toTime:toTime.value,progress:false})}
      function onStudentSelected(v){if(v){studentsList.value.push({...v});selectedStudent.value=null}}

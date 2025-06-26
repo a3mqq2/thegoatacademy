@@ -64,13 +64,13 @@ class ExamsController extends Controller
         if ($request->filled('exam_date_filter')) {
             $dateFilter = $request->exam_date_filter;
             $today      = Carbon::today();
-            if ($dateFilter === 'daily') {
+            if ($dateFilter == 'daily') {
                 $query->whereDate('exam_date', $today);
-            } elseif ($dateFilter === 'weekly') {
+            } elseif ($dateFilter == 'weekly') {
                 $startOfWeek = $today->copy()->startOfWeek();
                 $endOfWeek   = $today->copy()->endOfWeek();
                 $query->whereBetween('exam_date', [$startOfWeek, $endOfWeek]);
-            } elseif ($dateFilter === 'afterTwoDays') {
+            } elseif ($dateFilter == 'afterTwoDays') {
                 $targetDate = $today->copy()->addDays(2);
                 $query->whereDate('exam_date', $targetDate);
             }
@@ -137,7 +137,7 @@ class ExamsController extends Controller
             $new = $exam->examiner
                 ? $exam->examiner->name
                 : 'NULL';
-            if ($old !== $new) {
+            if ($old != $new) {
                 $changes[] = "Examiner changed from [{$old}] to [{$new}]";
             }
         }
@@ -211,7 +211,7 @@ class ExamsController extends Controller
     public function showRecordForm($examId)
     {
         $exam = Exam::with(['course', 'course.students'])->findOrFail($examId);
-        if ($exam->examiner_id !== \Illuminate\Support\Facades\Auth::id()) {
+        if ($exam->examiner_id != \Illuminate\Support\Facades\Auth::id()) {
             abort(403, 'You are not authorized to record grades for this exam.');
         }
         $students = $exam->students;  // This relies on the defined relationship in the Exam model
@@ -270,7 +270,7 @@ class ExamsController extends Controller
 
         $exam->update(['status' => 'completed']);
 
-        if ($exam->exam_type === 'final') {
+        if ($exam->exam_type == 'final') {
             $exam->course->update(['status' => 'completed']);
         }
 
@@ -350,14 +350,14 @@ class ExamsController extends Controller
         $origStatus = $exam->status;
     
         // قواعد التواريخ بناءً على نوع الامتحان
-        if ($exam->exam_type === 'pre') {
+        if ($exam->exam_type == 'pre') {
             $start = Carbon::parse($course->start_date)->startOfDay();
             if ($newDate->gt($start)) {
                 return back()->withErrors(['exam_date' => 'Pre-test date cannot be after course start date.']);
             }
         }
     
-        if ($exam->exam_type === 'mid') {
+        if ($exam->exam_type == 'mid') {
             // نقوم بحساب الموعد المقترح (منتصف مدة الدورة)
             $halfIndex = intdiv($course->courseType->duration, 2) - 1;
             $sortedSchedules = $course->schedules()->orderBy('date')->get();
@@ -369,7 +369,7 @@ class ExamsController extends Controller
             }
         }
     
-        if ($exam->exam_type === 'final') {
+        if ($exam->exam_type == 'final') {
             // final لا يمكن تقديمه قبل آخر محاضرة
             $lastClassDate = $course->schedules()->orderByDesc('date')->first();
             if ($lastClassDate && $newDate->lte(Carbon::parse($lastClassDate->date))) {
@@ -451,7 +451,7 @@ class ExamsController extends Controller
     
         $exam = Exam::findOrFail($data['exam_id']);
         $exam->examiner_id = $data['examiner_id'];
-        $exam->status = $exam->status === 'new' ? 'assigned' : $exam->status;
+        $exam->status = $exam->status == 'new' ? 'assigned' : $exam->status;
         $exam->save();
     
         return back()->with('success', 'Examiner assigned successfully');

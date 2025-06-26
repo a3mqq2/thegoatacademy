@@ -83,7 +83,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -116,12 +116,12 @@
 
     var global$1 = tinymce.util.Tools.resolve('tinymce.dom.DOMUtils');
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const prismjs = function (global, module, exports) {
       const oldprism = window.Prism;
       window.Prism = { manual: true };
-      var _self = typeof window !== 'undefined' ? window : typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope ? self : {};
+      var _self = typeof window != 'undefined' ? window : typeof WorkerGlobalScope != 'undefined' && self instanceof WorkerGlobalScope ? self : {};
       var Prism = function (_self) {
         var lang = /(?:^|\s)lang(?:uage)?-([\w-]+)(?=\s|$)/i;
         var uniqueId = 0;
@@ -480,7 +480,7 @@
                 patternObj.pattern = RegExp(patternObj.pattern.source, flags + 'g');
               }
               var pattern = patternObj.pattern || patternObj;
-              for (var currentNode = startNode.next, pos = startPos; currentNode !== tokenList.tail; pos += currentNode.value.length, currentNode = currentNode.next) {
+              for (var currentNode = startNode.next, pos = startPos; currentNode != tokenList.tail; pos += currentNode.value.length, currentNode = currentNode.next) {
                 if (rematch && pos >= rematch.reach) {
                   break;
                 }
@@ -511,7 +511,7 @@
                   if (currentNode.value instanceof Token) {
                     continue;
                   }
-                  for (var k = currentNode; k !== tokenList.tail && (p < to || typeof k.value === 'string'); k = k.next) {
+                  for (var k = currentNode; k != tokenList.tail && (p < to || typeof k.value === 'string'); k = k.next) {
                     removeCount++;
                     p += k.value.length;
                   }
@@ -587,7 +587,7 @@
         }
         function removeRange(list, node, count) {
           var next = node.next;
-          for (var i = 0; i < count && next !== list.tail; i++) {
+          for (var i = 0; i < count && next != list.tail; i++) {
             next = next.next;
           }
           node.next = next;
@@ -597,7 +597,7 @@
         function toArray(list) {
           var array = [];
           var node = list.head.next;
-          while (node !== list.tail) {
+          while (node != list.tail) {
             array.push(node.value);
             node = node.next;
           }
@@ -647,10 +647,10 @@
         }
         return _;
       }(_self);
-      if (typeof module !== 'undefined' && module.exports) {
+      if (typeof module != 'undefined' && module.exports) {
         module.exports = Prism;
       }
-      if (typeof global !== 'undefined') {
+      if (typeof global != 'undefined') {
         global.Prism = Prism;
       }
       Prism.languages.clike = {
@@ -689,7 +689,7 @@
         Object.defineProperties(Prism.languages['markup-templating'] = {}, {
           buildPlaceholders: {
             value: function (env, language, placeholderPattern, replaceFilter) {
-              if (env.language !== language) {
+              if (env.language != language) {
                 return;
               }
               var tokenStack = env.tokenStack = [];
@@ -699,7 +699,7 @@
                 }
                 var i = tokenStack.length;
                 var placeholder;
-                while (env.code.indexOf(placeholder = getPlaceholder(language, i)) !== -1) {
+                while (env.code.indexOf(placeholder = getPlaceholder(language, i)) != -1) {
                   ++i;
                 }
                 tokenStack[i] = match;
@@ -710,7 +710,7 @@
           },
           tokenizePlaceholders: {
             value: function (env, language) {
-              if (env.language !== language || !env.tokenStack) {
+              if (env.language != language || !env.tokenStack) {
                 return;
               }
               env.grammar = Prism.languages[language];
@@ -2210,7 +2210,7 @@
     const get = editor => Global.Prism && useGlobalPrismJS(editor) ? Global.Prism : prismjs;
 
     const isCodeSample = elm => {
-      return isNonNullable(elm) && elm.nodeName === 'PRE' && elm.className.indexOf('language-') !== -1;
+      return isNonNullable(elm) && elm.nodeName === 'PRE' && elm.className.indexOf('language-') != -1;
     };
 
     const getSelectedCodeSample = editor => {
@@ -2379,7 +2379,7 @@
       editor.on('SetContent', () => {
         const dom = editor.dom;
         const unprocessedCodeSamples = global.grep(dom.select('pre'), elm => {
-          return isCodeSample(elm) && dom.getAttrib(elm, 'data-mce-highlighted') !== 'true';
+          return isCodeSample(elm) && dom.getAttrib(elm, 'data-mce-highlighted') != 'true';
         });
         if (unprocessedCodeSamples.length) {
           editor.undoManager.transact(() => {
@@ -2388,7 +2388,7 @@
               global.each(dom.select('br', elm), elm => {
                 dom.replace(editor.getDoc().createTextNode('\n'), elm);
               });
-              elm.innerHTML = dom.encode((_a = elm.textContent) !== null && _a !== void 0 ? _a : '');
+              elm.innerHTML = dom.encode((_a = elm.textContent) != null && _a != void 0 ? _a : '');
               get(editor).highlightElement(elm);
               dom.setAttrib(elm, 'data-mce-highlighted', true);
               elm.className = trim(elm.className);
@@ -2401,7 +2401,7 @@
           var _a;
           for (let i = 0, l = nodes.length; i < l; i++) {
             const node = nodes[i];
-            const isCodeSample = ((_a = node.attr('class')) !== null && _a !== void 0 ? _a : '').indexOf('language-') !== -1;
+            const isCodeSample = ((_a = node.attr('class')) != null && _a != void 0 ? _a : '').indexOf('language-') != -1;
             if (isCodeSample) {
               node.attr('contenteditable', 'false');
               node.attr('data-mce-highlighted', 'false');

@@ -215,7 +215,7 @@
             <td>
               <select name="shifts[][day]" class="form-control" required>
                 @foreach($daysList as $d)
-                  <option value="{{ $d }}" ${day === '{{ $d }}' ? 'selected' : ''}>{{ $d }}</option>
+                  <option value="{{ $d }}" ${day == '{{ $d }}' ? 'selected' : ''}>{{ $d }}</option>
                 @endforeach
               </select>
             </td>

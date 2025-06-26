@@ -128,7 +128,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -195,14 +195,14 @@
         for (let i = 0, len = xs.length; i < len; i++) {
           const x = xs[i];
           const type = f(x);
-          if (type !== wasType) {
+          if (type != wasType) {
             r.push(group);
             group = [];
           }
           wasType = type;
           group.push(x);
         }
-        if (group.length !== 0) {
+        if (group.length != 0) {
           r.push(group);
         }
         return r;
@@ -234,7 +234,7 @@
     const hasOwnProperty = Object.hasOwnProperty;
     const has = (obj, key) => hasOwnProperty.call(obj, key);
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    typeof window != 'undefined' ? window : Function('return this;')();
 
     const DOCUMENT = 9;
     const DOCUMENT_FRAGMENT = 11;
@@ -293,7 +293,7 @@
       fromPoint
     };
 
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -349,7 +349,7 @@
     const get$1 = element => api.get(element);
 
     const compareDocumentPosition = (a, b, match) => {
-      return (a.compareDocumentPosition(b) & match) !== 0;
+      return (a.compareDocumentPosition(b) & match) != 0;
     };
     const documentPositionPreceding = (a, b) => {
       return compareDocumentPosition(a, b, Node.DOCUMENT_POSITION_PRECEDING);
@@ -402,7 +402,7 @@
       if (isBoundary(dom, node)) {
         return;
       }
-      const rootBlock = (_a = dom.getParent(rootNode, dom.isBlock)) !== null && _a !== void 0 ? _a : dom.getRoot();
+      const rootBlock = (_a = dom.getParent(rootNode, dom.isBlock)) != null && _a != void 0 ? _a : dom.getRoot();
       const walker = new global(node, rootBlock);
       const walkerFn = forwards ? walker.next.bind(walker) : walker.prev.bind(walker);
       walk(dom, walkerFn, node, {
@@ -545,7 +545,7 @@
           if (textNode.length === pos.finish && pos.start === 0) {
             wrap(pos.element, wrapper);
           } else {
-            if (textNode.length !== pos.finish) {
+            if (textNode.length != pos.finish) {
               textNode.splitText(pos.finish);
             }
             const matchNode = textNode.splitText(pos.start);
@@ -687,13 +687,13 @@
     };
     const isMatchSpan = node => {
       const matchIndex = getElmIndex(node);
-      return matchIndex !== null && matchIndex.length > 0;
+      return matchIndex != null && matchIndex.length > 0;
     };
     const replace = (editor, currentSearchState, text, forward, all) => {
       const searchState = currentSearchState.get();
       const currentIndex = searchState.index;
       let currentMatchIndex, nextIndex = currentIndex;
-      forward = forward !== false;
+      forward = forward != false;
       const node = editor.getBody();
       const nodes = global$1.grep(global$1.toArray(node.getElementsByTagName('span')), isMatchSpan);
       for (let i = 0; i < nodes.length; i++) {
@@ -741,7 +741,7 @@
       const nodes = global$1.toArray(editor.getBody().getElementsByTagName('span'));
       for (let i = 0; i < nodes.length; i++) {
         const nodeIndex = getElmIndex(nodes[i]);
-        if (nodeIndex !== null && nodeIndex.length) {
+        if (nodeIndex != null && nodeIndex.length) {
           if (nodeIndex === searchState.index.toString()) {
             if (!startContainer) {
               startContainer = nodes[i].firstChild;
@@ -761,7 +761,7 @@
         const rng = editor.dom.createRng();
         rng.setStart(startContainer, 0);
         rng.setEnd(endContainer, endContainer.data.length);
-        if (keepEditorSelection !== false) {
+        if (keepEditorSelection != false) {
           editor.selection.setRng(rng);
         }
         return rng;

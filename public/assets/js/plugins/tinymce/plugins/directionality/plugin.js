@@ -109,7 +109,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -206,17 +206,17 @@
 
     const is = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
@@ -224,7 +224,7 @@
       }
     };
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    typeof window != 'undefined' ? window : Function('return this;')();
 
     const name = element => {
       const r = element.dom.nodeName;
@@ -293,7 +293,7 @@
 
     const ancestor = (scope, selector, isRoot) => ancestor$1(scope, e => is(e, selector), isRoot);
 
-    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const get = (element, property) => {
       const dom = element.dom;
@@ -329,7 +329,7 @@
           } else {
             set(normalizedBlock, 'dir', dir);
           }
-          if (getDirection(normalizedBlock) !== dir) {
+          if (getDirection(normalizedBlock) != dir) {
             dom.setStyle(normalizedBlock.dom, 'direction', dir);
           }
           if (isBlockElementListItem) {

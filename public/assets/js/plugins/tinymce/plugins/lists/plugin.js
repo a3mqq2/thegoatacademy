@@ -123,7 +123,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -200,14 +200,14 @@
         for (let i = 0, len = xs.length; i < len; i++) {
           const x = xs[i];
           const type = f(x);
-          if (type !== wasType) {
+          if (type != wasType) {
             r.push(group);
             group = [];
           }
           wasType = type;
           group.push(x);
         }
-        if (group.length !== 0) {
+        if (group.length != 0) {
           r.push(group);
         }
         return r;
@@ -312,17 +312,17 @@
 
     const is$1 = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
@@ -338,11 +338,11 @@
     };
     const is = is$1;
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const path = (parts, scope) => {
-      let o = scope !== undefined && scope !== null ? scope : Global;
-      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+      let o = scope != undefined && scope != null ? scope : Global;
+      for (let i = 0; i < parts.length && o != undefined && o != null; ++i) {
         o = o[parts[i]];
       }
       return o;
@@ -510,7 +510,7 @@
     };
     const remove = element => {
       const dom = element.dom;
-      if (dom.parentNode !== null) {
+      if (dom.parentNode != null) {
         dom.parentNode.removeChild(dom);
       }
     };
@@ -646,7 +646,7 @@
       }
       while (node = contentNode.firstChild) {
         const nodeName = node.nodeName;
-        if (!hasContentNode && (nodeName !== 'SPAN' || node.getAttribute('data-mce-type') !== 'bookmark')) {
+        if (!hasContentNode && (nodeName != 'SPAN' || node.getAttribute('data-mce-type') != 'bookmark')) {
           hasContentNode = true;
         }
         if (isBlock(node, blockElements)) {
@@ -782,7 +782,7 @@
         return findSubLists(parentList);
       } else {
         return filter$1(selectedBlocks, elm => {
-          return isListNode(elm) && parentList !== elm;
+          return isListNode(elm) && parentList != elm;
         });
       }
     };
@@ -834,7 +834,7 @@
 
     const isCustomList = list => /\btox\-/.test(list.className);
     const inList = (parents, listName) => findUntil(parents, isListNode, isTableCellNode).exists(list => list.nodeName === listName && !isCustomList(list));
-    const isWithinNonEditable = (editor, element) => element !== null && !editor.dom.isEditable(element);
+    const isWithinNonEditable = (editor, element) => element != null && !editor.dom.isEditable(element);
     const selectionIsWithinNonEditableList = editor => {
       const parentList = getParentList(editor);
       return isWithinNonEditable(editor, parentList);
@@ -872,7 +872,7 @@
     const isNotEmpty = s => s.length > 0;
     const isEmpty$1 = s => !isNotEmpty(s);
 
-    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const internalSet = (dom, property, value) => {
       if (!isString(value)) {
@@ -953,7 +953,7 @@
       });
     };
     const normalizeSegment = (segment, entry) => {
-      if (name(segment.list) !== entry.listType) {
+      if (name(segment.list) != entry.listType) {
         segment.list = mutate(segment.list, entry.listType);
       }
       setAll(segment.list, entry.listAttributes);
@@ -1034,7 +1034,7 @@
       }
     };
     const cleanListProperties = entry => {
-      entry.listAttributes = filter(entry.listAttributes, (_value, key) => key !== 'start');
+      entry.listAttributes = filter(entry.listAttributes, (_value, key) => key != 'start');
     };
     const closestSiblingEntry = (entries, start) => {
       const depth = entries[start].depth;
@@ -1072,7 +1072,7 @@
       if (isComment(item)) {
         return [{
             depth: depth + 1,
-            content: (_a = item.dom.nodeValue) !== null && _a !== void 0 ? _a : '',
+            content: (_a = item.dom.nodeValue) != null && _a != void 0 ? _a : '',
             dirty: false,
             isSelected: false,
             isComment: true
@@ -1235,7 +1235,7 @@
             if (node === container) {
               return idx;
             }
-            if (!isElement(node) || node.getAttribute('data-mce-type') !== 'bookmark') {
+            if (!isElement(node) || node.getAttribute('data-mce-type') != 'bookmark') {
               idx++;
             }
             node = node.nextSibling;
@@ -1313,7 +1313,7 @@
         container = container.nextSibling;
       }
       const findBlockAncestor = node => {
-        while (!editor.dom.isBlock(node) && node.parentNode && root !== node) {
+        while (!editor.dom.isBlock(node) && node.parentNode && root != node) {
           node = node.parentNode;
         }
         return node;
@@ -1334,10 +1334,10 @@
         if (isZwsp(container.textContent)) {
           container = findBetterContainer(container, false).getOr(container);
         } else {
-          if (container.parentNode !== null && isInline(editor, container.parentNode)) {
+          if (container.parentNode != null && isInline(editor, container.parentNode)) {
             container = container.parentNode;
           }
-          while (container.previousSibling !== null && (isInline(editor, container.previousSibling) || isTextNode$1(container.previousSibling))) {
+          while (container.previousSibling != null && (isInline(editor, container.previousSibling) || isTextNode$1(container.previousSibling))) {
             container = container.previousSibling;
           }
         }
@@ -1346,15 +1346,15 @@
         if (isZwsp(container.textContent)) {
           container = findBetterContainer(container, true).getOr(container);
         } else {
-          if (container.parentNode !== null && isInline(editor, container.parentNode)) {
+          if (container.parentNode != null && isInline(editor, container.parentNode)) {
             container = container.parentNode;
           }
-          while (container.nextSibling !== null && (isInline(editor, container.nextSibling) || isTextNode$1(container.nextSibling))) {
+          while (container.nextSibling != null && (isInline(editor, container.nextSibling) || isTextNode$1(container.nextSibling))) {
             container = container.nextSibling;
           }
         }
       }
-      while (container.parentNode !== root) {
+      while (container.parentNode != root) {
         const parent = container.parentNode;
         if (isTextBlock(editor, container)) {
           return container;
@@ -1505,7 +1505,7 @@
       }
     };
     const updateList$1 = (editor, list, listName, detail) => {
-      if (list.nodeName !== listName) {
+      if (list.nodeName != listName) {
         const newList = editor.dom.rename(list, listName);
         updateListWithDetails(editor.dom, newList, detail);
         fireListEvent(editor, listToggleActionFromListName(listName), newList);
@@ -1523,7 +1523,7 @@
           }
         }
       });
-      if (list.nodeName !== listName) {
+      if (list.nodeName != listName) {
         const newList = editor.dom.rename(list, listName);
         updateListWithDetails(editor.dom, newList, detail);
         fireListEvent(editor, listToggleActionFromListName(listName), newList);
@@ -1705,7 +1705,7 @@
       const nestedLists = contains$1 ? dom.getParents(fromElm, isListNode, toElm) : [];
       dom.remove(fromElm);
       each$1(nestedLists, list => {
-        if (isEmpty$2(dom, list) && list !== dom.getRoot()) {
+        if (isEmpty$2(dom, list) && list != dom.getRoot()) {
           dom.remove(list);
         }
       });
@@ -1744,7 +1744,7 @@
         const rng = normalizeRange(selection.getRng());
         const otherLi = dom.getParent(findNextCaretContainer(editor, rng, isForward, root), 'LI', root);
         const willMergeParentIntoChild = otherLi && (isForward ? dom.isChildOf(li, otherLi) : dom.isChildOf(otherLi, li));
-        if (otherLi && otherLi !== li && !willMergeParentIntoChild) {
+        if (otherLi && otherLi != li && !willMergeParentIntoChild) {
           editor.undoManager.transact(() => {
             if (isForward) {
               mergeForward(editor, rng, otherLi, li);
@@ -1757,7 +1757,7 @@
             }
           });
           return true;
-        } else if (willMergeParentIntoChild && !isForward && otherLi !== li) {
+        } else if (willMergeParentIntoChild && !isForward && otherLi != li) {
           editor.undoManager.transact(() => {
             if (rng.commonAncestorContainer.parentElement) {
               const bookmark = createBookmark(rng);
@@ -2086,7 +2086,7 @@
 
     const setupTabKey = editor => {
       editor.on('keydown', e => {
-        if (e.keyCode !== global$4.TAB || global$4.metaKeyPressed(e)) {
+        if (e.keyCode != global$4.TAB || global$4.metaKeyPressed(e)) {
           return;
         }
         editor.undoManager.transact(() => {

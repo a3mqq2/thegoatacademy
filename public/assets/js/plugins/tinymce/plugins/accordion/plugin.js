@@ -121,7 +121,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -194,7 +194,7 @@
       }
     };
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    typeof window != 'undefined' ? window : Function('return this;')();
 
     const COMMENT = 8;
     const DOCUMENT = 9;
@@ -282,24 +282,24 @@
 
     const is$2 = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
         }
       }
     };
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -317,7 +317,7 @@
     const blank = r => s => s.replace(r, '');
     const trim = blank(/^\s+|\s+$/g);
 
-    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const owner = element => SugarElement.fromDom(element.dom.ownerDocument);
     const documentOrOwner = dos => isDocument(dos) ? dos : owner(dos);
@@ -326,7 +326,7 @@
       const stop = isFunction(isRoot) ? isRoot : never;
       let dom = element.dom;
       const ret = [];
-      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+      while (dom.parentNode != null && dom.parentNode != undefined) {
         const rawParent = dom.parentNode;
         const p = SugarElement.fromDom(rawParent);
         ret.push(p);
@@ -486,7 +486,7 @@
 
     const remove = element => {
       const dom = element.dom;
-      if (dom.parentNode !== null) {
+      if (dom.parentNode != null) {
         dom.parentNode.removeChild(dom);
       }
     };
@@ -814,7 +814,7 @@
       });
     };
     const toggleDetailsElement = (details, state) => {
-      const shouldOpen = state !== null && state !== void 0 ? state : !isOpen(details);
+      const shouldOpen = state != null && state != void 0 ? state : !isOpen(details);
       if (shouldOpen) {
         details.setAttribute('open', 'open');
       } else {
@@ -844,7 +844,7 @@
       if (accordions.length === 0) {
         return;
       }
-      each$1(accordions, accordion => toggleDetailsElement(accordion, state !== null && state !== void 0 ? state : !isOpen(accordion)));
+      each$1(accordions, accordion => toggleDetailsElement(accordion, state != null && state != void 0 ? state : !isOpen(accordion)));
       fireToggleAllAccordionsEvent(editor, accordions, state);
     };
 
@@ -859,7 +859,7 @@
 
     const getClassList = node => {
       var _a, _b;
-      return (_b = (_a = node.attr('class')) === null || _a === void 0 ? void 0 : _a.split(' ')) !== null && _b !== void 0 ? _b : [];
+      return (_b = (_a = node.attr('class')) === null || _a === void 0 ? void 0 : _a.split(' ')) != null && _b != void 0 ? _b : [];
     };
     const addClasses = (node, classes) => {
       const classListSet = new Set([

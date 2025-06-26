@@ -21,7 +21,7 @@
 
     var global$2 = tinymce.util.Tools.resolve('tinymce.PluginManager');
 
-    const get$5 = fullscreenState => ({ isFullscreen: () => fullscreenState.get() !== null });
+    const get$5 = fullscreenState => ({ isFullscreen: () => fullscreenState.get() != null });
 
     const hasProto = (v, constructor, predicate) => {
       var _a;
@@ -144,7 +144,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -299,11 +299,11 @@
       }
     };
 
-    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window != 'undefined' ? window : Function('return this;')();
 
     const path = (parts, scope) => {
-      let o = scope !== undefined && scope !== null ? scope : Global;
-      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+      let o = scope != undefined && scope != null ? scope : Global;
+      for (let i = 0; i < parts.length && o != undefined && o != null; ++i) {
         o = o[parts[i]];
       }
       return o;
@@ -365,20 +365,20 @@
       element.dom.removeAttribute(key);
     };
 
-    const supports = element => element.dom.classList !== undefined;
+    const supports = element => element.dom.classList != undefined;
 
     const has = (element, clazz) => supports(element) && element.dom.classList.contains(clazz);
 
     const contains = (str, substr, start = 0, end) => {
       const idx = str.indexOf(substr, start);
-      if (idx !== -1) {
+      if (idx != -1) {
         return isUndefined(end) ? true : idx + substr.length <= end;
       } else {
         return false;
       }
     };
 
-    const isSupported$1 = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported$1 = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const fromHtml = (html, scope) => {
       const doc = scope || document;
@@ -418,24 +418,24 @@
 
     const is = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
         }
       }
     };
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all$1 = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -450,7 +450,7 @@
       const stop = isFunction(isRoot) ? isRoot : never;
       let dom = element.dom;
       const ret = [];
-      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+      while (dom.parentNode != null && dom.parentNode != undefined) {
         const rawParent = dom.parentNode;
         const p = SugarElement.fromDom(rawParent);
         ret.push(p);
@@ -910,7 +910,7 @@
     const SugarPosition = r;
 
     const get$1 = _DOC => {
-      const doc = _DOC !== undefined ? _DOC.dom : document;
+      const doc = _DOC != undefined ? _DOC.dom : document;
       const x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
       const y = doc.body.scrollTop || doc.documentElement.scrollTop;
       return SugarPosition(x, y);
@@ -973,22 +973,22 @@
       return getShadowRoot(elem).map(getShadowHost).getOrThunk(() => getBody(owner(elem)));
     };
     const getFullscreenElement = root => {
-      if (root.fullscreenElement !== undefined) {
+      if (root.fullscreenElement != undefined) {
         return root.fullscreenElement;
-      } else if (root.msFullscreenElement !== undefined) {
+      } else if (root.msFullscreenElement != undefined) {
         return root.msFullscreenElement;
-      } else if (root.webkitFullscreenElement !== undefined) {
+      } else if (root.webkitFullscreenElement != undefined) {
         return root.webkitFullscreenElement;
       } else {
         return null;
       }
     };
     const getFullscreenchangeEventName = () => {
-      if (document.fullscreenElement !== undefined) {
+      if (document.fullscreenElement != undefined) {
         return 'fullscreenchange';
-      } else if (document.msFullscreenElement !== undefined) {
+      } else if (document.msFullscreenElement != undefined) {
         return 'MSFullscreenChange';
-      } else if (document.webkitFullscreenElement !== undefined) {
+      } else if (document.webkitFullscreenElement != undefined) {
         return 'webkitfullscreenchange';
       } else {
         return 'fullscreenchange';
@@ -1031,7 +1031,7 @@
     const isAndroid = global.os.isAndroid();
     const matchColor = editorBody => {
       const color = get$2(editorBody, 'background-color');
-      return color !== undefined && color !== '' ? 'background-color:' + color + '!important' : bgFallback;
+      return color != undefined && color != '' ? 'background-color:' + color + '!important' : bgFallback;
     };
     const clobberStyles = (dom, container, editorBody) => {
       const gatherSiblings = element => {
@@ -1059,7 +1059,7 @@
       const clobberedEls = all('[' + attr + ']');
       each$1(clobberedEls, element => {
         const restore = get$3(element, attr);
-        if (restore && restore !== 'no-styles') {
+        if (restore && restore != 'no-styles') {
           setAll(element, dom.parseStyle(restore));
         } else {
           remove(element, 'style');
@@ -1147,7 +1147,7 @@
       if (!fullscreenInfo) {
         const fullscreenChangeHandler = bind$1(owner(fullscreenRoot), getFullscreenchangeEventName(), _evt => {
           if (getFullscreenNative(editor)) {
-            if (!isFullscreenElement(fullscreenRoot) && fullscreenState.get() !== null) {
+            if (!isFullscreenElement(fullscreenRoot) && fullscreenState.get() != null) {
               toggleFullscreen(editor, fullscreenState);
             }
           }
@@ -1208,7 +1208,7 @@
     };
 
     const makeSetupHandler = (editor, fullscreenState) => api => {
-      api.setActive(fullscreenState.get() !== null);
+      api.setActive(fullscreenState.get() != null);
       const editorEventCallback = e => api.setActive(e.state);
       editor.on('FullscreenStateChanged', editorEventCallback);
       return () => editor.off('FullscreenStateChanged', editorEventCallback);

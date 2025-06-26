@@ -4,7 +4,7 @@
 // =========================================================
 (function () {
   function hasClass(el, cls) {
-    return el.className.split(' ').indexOf(cls) !== -1;
+    return el.className.split(' ').indexOf(cls) != -1;
   }
 
   function pcodbnd(source, blacklist) {
@@ -24,7 +24,7 @@
           .split(' ');
 
         for (var i = 0, l = blacklist.length, clsInd; i < l; i++) {
-          if ((clsInd = clsArr.indexOf(blacklist[i])) !== -1) {
+          if ((clsInd = clsArr.indexOf(blacklist[i])) != -1) {
             clsArr.splice(clsInd, 1);
           }
         }

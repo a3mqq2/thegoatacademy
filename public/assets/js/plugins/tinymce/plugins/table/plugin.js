@@ -130,7 +130,7 @@
       }
       getOrDie(message) {
         if (!this.tag) {
-          throw new Error(message !== null && message !== void 0 ? message : 'Called getOrDie on None');
+          throw new Error(message != null && message != void 0 ? message : 'Called getOrDie on None');
         } else {
           return this.value;
         }
@@ -198,7 +198,7 @@
       return has(obj, key) ? Optional.from(obj[key]) : Optional.none();
     };
     const has = (obj, key) => hasOwnProperty.call(obj, key);
-    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] !== undefined && obj[key] !== null;
+    const hasNonNullableKey = (obj, key) => has(obj, key) && obj[key] != undefined && obj[key] != null;
     const isEmpty$1 = r => {
       for (const x in r) {
         if (hasOwnProperty.call(r, x)) {
@@ -312,7 +312,7 @@
     const forall = (xs, pred) => {
       for (let i = 0, len = xs.length; i < len; ++i) {
         const x = xs[i];
-        if (pred(x, i) !== true) {
+        if (pred(x, i) != true) {
           return false;
         }
       }
@@ -383,24 +383,24 @@
 
     const is$2 = (element, selector) => {
       const dom = element.dom;
-      if (dom.nodeType !== ELEMENT) {
+      if (dom.nodeType != ELEMENT) {
         return false;
       } else {
         const elem = dom;
-        if (elem.matches !== undefined) {
+        if (elem.matches != undefined) {
           return elem.matches(selector);
-        } else if (elem.msMatchesSelector !== undefined) {
+        } else if (elem.msMatchesSelector != undefined) {
           return elem.msMatchesSelector(selector);
-        } else if (elem.webkitMatchesSelector !== undefined) {
+        } else if (elem.webkitMatchesSelector != undefined) {
           return elem.webkitMatchesSelector(selector);
-        } else if (elem.mozMatchesSelector !== undefined) {
+        } else if (elem.mozMatchesSelector != undefined) {
           return elem.mozMatchesSelector(selector);
         } else {
           throw new Error('Browser lacks native selectors');
         }
       }
     };
-    const bypassSelector = dom => dom.nodeType !== ELEMENT && dom.nodeType !== DOCUMENT && dom.nodeType !== DOCUMENT_FRAGMENT || dom.childElementCount === 0;
+    const bypassSelector = dom => dom.nodeType != ELEMENT && dom.nodeType != DOCUMENT && dom.nodeType != DOCUMENT_FRAGMENT || dom.childElementCount === 0;
     const all$1 = (selector, scope) => {
       const base = scope === undefined ? document : scope.dom;
       return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), SugarElement.fromDom);
@@ -413,7 +413,7 @@
     const eq = (e1, e2) => e1.dom === e2.dom;
     const is$1 = is$2;
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    typeof window != 'undefined' ? window : Function('return this;')();
 
     const name = element => {
       const r = element.dom.nodeName;
@@ -435,7 +435,7 @@
       const stop = isFunction(isRoot) ? isRoot : never;
       let dom = element.dom;
       const ret = [];
-      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+      while (dom.parentNode != null && dom.parentNode != undefined) {
         const rawParent = dom.parentNode;
         const p = SugarElement.fromDom(rawParent);
         ret.push(p);
@@ -619,7 +619,7 @@
       return isNaN(num) ? Optional.none() : Optional.some(num);
     };
 
-    const isSupported = dom => dom.style !== undefined && isFunction(dom.style.getPropertyValue);
+    const isSupported = dom => dom.style != undefined && isFunction(dom.style.getPropertyValue);
 
     const internalSet = (dom, property, value) => {
       if (!isString(value)) {
@@ -823,7 +823,7 @@
         const currentRow = [];
         each(rowData.cells, rowCell => {
           let start = 0;
-          while (access[key(rowCount, start)] !== undefined) {
+          while (access[key(rowCount, start)] != undefined) {
             start++;
           }
           const isLocked = hasNonNullableKey(lockedColumns, start.toString());
@@ -893,7 +893,7 @@
         if (isUndefined(firstChildStyle)) {
           firstChildStyle = currentStyle;
         }
-        if (firstChildStyle !== currentStyle) {
+        if (firstChildStyle != currentStyle) {
           return '';
         }
       }
@@ -901,7 +901,7 @@
     };
     const setAlign = (editor, elm, name) => {
       global$2.each('left center right'.split(' '), align => {
-        if (align !== name) {
+        if (align != name) {
           editor.formatter.remove('align' + align, {}, elm);
         }
       });
@@ -911,7 +911,7 @@
     };
     const setVAlign = (editor, elm, name) => {
       global$2.each('top middle bottom'.split(' '), align => {
-        if (align !== name) {
+        if (align != name) {
           editor.formatter.remove('valign' + align, {}, elm);
         }
       });
@@ -976,7 +976,7 @@
     const getPixelForcedWidth = editor => {
       var _a;
       const dom = editor.dom;
-      const parentBlock = (_a = dom.getParent(editor.selection.getStart(), dom.isBlock)) !== null && _a !== void 0 ? _a : editor.getBody();
+      const parentBlock = (_a = dom.getParent(editor.selection.getStart(), dom.isBlock)) != null && _a != void 0 ? _a : editor.getBody();
       return getInner(SugarElement.fromDom(parentBlock)) + 'px';
     };
     const determineDefaultStyles = (editor, defaultStyles) => {
@@ -1178,7 +1178,7 @@
 
     const remove = element => {
       const dom = element.dom;
-      if (dom.parentNode !== null) {
+      if (dom.parentNode != null) {
         dom.parentNode.removeChild(dom);
       }
     };
@@ -1523,11 +1523,11 @@
         return Optional.some(rgbaColour(0, 0, 0, 0));
       }
       const rgbMatch = rgbRegex.exec(rgbaString);
-      if (rgbMatch !== null) {
+      if (rgbMatch != null) {
         return Optional.some(fromStringValues(rgbMatch[1], rgbMatch[2], rgbMatch[3], '1'));
       }
       const rgbaMatch = rgbaRegex.exec(rgbaString);
-      if (rgbaMatch !== null) {
+      if (rgbaMatch != null) {
         return Optional.some(fromStringValues(rgbaMatch[1], rgbaMatch[2], rgbaMatch[3], rgbaMatch[4]));
       }
       return Optional.none();
@@ -1929,12 +1929,12 @@
       const adt = {};
       each(cases, (acase, count) => {
         const keys$1 = keys(acase);
-        if (keys$1.length !== 1) {
+        if (keys$1.length != 1) {
           throw new Error('one and only one name per case');
         }
         const key = keys$1[0];
         const value = acase[key];
-        if (adt[key] !== undefined) {
+        if (adt[key] != undefined) {
           throw new Error('duplicate key detected:' + key);
         } else if (key === 'cata') {
           throw new Error('cannot have a case named cata (sorry)');
@@ -1944,12 +1944,12 @@
         constructors.push(key);
         adt[key] = (...args) => {
           const argLength = args.length;
-          if (argLength !== value.length) {
+          if (argLength != value.length) {
             throw new Error('Wrong number of arguments to case ' + key + '. Expected ' + value.length + ' (' + value + '), got ' + argLength);
           }
           const match = branches => {
             const branchKeys = keys(branches);
-            if (constructors.length !== branchKeys.length) {
+            if (constructors.length != branchKeys.length) {
               throw new Error('Wrong number of arguments to match. Expected: ' + constructors.join(',') + '\nActual: ' + branchKeys.join(','));
             }
             const allReqd = forall(constructors, reqKey => {
@@ -1962,7 +1962,7 @@
           };
           return {
             fold: (...foldArgs) => {
-              if (foldArgs.length !== cases.length) {
+              if (foldArgs.length != cases.length) {
                 throw new Error('Wrong number of arguments to fold. Expected ' + cases.length + ', got ' + foldArgs.length);
               }
               const target = foldArgs[count];
@@ -2038,8 +2038,8 @@
         each(keys(baseData), key => {
           each$1(items, (itemValue, itemKey) => {
             const comparisonValue = baseData[key];
-            if (comparisonValue !== '' && key === itemKey) {
-              if (comparisonValue !== itemValue) {
+            if (comparisonValue != '' && key === itemKey) {
+              if (comparisonValue != itemValue) {
                 baseData[key] = '';
               }
             }
@@ -2121,8 +2121,8 @@
       return {
         width: dom.getStyle(elm, 'width') || dom.getAttrib(elm, 'width'),
         height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
-        cellspacing: cellspacing !== null && cellspacing !== void 0 ? cellspacing : '',
-        cellpadding: cellpadding !== null && cellpadding !== void 0 ? cellpadding : '',
+        cellspacing: cellspacing != null && cellspacing != void 0 ? cellspacing : '',
+        cellpadding: cellpadding != null && cellpadding != void 0 ? cellpadding : '',
         border: getBorder(dom, elm),
         caption: !!dom.select('caption', elm)[0],
         class: dom.getAttrib(elm, 'class', ''),
@@ -2219,11 +2219,11 @@
       });
     };
     const applyCellData = (editor, cells, oldData, data) => {
-      const modifiedData = filter$1(data, (value, key) => oldData[key] !== value);
+      const modifiedData = filter$1(data, (value, key) => oldData[key] != value);
       if (size(modifiedData) > 0 && cells.length >= 1) {
         table(cells[0]).each(table => {
           const selectedCells = getSelectedCells(table, cells);
-          const styleModified = size(filter$1(modifiedData, (_value, key) => key !== 'scope' && key !== 'celltype')) > 0;
+          const styleModified = size(filter$1(modifiedData, (_value, key) => key != 'scope' && key != 'celltype')) > 0;
           const structureModified = has(modifiedData, 'celltype');
           if (styleModified || has(modifiedData, 'scope')) {
             applyStyleData$1(editor, selectedCells, data, curry(has, modifiedData));
@@ -2400,7 +2400,7 @@
       });
     };
     const applyRowData = (editor, rows, oldData, data) => {
-      const modifiedData = filter$1(data, (value, key) => oldData[key] !== value);
+      const modifiedData = filter$1(data, (value, key) => oldData[key] != value);
       if (size(modifiedData) > 0) {
         const typeModified = has(modifiedData, 'type');
         const styleModified = typeModified ? size(modifiedData) > 1 : true;
@@ -2632,7 +2632,7 @@
     const onSubmitTableForm = (editor, tableElm, oldData, api) => {
       const dom = editor.dom;
       const data = api.getData();
-      const modifiedData = filter$1(data, (value, key) => oldData[key] !== value);
+      const modifiedData = filter$1(data, (value, key) => oldData[key] != value);
       api.close();
       if (data.class === '') {
         delete data.class;
@@ -2845,7 +2845,7 @@
         handler();
         changeHandlers.set(changeHandlers.get().concat([handler]));
         return () => {
-          changeHandlers.set(filter(changeHandlers.get(), h => h !== handler));
+          changeHandlers.set(filter(changeHandlers.get(), h => h != handler));
         };
       };
       const onSetup = (api, isDisabled) => setupHandler(() => targets.get().fold(() => {
@@ -2903,7 +2903,7 @@
     const tableTypeColumn = tableTypeBase + 'columns';
     const getData = type => {
       var _a;
-      const items = (_a = global.read()) !== null && _a !== void 0 ? _a : [];
+      const items = (_a = global.read()) != null && _a != void 0 ? _a : [];
       return findMap(items, item => Optional.from(item.getType(type)));
     };
     const getRows = () => getData(tableTypeRow);
@@ -3070,7 +3070,7 @@
         onSetup: onSetupEditable$1(editor)
       });
       const tableClassList = filterNoneItem(getTableClassList(editor));
-      if (tableClassList.length !== 0 && editor.queryCommandSupported('mceTableToggleClass')) {
+      if (tableClassList.length != 0 && editor.queryCommandSupported('mceTableToggleClass')) {
         editor.ui.registry.addMenuButton('tableclass', {
           icon: 'table-classes',
           tooltip: 'Table styles',
@@ -3079,7 +3079,7 @@
         });
       }
       const tableCellClassList = filterNoneItem(getCellClassList(editor));
-      if (tableCellClassList.length !== 0 && editor.queryCommandSupported('mceTableCellToggleClass')) {
+      if (tableCellClassList.length != 0 && editor.queryCommandSupported('mceTableCellToggleClass')) {
         editor.ui.registry.addMenuButton('tablecellclass', {
           icon: 'table-cell-classes',
           tooltip: 'Cell styles',
@@ -3374,7 +3374,7 @@
         }
       });
       const tableClassList = filterNoneItem(getTableClassList(editor));
-      if (tableClassList.length !== 0 && editor.queryCommandSupported('mceTableToggleClass')) {
+      if (tableClassList.length != 0 && editor.queryCommandSupported('mceTableToggleClass')) {
         editor.ui.registry.addNestedMenuItem('tableclass', {
           icon: 'table-classes',
           text: 'Table styles',
@@ -3383,7 +3383,7 @@
         });
       }
       const tableCellClassList = filterNoneItem(getCellClassList(editor));
-      if (tableCellClassList.length !== 0 && editor.queryCommandSupported('mceTableCellToggleClass')) {
+      if (tableCellClassList.length != 0 && editor.queryCommandSupported('mceTableCellToggleClass')) {
         editor.ui.registry.addNestedMenuItem('tablecellclass', {
           icon: 'table-cell-classes',
           text: 'Cell styles',

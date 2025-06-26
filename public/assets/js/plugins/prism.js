@@ -5,10 +5,10 @@
 
 /// <reference lib="WebWorker"/>
 
-var _self = (typeof window !== 'undefined')
+var _self = (typeof window != 'undefined')
 	? window   // if in browser
 	: (
-		(typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope)
+		(typeof WorkerGlobalScope != 'undefined' && self instanceof WorkerGlobalScope)
 			? self // if in worker
 			: {}   // if in node js
 	);
@@ -408,7 +408,7 @@ var Prism = (function (_self) {
 			 * var oldMarkup = Prism.languages.markup;
 			 * var newMarkup = Prism.languages.insertBefore('markup', 'comment', { ... });
 			 *
-			 * assert(oldMarkup !== Prism.languages.markup);
+			 * assert(oldMarkup != Prism.languages.markup);
 			 * assert(newMarkup === Prism.languages.markup);
 			 * ```
 			 *
@@ -949,7 +949,7 @@ var Prism = (function (_self) {
 
 				for ( // iterate the token list and keep track of the current token/string position
 					var currentNode = startNode.next, pos = startPos;
-					currentNode !== tokenList.tail;
+					currentNode != tokenList.tail;
 					pos += currentNode.value.length, currentNode = currentNode.next
 				) {
 
@@ -999,7 +999,7 @@ var Prism = (function (_self) {
 						// find the last node which is affected by this match
 						for (
 							var k = currentNode;
-							k !== tokenList.tail && (p < to || typeof k.value === 'string');
+							k != tokenList.tail && (p < to || typeof k.value === 'string');
 							k = k.next
 						) {
 							removeCount++;
@@ -1122,7 +1122,7 @@ var Prism = (function (_self) {
 	 */
 	function removeRange(list, node, count) {
 		var next = node.next;
-		for (var i = 0; i < count && next !== list.tail; i++) {
+		for (var i = 0; i < count && next != list.tail; i++) {
 			next = next.next;
 		}
 		node.next = next;
@@ -1137,7 +1137,7 @@ var Prism = (function (_self) {
 	function toArray(list) {
 		var array = [];
 		var node = list.head.next;
-		while (node !== list.tail) {
+		while (node != list.tail) {
 			array.push(node.value);
 			node = node.next;
 		}
@@ -1209,12 +1209,12 @@ var Prism = (function (_self) {
 
 }(_self));
 
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module != 'undefined' && module.exports) {
 	module.exports = Prism;
 }
 
 // hack for components to work correctly in node.js
-if (typeof global !== 'undefined') {
+if (typeof global != 'undefined') {
 	global.Prism = Prism;
 }
 

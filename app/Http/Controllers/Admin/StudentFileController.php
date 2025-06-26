@@ -41,7 +41,7 @@ class StudentFileController extends Controller
     public function download(Student $student, StudentFile $file)
     {
         // Ensure this file belongs to the given student
-        if ($file->student_id !== $student->id) {
+        if ($file->student_id != $student->id) {
             abort(403, 'Unauthorized action.');
         }
 
