@@ -10,7 +10,9 @@
     $hasStarted   = $now->gte($examDateTime);
     $hasTime      = !is_null($exam->time);
     $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new']) && $hasTime;
-    $skills  = $exam->course->courseType->skills;
+    
+    // للـ Mid و Final فقط - نحصل على مهارات الامتحان فقط
+    $skills = $exam->course->courseType->examSkills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
 @endphp
 
@@ -110,6 +112,11 @@
                 </div>
             @endif
 
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                This is a {{ ucfirst($exam->exam_type) }} Exam using <strong>Mid & Final Exam Skills</strong> only.
+            </div>
+
             <h5 class="mt-4"><i class="fas fa-star text-primary me-1"></i> Skills & Maximum Grades</h5>
             <div class="table-responsive">
                 <table class="table table-bordered">
@@ -124,9 +131,7 @@
                         <tr>
                             @foreach($skills as $skill)
                                 <td class="text-center">
-                                    @if($exam->exam_type == 'pre')
-                                        {{ $skill->pivot->final_max }}
-                                    @elseif($exam->exam_type == 'mid')
+                                    @if($exam->exam_type == 'mid')
                                         {{ $skill->pivot->mid_max }}
                                     @else
                                         {{ $skill->pivot->final_max }}
@@ -195,6 +200,7 @@
                                             <input
                                                 type="number"
                                                 step="0.01"
+                                                max="{{ $maxValue }}"
                                                 name="grades[{{ $student->id }}][{{ $pivotId }}]"
                                                 value="{{ old("grades.{$student->id}.{$pivotId}", $gradeValue) }}"
                                                 class="form-control text-center"
@@ -223,12 +229,10 @@
                         class="btn btn-primary"
                         @if(! $canEnter) disabled @endif
                     >
-                        Save Grades
+                        <i class="fas fa-save me-1"></i> Save Grades
                     </button>
                 </div>
             </form>
-            
-
         </div>
     </div>
 </div>

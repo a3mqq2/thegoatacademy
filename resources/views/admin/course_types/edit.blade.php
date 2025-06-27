@@ -22,12 +22,13 @@
 <div class="container">
   <div class="card mt-3">
     <div class="card-header">
-      <h4><i class="fa fa-edit"></i> Edit Course Type</h4>
+      <h4><i class="fa fa-edit"></i> Edit Course Type: {{ $courseType->name }}</h4>
     </div>
     <div class="card-body">
-      <form action="{{ route('admin.course-types.update', $courseType->id) }}" method="POST">
+      <form action="{{ route('admin.course-types.update', $courseType) }}" method="POST">
         @csrf
         @method('PUT')
+        
         <div class="row g-3">
           <div class="col-md-6">
             <label for="name" class="form-label"><i class="fa fa-tag"></i> Name</label>
@@ -48,7 +49,7 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
-        
+       
           <div class="col-md-6">
             <label for="duration" class="form-label"><i class="fa fa-clock"></i> Classes (Count)</label>
             <input type="number" name="duration" value="{{ old('duration', $courseType->duration) }}" class="form-control">
@@ -56,42 +57,153 @@
               <div class="invalid-feedback">{{ $message }}</div>
             @enderror
           </div>
-          
-          <!-- Multiselect for Skills using Select2 -->
-          <div class="col-md-6">
-            <label for="skills" class="form-label"><i class="fa fa-code"></i> Skills</label>
-            <select name="skills[]" id="skills" class="form-select @error('skills') is-invalid @enderror" multiple>
-              @foreach($skills as $skill)
-                <option value="{{ $skill->id }}" {{ collect(old('skills', $courseType->skills->pluck('id')->toArray()))->contains($skill->id) ? 'selected' : '' }}>
-                  {{ $skill->name }}
-                </option>
-              @endforeach
-            </select>
-            @error('skills')
-              <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+        </div>
+
+        <!-- Legacy Data Migration Notice -->
+        @if(isset($currentData['has_legacy_data']) && $currentData['has_legacy_data'])
+        <div class="alert alert-warning mt-4" role="alert">
+          <h5 class="alert-heading"><i class="fa fa-exclamation-triangle"></i> Legacy Data Detected</h5>
+          <p>This course type contains legacy skill data that should be migrated to the new system.</p>
+          <hr>
+          <p class="mb-0">
+            <a href="{{ route('admin.course-types.migrate-legacy', $courseType) }}" class="btn btn-warning btn-sm">
+              <i class="fa fa-sync"></i> Migrate Legacy Data
+            </a>
+          </p>
+        </div>
+        @endif
+        
+        <!-- Progress Test Skills Section -->
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header bg-info text-white">
+                <h5><i class="fa fa-chart-line"></i> Progress Test Skills</h5>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-12">
+                    <label for="progress_skills" class="form-label"><i class="fa fa-code"></i> Select Progress Test Skills</label>
+                    <select name="progress_skills[]" id="progress_skills" class="form-select @error('progress_skills') is-invalid @enderror" multiple>
+                      @foreach($skills as $skill)
+                        <option value="{{ $skill->id }}" 
+                          {{ in_array($skill->id, old('progress_skills', $currentData['progress_skills'] ?? [])) ? 'selected' : '' }}>
+                          {{ $skill->name }}
+                        </option>
+                      @endforeach
+                    </select>
+                    @error('progress_skills')
+                      <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                  </div>
+                </div>
+                
+                <!-- Progress Test Skills Grades Table -->
+                <table class="table table-bordered" id="progress-skills-table">
+                  <thead>
+                    <tr>
+                      <th>Skill</th>
+                      <th>Max Grade</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="progress-skills-tbody">
+                    {{-- سيتم تعبئة الصفوف تلقائيًا باستخدام JavaScript --}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
         
-        <!-- Table for editing skill grades -->
+        <!-- Mid & Final Skills Section -->
         <div class="row mt-4">
           <div class="col-md-12">
-            <h5>Skill Grades Settings</h5>
-            <table class="table table-bordered" id="skills-grades-table">
-              <thead>
-                <tr>
-                  <th>Skill</th>
-                  <th>Progress test Max Grade</th>
-                  <th>Mid Max Grade</th>
-                  <th>Final Max Grade</th>
-                </tr>
-              </thead>
-              <tbody id="skills-grades-tbody">
-                {{-- Rows will be inserted dynamically using JavaScript --}}
-              </tbody>
-            </table>
+            <div class="card">
+              <div class="card-header bg-success text-white">
+                <h5><i class="fa fa-graduation-cap"></i> Mid & Final Exam Skills</h5>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-12">
+                    <label for="exam_skills" class="form-label"><i class="fa fa-code"></i> Select Mid & Final Skills</label>
+                    <select name="exam_skills[]" id="exam_skills" class="form-select @error('exam_skills') is-invalid @enderror" multiple>
+                      @foreach($skills as $skill)
+                        <option value="{{ $skill->id }}" 
+                          {{ in_array($skill->id, old('exam_skills', $currentData['exam_skills'] ?? [])) ? 'selected' : '' }}>
+                          {{ $skill->name }}
+                        </option>
+                      @endforeach
+                    </select>
+                    @error('exam_skills')
+                      <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                  </div>
+                </div>
+                
+                <!-- Mid & Final Skills Grades Table -->
+                <table class="table table-bordered" id="exam-skills-table">
+                  <thead>
+                    <tr>
+                      <th>Skill</th>
+                      <th>Mid Max Grade</th>
+                      <th>Final Max Grade</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="exam-skills-tbody">
+                    {{-- سيتم تعبئة الصفوف تلقائيًا باستخدام JavaScript --}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Legacy Skills Section (إذا وجدت) -->
+        @if(isset($currentData['legacy_skills']) && count($currentData['legacy_skills']) > 0)
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <div class="card border-warning">
+              <div class="card-header bg-warning text-dark">
+                <h5><i class="fa fa-exclamation-triangle"></i> Legacy Skills (Need Migration)</h5>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Skill</th>
+                        <th>Progress Test Max</th>
+                        <th>Mid Max</th>
+                        <th>Final Max</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($currentData['legacy_grades'] as $skillId => $grades)
+                        @php
+                          $skill = $skills->find($skillId);
+                        @endphp
+                        @if($skill)
+                        <tr>
+                          <td>{{ $skill->name }}</td>
+                          <td>{{ $grades['progress_test_max'] ?? 'N/A' }}</td>
+                          <td>{{ $grades['mid_max'] ?? 'N/A' }}</td>
+                          <td>{{ $grades['final_max'] ?? 'N/A' }}</td>
+                        </tr>
+                        @endif
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+                <div class="alert alert-info">
+                  <small><i class="fa fa-info-circle"></i> These skills use the old system. Please migrate them to the new separated system above.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        @endif
         
         <div class="mt-4 d-flex justify-content-end">
           <a href="{{ route('admin.course-types.index') }}" class="btn btn-outline-secondary me-2">
@@ -109,59 +221,114 @@
 
 @push('styles')
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <style>
+    .select2-container {
+      width: 100% !important;
+    }
+    .card-header h5 {
+      margin: 0;
+    }
+    .alert-heading {
+      margin-bottom: 0.5rem;
+    }
+  </style>
 @endpush
 
 @push('scripts')
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
     $(document).ready(function() {
-      $('#skills').select2({
-        placeholder: 'Select skills',
+      // Initialize Select2
+      $('#progress_skills').select2({
+        placeholder: 'Select progress test skills',
+        allowClear: true
+      });
+      
+      $('#exam_skills').select2({
+        placeholder: 'Select mid & final exam skills',
         allowClear: true
       });
 
-      // Preload existing pivot grade values into a JavaScript object.
-      let initialSkillGrades = @json(
-        $courseType->skills->mapWithKeys(function ($skill) {
-            return [
-                $skill->id => [
-                    'progress_test_max' => $skill->pivot->progress_test_max,
-                    'mid_max' => $skill->pivot->mid_max,
-                    'final_max' => $skill->pivot->final_max
-                ]
-            ];
-        })
-      );
-
-      // Function to update the skills grades table based on selected skills and prefill values if available.
-      function updateSkillsTable() {
-        let data = $('#skills').select2('data');
-        let tbody = $('#skills-grades-tbody');
+      // البيانات الحالية من الخادم
+      const currentData = @json($currentData ?? []);
+      
+      // Function to update Progress Test Skills table
+      function updateProgressSkillsTable() {
+        var data = $('#progress_skills').select2('data');
+        var tbody = $('#progress-skills-tbody');
         tbody.empty();
         
         data.forEach(function(skill) {
-          let optionId = skill.id;
-          let skillName = skill.text;
-          let progressTestMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].progress_test_max : '';
-          let midMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].mid_max : '';
-          let finalMax = initialSkillGrades[optionId] ? initialSkillGrades[optionId].final_max : '';
+          var skillId = skill.id;
+          var skillName = skill.text;
+          var currentGrade = currentData.progress_grades && currentData.progress_grades[skillId] 
+                            ? currentData.progress_grades[skillId].max_grade : '';
           
-          let row = '<tr>';
-          // Display the skill name and include a hidden input for the skill ID.
-          row += '<td>' + skillName + '<input type="hidden" name="skill_grades['+ optionId +'][skill_id]" value="'+ optionId +'"></td>';
-          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][progress_test_max]" class="form-control" placeholder="Progress test Max" value="'+ progressTestMax +'"></td>';
-          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][mid_max]" class="form-control" placeholder="Mid Max Grade" value="'+ midMax +'"></td>';
-          row += '<td><input type="number" step="any" name="skill_grades['+ optionId +'][final_max]" class="form-control" placeholder="Final Max Grade" value="'+ finalMax +'"></td>';
+          var row = '<tr data-skill-id="' + skillId + '">';
+          row += '<td>' + skillName + '<input type="hidden" name="progress_grades[' + skillId + '][skill_id]" value="' + skillId + '"></td>';
+          row += '<td><input type="number" step="0.01" name="progress_grades[' + skillId + '][max_grade]" class="form-control" placeholder="Enter max grade" value="' + currentGrade + '" required></td>';
+          row += '<td><button type="button" class="btn btn-sm btn-outline-danger remove-progress-skill" data-skill-id="' + skillId + '"><i class="fa fa-trash"></i></button></td>';
           row += '</tr>';
           tbody.append(row);
         });
       }
-      
-      // Update the table on page load and when skill selections change.
-      updateSkillsTable();
-      $('#skills').on('change', function() {
-        updateSkillsTable();
+
+      // Function to update Mid & Final Skills table
+      function updateExamSkillsTable() {
+        var data = $('#exam_skills').select2('data');
+        var tbody = $('#exam-skills-tbody');
+        tbody.empty();
+        
+        data.forEach(function(skill) {
+          var skillId = skill.id;
+          var skillName = skill.text;
+          var currentMidMax = currentData.exam_grades && currentData.exam_grades[skillId] 
+                             ? currentData.exam_grades[skillId].mid_max : '';
+          var currentFinalMax = currentData.exam_grades && currentData.exam_grades[skillId] 
+                               ? currentData.exam_grades[skillId].final_max : '';
+          
+          var row = '<tr data-skill-id="' + skillId + '">';
+          row += '<td>' + skillName + '<input type="hidden" name="exam_grades[' + skillId + '][skill_id]" value="' + skillId + '"></td>';
+          row += '<td><input type="number" step="0.01" name="exam_grades[' + skillId + '][mid_max]" class="form-control" placeholder="Enter mid max grade" value="' + currentMidMax + '" required></td>';
+          row += '<td><input type="number" step="0.01" name="exam_grades[' + skillId + '][final_max]" class="form-control" placeholder="Enter final max grade" value="' + currentFinalMax + '" required></td>';
+          row += '<td><button type="button" class="btn btn-sm btn-outline-danger remove-exam-skill" data-skill-id="' + skillId + '"><i class="fa fa-trash"></i></button></td>';
+          row += '</tr>';
+          tbody.append(row);
+        });
+      }
+
+      // Update tables when selections change
+      $('#progress_skills').on('change', function() {
+        updateProgressSkillsTable();
       });
+      
+      $('#exam_skills').on('change', function() {
+        updateExamSkillsTable();
+      });
+
+      // Remove skill from Progress Test table
+      $(document).on('click', '.remove-progress-skill', function() {
+        var skillId = $(this).data('skill-id');
+        var currentValues = $('#progress_skills').val() || [];
+        var newValues = currentValues.filter(function(value) {
+          return value != skillId;
+        });
+        $('#progress_skills').val(newValues).trigger('change');
+      });
+
+      // Remove skill from Exam table
+      $(document).on('click', '.remove-exam-skill', function() {
+        var skillId = $(this).data('skill-id');
+        var currentValues = $('#exam_skills').val() || [];
+        var newValues = currentValues.filter(function(value) {
+          return value != skillId;
+        });
+        $('#exam_skills').val(newValues).trigger('change');
+      });
+
+      // Initialize tables on page load with current data
+      updateProgressSkillsTable();
+      updateExamSkillsTable();
     });
   </script>
 @endpush

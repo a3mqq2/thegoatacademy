@@ -85,6 +85,13 @@ th, td {
     top: 160px;
     left: 40px;
 }
+.exam-type-badge {
+    background: #007bff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-left: 10px;
+}
 </style>
 </head>
 <body>
@@ -92,35 +99,58 @@ th, td {
 
     <div class="header">
         <h1 class="title">
-            {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} – EXAM RESULTS (#{{ $exam->course_id }})
+            {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} EXAM RESULTS (#{{ $exam->course_id }})
+            <span class="exam-type-badge">{{ strtoupper($exam->exam_type) }} SKILLS ONLY</span>
         </h1>
         <div class="sub-details">
             <div style="position: absolute; top:210px;">
                 Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
-                Days: {{ $exam->course->days ?? '-' }}
+                Days: {{ $exam->course->days ?? '-' }}<br>
+                Course Type: {{ $exam->course->courseType->name }}
             </div>
             <div style="text-align: right; position: absolute; top:210px; left:250px;">
                 Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
-                Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}
+                Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}<br>
+                Status: {{ strtoupper($exam->status) }}
             </div>
         </div>
     </div>
 
     <div class="table-container">
         @php
-            $skills  = $exam->course->courseType->skills;
+            // استخدام examSkills فقط للـ Mid و Final
+            $skills  = $exam->course->courseType->examSkills;
             $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
         @endphp
-
 
         <table>
             <thead>
                 <tr>
-                    <th>NO</th><th>NAME</th>
+                    <th>NO</th>
+                    <th>NAME</th>
                     @foreach($skills as $s)
-                        <th>{{ mb_substr($s->name, 0, 1, 'UTF-8') }}</th>
+                        <th title="{{ $s->name }}">{{ mb_substr($s->name, 0, 3, 'UTF-8') }}</th>
                     @endforeach
+                    <th>TOTAL</th>
                     <th>PER</th>
+                    <th>STATUS</th>
+                </tr>
+                <tr style="font-size: 14px; background: #333;">
+                    <th colspan="2">MAX GRADES</th>
+                    @foreach($skills as $s)
+                        <th>
+                            @if($exam->exam_type == 'mid')
+                                {{ $s->pivot->mid_max ?? 0 }}
+                            @else
+                                {{ $s->pivot->final_max ?? 0 }}
+                            @endif
+                        </th>
+                    @endforeach
+                    <th>{{ $skills->sum(function($s) use ($exam) { 
+                        return $exam->exam_type == 'mid' ? ($s->pivot->mid_max ?? 0) : ($s->pivot->final_max ?? 0); 
+                    }) }}</th>
+                    <th>100%</th>
+                    <th>PASS/FAIL</th>
                 </tr>
             </thead>
             <tbody>
@@ -129,36 +159,75 @@ th, td {
                         $es      = $exam->examStudents->firstWhere('student_id', $student->id);
                         $grades  = [];
                         $maxes   = [];
+                        $totalGrades = 0;
+                        $totalMax = 0;
                 
-                        
                         foreach ($skills as $sk) {
                             $pivotId  = $sk->pivot->id;
                             $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
 
                             $g = $gradeRow?->grade ?: 0;
 
-                            $m = match(strtolower($exam->exam_type)) {
-                                'mid'   => $sk->pivot->mid_max   ?? 0,
-                                'final' => $sk->pivot->final_max ?? 0,
-                                default => $sk->pivot->final_max ?? 0,   // pre
-                            };
+                            // استخدام منطق بسيط للـ Mid و Final فقط
+                            $m = $exam->exam_type == 'mid' 
+                                ? ($sk->pivot->mid_max ?? 0)
+                                : ($sk->pivot->final_max ?? 0);
 
                             $grades[] = $g;
                             $maxes[]  = $m;
+                            $totalGrades += $g;
+                            $totalMax += $m;
                         }
                 
-                        $per = array_sum($maxes) ? round(array_sum($grades) / array_sum($maxes) * 100, 1) : 0;
+                        $per = $totalMax ? round($totalGrades / $totalMax * 100, 1) : 0;
+                        $status = $per >= 50 ? 'PASS' : 'FAIL';
                     @endphp
                     <tr>
                         <td>{{ $i + 1 }}</td>
-                        <td>{{ $student->name }}</td>
-                        @foreach($grades as $g)
-                            <td>{{ number_format($g, 2) }}</td>
+                        <td style="text-align: left; font-size: 16px;">{{ $student->name }}</td>
+                        @foreach($grades as $j => $g)
+                            <td style="color: {{ $g >= ($maxes[$j] * 0.5) ? '#0f0' : '#f90' }}">
+                                {{ number_format($g, 1) }}
+                            </td>
                         @endforeach
-                        <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}">{{ $per }}%</td>
+                        <td style="font-weight: bold;">{{ number_format($totalGrades, 1) }}</td>
+                        <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}; font-weight: bold;">{{ $per }}%</td>
+                        <td style="color: {{ $per >= 50 ? '#0f0' : '#f00' }}; font-weight: bold;">{{ $status }}</td>
                     </tr>
                 @endforeach
-                </tbody>
+            </tbody>
+            
+            <!-- إضافة إحصائيات سريعة -->
+            <tfoot>
+                <tr style="background: #444; font-weight: bold;">
+                    <td colspan="2">STATISTICS</td>
+                    @php
+                        $passCount = $ongoing->filter(function($student) use ($exam, $skills) {
+                            $es = $exam->examStudents->firstWhere('student_id', $student->id);
+                            $totalGrades = 0;
+                            $totalMax = 0;
+                            foreach ($skills as $sk) {
+                                $pivotId = $sk->pivot->id;
+                                $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
+                                $g = $gradeRow?->grade ?: 0;
+                                $m = $exam->exam_type == 'mid' ? ($sk->pivot->mid_max ?? 0) : ($sk->pivot->final_max ?? 0);
+                                $totalGrades += $g;
+                                $totalMax += $m;
+                            }
+                            $per = $totalMax ? round($totalGrades / $totalMax * 100, 1) : 0;
+                            return $per >= 50;
+                        })->count();
+                        $totalStudents = $ongoing->count();
+                        $failCount = $totalStudents - $passCount;
+                    @endphp
+                    <td colspan="{{ $skills->count() }}">
+                        PASS: {{ $passCount }} | FAIL: {{ $failCount }}
+                    </td>
+                    <td>{{ $totalStudents }}</td>
+                    <td>{{ $totalStudents ? round($passCount / $totalStudents * 100, 1) : 0 }}%</td>
+                    <td>{{ round($passCount / max($totalStudents, 1) * 100, 1) }}%</td>
+                </tr>
+            </tfoot>
         </table>
     </div>
 

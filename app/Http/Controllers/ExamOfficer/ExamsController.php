@@ -218,10 +218,47 @@ class ExamsController extends Controller
         return view('exam_officer.exams.grads_record', compact('exam', 'students'));
     }
 
+// إضافة هذه الدوال في ExamsController
 
- 
+/**
+ * الحصول على المهارات والدرجات القصوى للامتحان
+ */
+private function getSkillsAndMaxGrades(Exam $exam)
+{
+    $skills = $exam->course->courseType->getSkillsForExamType($exam->exam_type);
     
+    $maxGrades = [];
+    foreach ($skills as $skill) {
+        $pivotId = $skill->pivot->id;
+        $maxGrades[$pivotId] = $skill->pivot->getMaxGradeForExamType($exam->exam_type);
+    }
     
+    return [$skills, $maxGrades];
+}
+
+/**
+ * التحقق من صحة الدرجات المدخلة
+ */
+private function validateGradesForExam(array $grades, array $maxGrades): array
+{
+    $validatedGrades = [];
+    
+    foreach ($grades as $studentId => $gradeData) {
+        foreach ($gradeData as $pivotId => $gradeValue) {
+            $maxGrade = $maxGrades[$pivotId] ?? 0;
+            
+            // التأكد من أن الدرجة لا تتجاوز الحد الأقصى
+            $validatedGrades[$studentId][$pivotId] = min($gradeValue, $maxGrade);
+            
+            // التأكد من أن الدرجة لا تقل عن الصفر
+            $validatedGrades[$studentId][$pivotId] = max($validatedGrades[$studentId][$pivotId], 0);
+        }
+    }
+    
+    return $validatedGrades;
+}
+
+
     public function storeGrades(Request $request, $examId)
     {
         $exam = Exam::findOrFail($examId);
@@ -236,14 +273,16 @@ class ExamsController extends Controller
             'grades' => 'required|array',
         ]);
 
-        $skills = $exam->course->courseType->skills;
+        // للـ Mid و Final فقط - نحصل على مهارات الامتحان فقط
+        $skills = $exam->course->courseType->examSkills;
 
         $maxGrades = [];
         foreach ($skills as $skill) {
             $pivotId = $skill->pivot->id;
             $maxGrades[$pivotId] = match ($exam->exam_type) {
                 'mid'   => $skill->pivot->mid_max,
-                default => $skill->pivot->final_max,  // pre & final use final_max
+                'final' => $skill->pivot->final_max,
+                default => $skill->pivot->final_max, // fallback
             };
         }
 
@@ -277,10 +316,6 @@ class ExamsController extends Controller
         return redirect()->route('exam_officer.exams.index')
                         ->with('success', 'Grades recorded successfully!');
     }
-    
-    
-
-
     public function show($id)
     {
         $exam = Exam::with(['examStudents.grades', 'course.courseType.skills'])->findOrFail($id);
@@ -490,4 +525,6 @@ class ExamsController extends Controller
         return redirect()->back()->with('success', 'Exam time updated successfully.');
     }
     
+
+
 }

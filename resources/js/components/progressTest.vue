@@ -20,14 +20,35 @@
       Editing window has closed. You cannot modify scores anymore.
     </div>
 
+    <!-- Skills summary -->
+    <div v-if="ready && skills.length > 0" class="alert alert-light mb-3">
+      <h6><i class="fa fa-star me-1" />Progress Test Skills Summary:</h6>
+      <div class="row">
+        <div v-for="skill in skills" :key="skill.pivot.id" class="col-md-3 mb-2">
+          <span class="badge bg-info me-1">{{ skill.name }}</span>
+          <small class="text-muted">Max: {{ skill.pivot.progress_test_max }}</small>
+        </div>
+      </div>
+      <hr class="my-2">
+      <small class="text-muted">
+        <strong>Total Max Score:</strong> {{ totalMaxScore }}
+      </small>
+    </div>
+
+    <!-- No skills warning -->
+    <div v-if="ready && skills.length === 0" class="alert alert-warning">
+      <i class="fa fa-exclamation-triangle me-1" />
+      No progress test skills found for this course type. Please contact administrator.
+    </div>
+
     <!-- =========== Students × Skills table =========== -->
-    <div v-if="ready" class="table-responsive">
+    <div v-if="ready && skills.length > 0" class="table-responsive">
       <table class="table table-bordered align-middle">
         <thead class="table-light">
           <tr>
             <th style="width:60px">#</th>
             <th style="min-width:220px">Student</th>
-            <!-- one column per skill -->
+            <!-- one column per progress skill only -->
             <th v-for="skill in skills"
                 :key="skill.pivot.id"
                 class="text-center"
@@ -35,6 +56,8 @@
               {{ skill.name }}<br />
               <small class="text-muted">( / {{ skill.pivot.progress_test_max }})</small>
             </th>
+            <th class="text-center" style="width:80px">Total</th>
+            <th class="text-center" style="width:80px">%</th>
             <th class="text-center" style="width:100px">Status</th>
           </tr>
         </thead>
@@ -47,7 +70,7 @@
                 <i class="fa fa-phone me-1" />{{ student.phone }}
               </small>
             </td>
-            <!-- score input for each skill -->
+            <!-- score input for each progress skill -->
             <td v-for="skill in skills"
                 :key="skill.pivot.id">
               <input
@@ -56,16 +79,54 @@
                 v-model.number="student.scores[skill.pivot.id]"
                 :max="skill.pivot.progress_test_max"
                 min="0"
+                step="0.01"
                 :placeholder="`0-${skill.pivot.progress_test_max}`"
                 :disabled="isClosed"
+                @input="updateStudentStats(student)"
               />
+            </td>
+            <!-- total score -->
+            <td class="text-center">
+              <strong :class="getScoreClass(student.totalScore, totalMaxScore)">
+                {{ student.totalScore.toFixed(1) }}
+              </strong>
+            </td>
+            <!-- percentage -->
+            <td class="text-center">
+              <strong :class="getScoreClass(student.percentage, 100)">
+                {{ student.percentage.toFixed(1) }}%
+              </strong>
             </td>
             <!-- status: has grades? -->
             <td class="text-center">
-              <i v-if="student.hasGrades" class="fa fa-check text-success"></i>
+              <span v-if="student.hasGrades" class="badge bg-success">
+                <i class="fa fa-check" /> Saved
+              </span>
+              <span v-else class="badge bg-secondary">
+                <i class="fa fa-clock" /> Pending
+              </span>
             </td>
           </tr>
         </tbody>
+        
+        <!-- Summary row -->
+        <tfoot v-if="studentsList.length > 0">
+          <tr class="table-info">
+            <td colspan="2"><strong>Class Average</strong></td>
+            <td v-for="skill in skills" :key="skill.pivot.id" class="text-center">
+              <strong>{{ getSkillAverage(skill.pivot.id).toFixed(1) }}</strong>
+            </td>
+            <td class="text-center">
+              <strong>{{ classAverageTotal.toFixed(1) }}</strong>
+            </td>
+            <td class="text-center">
+              <strong>{{ classAveragePercentage.toFixed(1) }}%</strong>
+            </td>
+            <td class="text-center">
+              <small>{{ passCount }}/{{ studentsList.length }} Pass</small>
+            </td>
+          </tr>
+        </tfoot>
       </table>
     </div>
 
@@ -79,7 +140,7 @@
       </a>
       <button
         class="btn btn-primary"
-        :disabled="isClosed"
+        :disabled="isClosed || skills.length === 0"
         @click="submitProgressTest"
       >
         <i class="fa fa-save" /> Save Scores
@@ -106,19 +167,42 @@ export default {
     const studentsList = ref([])
 
     const isClosed = computed(() => {
-        const raw = progressTest.value.close_at
-        if (!raw) return false
+      const raw = progressTest.value.close_at
+      if (!raw) return false
 
-        // Turn "2025-05-18 13:04:00" into "2025-05-18T13:04:00"
-        const iso = raw.replace(' ', 'T')
-        const closeDate = new Date(iso)
+      // Turn "2025-05-18 13:04:00" into "2025-05-18T13:04:00"
+      const iso = raw.replace(' ', 'T')
+      const closeDate = new Date(iso)
 
-        // now() >= close_at?
-        return Date.now() >= closeDate.getTime()
-      });
+      // now() >= close_at?
+      return Date.now() >= closeDate.getTime()
+    })
+
     const ready = computed(
-      () => skills.value.length > 0 && studentsList.value.length > 0
+      () => skills.value.length >= 0 && studentsList.value.length > 0
     )
+
+    const totalMaxScore = computed(() => {
+      return skills.value.reduce((sum, skill) => {
+        return sum + (skill.pivot.progress_test_max || 0)
+      }, 0)
+    })
+
+    const classAverageTotal = computed(() => {
+      if (studentsList.value.length === 0) return 0
+      return studentsList.value.reduce((sum, student) => {
+        return sum + student.totalScore
+      }, 0) / studentsList.value.length
+    })
+
+    const classAveragePercentage = computed(() => {
+      if (totalMaxScore.value === 0) return 0
+      return (classAverageTotal.value / totalMaxScore.value) * 100
+    })
+
+    const passCount = computed(() => {
+      return studentsList.value.filter(student => student.percentage >= 50).length
+    })
 
     const fetchData = async () => {
       globalLoading.value = true
@@ -132,8 +216,8 @@ export default {
           close_at: pt.close_at
         }
 
-        // load skills
-        skills.value = pt.course.course_type.skills
+        // load ONLY progress skills
+        skills.value = pt.course.course_type.progress_skills || []
 
         // build students with scores and hasGrades
         studentsList.value = pt.progress_test_students.map((rec) => {
@@ -148,26 +232,58 @@ export default {
             if (grade) hasGrades = true
             scores[sk.pivot.id] = grade
               ? grade.progress_test_grade
-              : null
+              : 0
           })
 
-          return {
+          const student = {
             id: base.id,
             name: base.name,
             phone: base.phone,
             scores,
-            hasGrades
+            hasGrades,
+            totalScore: 0,
+            percentage: 0
           }
+
+          updateStudentStats(student)
+          return student
         })
       } catch (e) {
+        console.error('Error loading progress test:', e)
         toastr.error('Failed to load progress test data')
       } finally {
         globalLoading.value = false
       }
     }
 
+    const updateStudentStats = (student) => {
+      student.totalScore = Object.values(student.scores).reduce((sum, score) => {
+        return sum + (parseFloat(score) || 0)
+      }, 0)
+      
+      student.percentage = totalMaxScore.value > 0 
+        ? (student.totalScore / totalMaxScore.value) * 100 
+        : 0
+    }
+
+    const getSkillAverage = (skillPivotId) => {
+      if (studentsList.value.length === 0) return 0
+      return studentsList.value.reduce((sum, student) => {
+        return sum + (parseFloat(student.scores[skillPivotId]) || 0)
+      }, 0) / studentsList.value.length
+    }
+
+    const getScoreClass = (score, maxScore) => {
+      const percentage = (score / maxScore) * 100
+      if (percentage >= 80) return 'text-success'
+      if (percentage >= 60) return 'text-warning'
+      if (percentage >= 50) return 'text-info'
+      return 'text-danger'
+    }
+
     const submitProgressTest = async () => {
-      if (!ready.value || isClosed.value) return
+      if (!ready.value || isClosed.value || skills.value.length === 0) return
+      
       const payload = studentsList.value.map((st) => ({
         student_id: st.id,
         scores: st.scores
@@ -181,9 +297,13 @@ export default {
             students: payload
           }
         )
-        toastr.success('Scores saved successfully')
+        toastr.success('Progress test scores saved successfully')
+        
+        // Refresh data to update status
+        await fetchData()
       } catch (e) {
-        toastr.error('Error saving scores')
+        console.error('Error saving scores:', e)
+        toastr.error('Error saving progress test scores')
       }
     }
 
@@ -196,6 +316,13 @@ export default {
       studentsList,
       isClosed,
       ready,
+      totalMaxScore,
+      classAverageTotal,
+      classAveragePercentage,
+      passCount,
+      updateStudentStats,
+      getSkillAverage,
+      getScoreClass,
       submitProgressTest
     }
   }
@@ -209,7 +336,7 @@ export default {
   border-radius: 12px;
   box-shadow: var(--shadow);
   padding: 22px;
-  max-width: 1080px;
+  max-width: 1200px;
   margin: auto;
 }
 .global-spinner-overlay {
@@ -234,5 +361,8 @@ export default {
 .table td { vertical-align: middle }
 .alert {
   margin-bottom: 1rem;
+}
+.badge {
+  font-size: 0.75em;
 }
 </style>
