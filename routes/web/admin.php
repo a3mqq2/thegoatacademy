@@ -14,9 +14,14 @@ use App\Http\Controllers\Admin\GroupTypeController;
 use App\Http\Controllers\WithdrawnReasonController;
 use App\Http\Controllers\Admin\CourseTypeController;
 use App\Http\Controllers\Admin\StudentFileController;
+use App\Http\Controllers\Instructor\CoursesController;
 use App\Http\Controllers\Admin\CourseStudentController;
+use App\Http\Controllers\CourseScheduleController;
 use App\Http\Controllers\Admin\QualitySettingController;
-use App\Http\Controllers\Admin\MeetingPlatformController;
+// ADD THESE NEW CONTROLLER IMPORTS
+use App\Http\Controllers\AdminAttendanceController;
+use App\Http\Controllers\MeetingPlatformController;
+use App\Http\Controllers\AdminProgressTestController;
 use App\Http\Controllers\Instructor\ProgressTestController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -41,30 +46,59 @@ Route::put('/courses/{id}/reactive', [CourseController::class, 'reactive'])->nam
 Route::get('/courses/search', [CourseController::class, 'search'])->name('courses.search');
 Route::resource('courses', CourseController::class);
 
+// ========== NEW SCHEDULE MANAGEMENT ROUTES ==========
+// Schedule CRUD operations
+Route::post('/courses/{course}/schedules', [CourseScheduleController::class, 'store'])->name('courses.schedules.store');
+Route::put('/courses/{course}/schedules/{schedule}', [CourseScheduleController::class, 'update'])->name('courses.schedules.update');
+Route::delete('/courses/{course}/schedules/{schedule}', [CourseScheduleController::class, 'destroy'])->name('courses.schedules.destroy');
+// Schedule status update via AJAX
+Route::put('/courses/{course}/schedules/{schedule}/status', [CourseScheduleController::class, 'updateStatus'])->name('courses.schedules.update-status');
+
+// ========== NEW ADMIN PROGRESS TEST ROUTES ==========
+// Admin Progress Test CRUD operations
+Route::post('/courses/{course}/progress-tests', [AdminProgressTestController::class, 'store'])->name('courses.progress_tests.store');
+Route::put('/courses/{course}/progress-tests/{progressTest}', [AdminProgressTestController::class, 'update'])->name('courses.progress_tests.update');
+Route::delete('/courses/{course}/progress-tests/{progressTest}', [AdminProgressTestController::class, 'destroy'])->name('courses.progress_tests.destroy');
+// Admin Progress Test with admin override capability
+Route::get('/admin/progress-tests/{progressTest}', [AdminProgressTestController::class, 'show'])->name('admin.courses.progress_tests.show');
+Route::put('/admin/progress-tests/{progressTest}', [AdminProgressTestController::class, 'updateGrades'])->name('admin.courses.progress_tests.update_grades');
+
+// ========== ADMIN ATTENDANCE ROUTES ==========
+// Admin attendance with override capability
+Route::get('/courses/{course}/{CourseSchedule}/admin-attendance', [AdminAttendanceController::class, 'take'])->name('admin.courses.take_attendance');
+Route::post('/courses/{course}/admin-attendance', [AdminAttendanceController::class, 'store'])->name('admin.courses.attendance.store');
 
 Route::put('/courses/{course}/students/{student}/exclude', [CourseStudentController::class, 'exclude'])->name('courses.students.exclude');
 Route::put('/courses/{course}/students/{student}/withdraw', [CourseStudentController::class, 'withdraw'])->name('courses.students.withdraw');
 
+Route::get(
+    '/progress-test/{progressTest}',
+    [ProgressTestController::class, 'show']
+)->name('courses.progress_tests.show');
 
+Route::get(
+    '/progress-test/{progressTest}/print',
+    [ProgressTestController::class, 'print']
+)->name('courses.progress_tests.print');
+
+// ========== FIXED EXISTING ROUTE ==========
+// Fixed typo: "attenance" -> "attendance"
+Route::get('/courses/{course}/{CourseSchedule}/take-attenance', [CoursesController::class, 'take_attendance'])
+     ->name('courses.take_attendance');
+     
 Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit_logs.index');
 
 Route::resource('exclude_reasons', ExcludeReasonController::class)->only(['index','create','store']);
 Route::resource('withdrawn_reasons', WithdrawnReasonController::class)->only(['index','create','store']);
 
-
-
 Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
 Route::put('/settings/update', [SettingController::class, 'update'])->name('settings.update');
-
-
 
 Route::get('/quality-settings', [QualitySettingController::class, 'index'])->name('quality-settings.index');
 Route::put('/quality-settings/update', [QualitySettingController::class, 'update'])->name('quality-settings.update');
 
-
 Route::resource('skills', SkillController::class);
 Route::resource('levels', LevelController::class);
-
 
 Route::post('/students/{student}/files', [StudentFileController::class, 'store'])
     ->name('students.files.store');
@@ -78,6 +112,6 @@ Route::put('/students/files/{file}', [StudentFileController::class, 'update'])
 Route::delete('/students/files/{file}', [StudentFileController::class, 'destroy'])
     ->name('students.files.destroy');
 
-    Route::resource('meeting_platforms', MeetingPlatformController::class);
+Route::resource('meeting_platforms', MeetingPlatformController::class);
 
-    Route::resource('progressTests', ProgressTestController::class);
+Route::resource('progressTests', ProgressTestController::class);

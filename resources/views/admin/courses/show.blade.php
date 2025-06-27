@@ -18,7 +18,38 @@
   </li>
 @endsection
 
+@push('styles')
+<style>
+  :root{--primary:#6f42c1;--secondary:#007bff;--bg:#f0f2f5;--card:#fff;--sh:0 6px 14px rgba(0,0,0,.08)}
+  body{background:var(--bg)}
+  .card{border:none;border-radius:12px;box-shadow:var(--sh);margin-bottom:1.5rem}
+  .card-header{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;padding:.7rem 1rem}
+  .card-header h4,.card-header h5{margin:0;font-weight:600;font-size:1.05rem}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #dee2e6;padding:.45rem .7rem;vertical-align:middle}
+  th{background:#f8f9fa;font-size:.88rem;font-weight:600}
+  .exam-row{background:#151f42;color:#fff!important}
+  .exam-row td {color: #fff !important;}
+  .progress-row{background:#ffc107;color:#000}
+  .badge{font-size:.8rem}
+  .admin-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .status-indicator {
+    min-width: 80px;
+    text-align: center;
+  }
+</style>
+@endpush
+
 @section('content')
+@php
+  /* ---------- helper: id ➜ name (Sat first) ---------- */
+  $dayName = [6=>'Sat',0=>'Sun',1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri'];
+@endphp
+
 <div class="container">
 
   <!-- Course Overview Card -->
@@ -33,14 +64,6 @@
         <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-light btn-sm me-2">
           <i class="fa fa-edit"></i> Edit
         </a>
-
-{{-- 
-        @if (in_array($course->status,['canceled','completed','cancelled','paused']))
-          <a href="{{ route('admin.courses.restore', $course->id) }}"   class="btn btn-success btn-sm me-2">
-            <i class="fa fa-redo"></i> Restore The Course
-          </a>
-        @endif --}}
-
 
         <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-dark btn-sm me-2">
           <i class="fa fa-arrow-left"></i> Back
@@ -93,7 +116,6 @@
             >
               {{ ucfirst($course->status) }}
             </span>
-
           </div>
         </div>
       
@@ -158,93 +180,239 @@
   </div>
   <!-- End Course Overview Card -->
 
-  <!-- Schedule Section -->
+  <!-- Enhanced Schedule Section with Admin Controls -->
   <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
-      <h5 class="mb-0">
-        <i class="fa fa-calendar"></i> Schedule
-      </h5>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#scheduleCollapse" aria-expanded="true" aria-controls="scheduleCollapse">
-        <i class="fa fa-minus"></i>
-      </button>
-    </div>
-    <div id="scheduleCollapse" class="collapse">
-      <div class="card-body">
-        @if($course->schedules->count())
-          @php
-            $total = $course->schedules->count();
-            $midPoint = ceil($total / 2);
-          @endphp
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th class="text-primary">#</th>
-                  <th class="text-primary">Day</th>
-                  <th class="text-primary">Date</th>
-                  <th class="text-primary">From Time</th>
-                  <th class="text-primary">To Time</th>
-                </tr>
-              </thead>
-              <tbody>
-
-                @if ($course->pre_test_date)
-                <tr style="background-color: #151f42; color: #fff;">
-                  <td colspan="2" class="text-light">Pre exam test</td>
-                  <td class="text-light">
-                    {{ $course->pre_test_date }} 
-                    ({{ \Carbon\Carbon::parse($course->pre_test_date)->format('l') }})
-                  </td>
-                  <td colspan="2"></td>
-                </tr>
-                @endif
-
-
-                @foreach($course->schedules as $i => $schedule)
-                  <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $schedule->day }}</td>
-                    <td>{{ $schedule->date }}</td>
-                    <td>{{ $schedule->from_time }}</td>
-                    <td>{{ $schedule->to_time }}</td>
-                  </tr>
-                  @if($i + 1 == $midPoint)
-                  
-                  @if ($course->mid_exam_date)
-                  <tr style="background-color: #151f42; color: #fff;">
-                    <td colspan="2" class="text-light">MID exam test</td>
-                    <td class="text-light">
-                      {{ $course->mid_exam_date }} 
-                      ({{ \Carbon\Carbon::parse($course->mid_exam_date)->format('l') }})
-                    </td>
-                    <td colspan="2"></td>
-                  </tr>
-                  @endif
-                    
-                  @endif
-                @endforeach
-                
-                @if ($course->final_exam_date)
-                <tr style="background-color: #151f42; color: #fff;">
-                  <td colspan="2" class="text-light">Final exam test</td>
-                  <td class="text-light">
-                    {{ $course->final_exam_date }} 
-                    ({{ \Carbon\Carbon::parse($course->final_exam_date)->format('l') }})
-                  </td>
-                  <td colspan="2"></td>
-                </tr>
-                @endif
-
-              </tbody>
-            </table>
-          </div>
-        @else
-          <p class="text-muted mb-0">No schedule entries available for this course.</p>
-        @endif
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addProgressTestModal">
+          <i class="fa fa-plus"></i> Add Progress Test
+        </button>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+          <i class="fa fa-plus"></i> Add Schedule
+        </button>
       </div>
     </div>
+    <div class="card-body p-0">
+      @if($course->schedules->count())
+        @php
+          $timeline = collect();
+          foreach ($course->schedules as $idx => $s) {
+            $timeline->push([
+              'type'     => 'lecture',
+              'no'       => $idx + 1,
+              'day'      => $dayName[$s->day] ?? $s->day,
+              'date'     => $s->date,
+              'from'     => $s->from_time,
+              'to'       => $s->to_time,
+              'schedule' => $s,
+            ]);
+          }
+          foreach ($course->progressTests as $pt) {
+            $timeline->push([
+              'type' => 'progress',
+              'pt'   => $pt,
+              'week' => $pt->week,
+              'day'  => \Carbon\Carbon::parse($pt->date)->format('l'),
+              'date' => $pt->date,
+              'time' => $pt->time,
+              'id'   => $pt->id,
+            ]);
+          }
+          $timeline   = $timeline->sortBy('date')->values();
+          $lecCounter = 0;
+        @endphp
+  
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Day</th>
+                <th>Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($timeline as $row)
+                {{-- Progress Test --}}
+                @if($row['type'] === 'progress')
+                @php
+                $pt        = $row['pt'];
+                $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
+                $closed    = now()->gt(\Carbon\Carbon::parse($pt->close_at));
+                @endphp
+                <tr class="progress-row text-center text-dark">
+                    <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
+                    <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
+                    <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                    <td class="status-indicator">
+                        @if($hasGrades)
+                            <span class="badge bg-success">
+                              <i class="fa fa-check"></i> Completed
+                            </span>
+                        @elseif($closed)
+                            <span class="badge bg-danger">
+                              <i class="fa fa-times"></i> Closed
+                            </span>
+                        @else
+                            <span class="badge bg-warning">
+                              <i class="fa fa-clock"></i> Pending
+                            </span>
+                        @endif
+                    </td>
+                    <td>
+                        <div class="admin-controls">
+                            {{-- Edit Progress Test --}}
+                            <button class="btn btn-warning btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editProgressTestModal"
+                                    data-pt-id="{{ $pt->id }}"
+                                    data-pt-week="{{ $pt->week }}"
+                                    data-pt-date="{{ $pt->date }}"
+                                    data-pt-time="{{ $pt->time }}"
+                                    data-pt-close="{{ $pt->close_at }}">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            
+                            {{-- Grades Button (with admin override) --}}
+                            @if($hasGrades || $closed)
+                                <a href="{{ route('admin.courses.progress_tests.show', [$row['id'], 'admin' => true]) }}" 
+                                   class="btn btn-info btn-sm">
+                                    <i class="fa fa-chart-bar"></i> Grades
+                                </a>
+                            @else
+                                <a href="{{ route('admin.courses.progress_tests.show', [$row['id'], 'admin' => true]) }}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fa fa-plus"></i> Enter Grades
+                                </a>
+                            @endif
+
+                            {{-- Download Results --}}
+                            @if($hasGrades)
+                                <a href="{{ route('admin.courses.progress_tests.print', $row['id']) }}" 
+                                   class="btn btn-danger btn-sm">
+                                    <i class="fa fa-download"></i>
+                                </a>
+                            @endif
+
+                            {{-- Delete Progress Test --}}
+                            <button class="btn btn-outline-danger btn-sm" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteProgressTestModal"
+                                    data-pt-id="{{ $pt->id }}">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                @else
+                  {{-- Lecture Schedule --}}
+                  @php
+                    $lecCounter++;
+                    $sch = $row['schedule'];
+                    $closeAt = \Carbon\Carbon::parse($sch->close_at);
+                    $today = now()->toDateString();
+                    $isToday = ($row['date'] === $today);
+                    $canTakeAttendance = $isToday && now()->lt($closeAt);
+                  @endphp
+                  <tr>
+                    <td>{{ $lecCounter }}</td>
+                    <td>
+                      {{ $row['day'] }} 
+                      @if ($sch->extra_date)
+                        <div class="badge badge-info m-1 bg-info">EXTRA</div>
+                      @endif
+                    </td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
+                    <td class="text-center status-indicator">
+                      @if ($sch->status == "pending")
+                          <span class="badge bg-warning">
+                            <i class="fa fa-hourglass-end"></i> Pending
+                          </span>
+                      @elseif ($sch->status == "done")
+                          <span class="badge bg-success">
+                            <i class="fa fa-check"></i> Done
+                          </span>
+                      @elseif ($sch->status == "absent")
+                          <span class="badge bg-danger">
+                            <i class="fa fa-times"></i> Absent
+                          </span>
+                      @endif
+                    </td>
+                    <td class="text-center">
+                      <div class="admin-controls">
+                        {{-- Edit Schedule --}}
+                        <button class="btn btn-warning btn-sm" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editScheduleModal"
+                                data-schedule-id="{{ $sch->id }}"
+                                data-schedule-date="{{ $sch->date }}"
+                                data-schedule-from="{{ $sch->from_time }}"
+                                data-schedule-to="{{ $sch->to_time }}"
+                                data-schedule-day="{{ $sch->day }}"
+                                data-schedule-extra="{{ $sch->extra_date ? 1 : 0 }}">
+                            <i class="fa fa-edit"></i>
+                        </button>
+
+                        {{-- Status Control --}}
+                        <div class="btn-group" role="group">
+                          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                  type="button" 
+                                  data-bs-toggle="dropdown">
+                            Status
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="updateScheduleStatus({{ $sch->id }}, 'pending')">
+                              <i class="fa fa-hourglass-end text-warning"></i> Pending
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateScheduleStatus({{ $sch->id }}, 'done')">
+                              <i class="fa fa-check text-success"></i> Done
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateScheduleStatus({{ $sch->id }}, 'absent')">
+                              <i class="fa fa-times text-danger"></i> Absent
+                            </a></li>
+                          </ul>
+                        </div>
+
+                        {{-- Attendance Control --}}
+                        @if($sch->attendance_taken_at)
+                          <a href="{{ route('admin.courses.take_attendance', ['course' => $course->id, 'CourseSchedule' => $sch->id, 'admin' => true]) }}" 
+                             class="btn btn-info btn-sm">
+                            <i class="fa fa-users"></i> View
+                          </a>
+                        @elseif($canTakeAttendance || true) {{-- Admin can always take attendance --}}
+                          <a href="{{ route('admin.courses.take_attendance', ['course' => $course->id, 'CourseSchedule' => $sch->id, 'admin' => true]) }}" 
+                             class="btn btn-primary btn-sm">
+                            <i class="fa fa-user-check"></i> Attendance
+                          </a>
+                        @endif
+
+                        {{-- Delete Schedule --}}
+                        <button class="btn btn-outline-danger btn-sm" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteScheduleModal"
+                                data-schedule-id="{{ $sch->id }}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                @endif
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      @else
+        <p class="p-3 mb-0 text-muted">No schedule entries.</p>
+      @endif
+    </div>
   </div>
-  <!-- End Schedule Section -->
 
   <!-- Enrolled Students Section -->
   <div class="card mt-4">
@@ -334,7 +502,6 @@
       </div>
     </div>
   </div>
-  <!-- End Enrolled Students Section -->
 
   <!-- Cancel Course Button -->
   @if($course->status == 'ongoing')
@@ -344,50 +511,255 @@
       </button>
     </div>
   @endif
+</div>
 
-  <!-- Audit Logs Section -->
-  <div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center bg-light text-primary">
-      <h5 class="mb-0">
-        <i class="fa fa-history"></i> Audit Logs
-      </h5>
-      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#auditLogsCollapse" aria-expanded="true" aria-controls="auditLogsCollapse">
-        <i class="fa fa-minus"></i>
-      </button>
-    </div>
-    <div id="auditLogsCollapse" class="collapse">
-      <div class="card-body">
-        @if($course->logs && $course->logs->count())
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Event</th>
-                  <th>Performed By</th>
-                  <th>Created At</th>
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($course->logs as $idx => $log)
-                  <tr>
-                    <td>{{ $idx + 1 }}</td>
-                    <td>{{ ucfirst($log->description) }}</td>
-                    <td>{{ $log->user->name ?? 'System' }}</td>
-                    <td>{{ $log->created_at->format('Y-m-d H:i') }}</td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ route('admin.courses.schedules.store', $course) }}">
+      @csrf
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-plus"></i> Add New Schedule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Day</label>
+              <select name="day" class="form-select" required>
+                <option value="">Select Day</option>
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
           </div>
-        @else
-          <p class="text-muted mb-0">No audit logs found for this course.</p>
-        @endif
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">From Time</label>
+              <input type="time" name="from_time" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">To Time</label>
+              <input type="time" name="to_time" class="form-control" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="extra_date" id="extraDate" value="1">
+              <label class="form-check-label" for="extraDate">
+                Mark as Extra Class
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Schedule</button>
+        </div>
       </div>
-    </div>
+    </form>
   </div>
 </div>
-<!-- End Container -->
+
+<!-- Edit Schedule Modal -->
+<div class="modal fade" id="editScheduleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="editScheduleForm" method="POST">
+      @csrf
+      @method('PUT')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Schedule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" id="editScheduleDate" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Day</label>
+              <select name="day" id="editScheduleDay" class="form-select" required>
+                <option value="">Select Day</option>
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">From Time</label>
+              <input type="time" name="from_time" id="editScheduleFrom" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">To Time</label>
+              <input type="time" name="to_time" id="editScheduleTo" class="form-control" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="extra_date" id="editExtraDate" value="1">
+              <label class="form-check-label" for="editExtraDate">
+                Mark as Extra Class
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">Update Schedule</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Schedule Modal -->
+<div class="modal fade" id="deleteScheduleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="deleteScheduleForm" method="POST">
+      @csrf
+      @method('DELETE')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-trash"></i> Delete Schedule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this schedule? This action cannot be undone.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Schedule</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Progress Test Modal -->
+<div class="modal fade" id="addProgressTestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ route('admin.courses.progress_tests.store', $course) }}">
+      @csrf
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-plus"></i> Add Progress Test</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Week Number</label>
+              <input type="number" name="week" class="form-control" min="1" max="20" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Time</label>
+              <input type="time" name="time" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Close At</label>
+              <input type="datetime-local" name="close_at" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Add Progress Test</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Progress Test Modal -->
+<div class="modal fade" id="editProgressTestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="editProgressTestForm" method="POST">
+      @csrf
+      @method('PUT')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-edit"></i> Edit Progress Test</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Week Number</label>
+              <input type="number" name="week" id="editPtWeek" class="form-control" min="1" max="20" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" id="editPtDate" class="form-control" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Time</label>
+              <input type="time" name="time" id="editPtTime" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Close At</label>
+              <input type="datetime-local" name="close_at" id="editPtClose" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">Update Progress Test</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Progress Test Modal -->
+<div class="modal fade" id="deleteProgressTestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="deleteProgressTestForm" method="POST">
+      @csrf
+      @method('DELETE')
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-trash"></i> Delete Progress Test</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete this progress test? This action cannot be undone and will remove all associated grades.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Delete Progress Test</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Existing Modals from Original Code -->
 <!-- Enroll Student Modal -->
 <div class="modal fade" id="enrollStudentModal" tabindex="-1">
   <div class="modal-dialog">
@@ -509,57 +881,6 @@
   </div>
 </div>
 
-<!-- Complete Course Modal -->
-<div class="modal fade" id="completeCourseModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="completeCourseForm" method="POST">
-      @csrf
-      @method('PUT')
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title"><i class="fa fa-check"></i> Complete Course</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to mark this course as completed?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-          <button type="submit" class="btn btn-success">Yes, Complete</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Audit Logs Modal -->
-<div class="modal fade" id="auditChangeModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-eye"></i> Audit Changes</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-         <div class="row mb-3">
-           <div class="col-md-6">
-             <label class="form-label fw-bold">Old Values:</label>
-             <pre id="logOldValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-bold">New Values:</label>
-             <pre id="logNewValues" class="bg-light p-2 rounded" style="max-height: 300px; overflow:auto;"></pre>
-           </div>
-         </div>
-      </div>
-      <div class="modal-footer">
-         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 <!-- Update Course Status Modal -->
 <div class="modal fade" id="updateStatusModal" tabindex="-1">
   <div class="modal-dialog">
@@ -587,8 +908,6 @@
                 <option value="upcoming">Upcoming</option>
               @endif
 
-
-
               <option value="paused">Paused</option>
               <option value="canceled">Canceled</option>
             </select>
@@ -603,121 +922,117 @@
   </div>
 </div>
 
-
-
-
-<!-- Scripts for modals, Select2, and FilePond -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Cancel Course Modal
-    document.querySelectorAll('[data-bs-target="#cancelCourseModal"]').forEach(button => {
-      button.addEventListener("click", function () {
-        const courseId = this.dataset.courseId;
-        document.getElementById("cancelCourseForm").setAttribute("action", "/admin/courses/" + courseId + "/cancel");
-      });
-    });
+document.addEventListener("DOMContentLoaded", function () {
+  // Edit Schedule Modal
+  document.querySelectorAll('[data-bs-target="#editScheduleModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const scheduleId = this.dataset.scheduleId;
+      const date = this.dataset.scheduleDate;
+      const from = this.dataset.scheduleFrom;
+      const to = this.dataset.scheduleTo;
+      const day = this.dataset.scheduleDay;
+      const extra = this.dataset.scheduleExtra;
 
-    // Complete Course Modal
-    document.querySelectorAll('[data-bs-target="#completeCourseModal"]').forEach(button => {
-      button.addEventListener("click", function () {
-        const courseId = this.dataset.courseId;
-        document.getElementById("completeCourseForm").setAttribute("action", "/admin/courses/" + courseId + "/complete");
-      });
+      document.getElementById("editScheduleForm").setAttribute("action", `/admin/courses/{{ $course->id }}/schedules/${scheduleId}`);
+      document.getElementById("editScheduleDate").value = date;
+      document.getElementById("editScheduleFrom").value = from;
+      document.getElementById("editScheduleTo").value = to;
+      document.getElementById("editScheduleDay").value = day;
+      document.getElementById("editExtraDate").checked = extra == "1";
     });
+  });
 
-    // Audit Logs Modal: Show old/new values
-    document.querySelectorAll('[data-bs-target="#auditChangeModal"]').forEach(button => {
-      button.addEventListener("click", function () {
-        const oldVals = this.dataset.logOld;
-        const newVals = this.dataset.logNew;
-        document.getElementById("logOldValues").textContent = JSON.stringify(JSON.parse(oldVals), null, 2);
-        document.getElementById("logNewValues").textContent = JSON.stringify(JSON.parse(newVals), null, 2);
-      });
+  // Delete Schedule Modal
+  document.querySelectorAll('[data-bs-target="#deleteScheduleModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const scheduleId = this.dataset.scheduleId;
+      document.getElementById("deleteScheduleForm").setAttribute("action", `/admin/courses/{{ $course->id }}/schedules/${scheduleId}`);
     });
+  });
 
-    // Exclude Student Modal
-    document.querySelectorAll('[data-bs-target="#excludeStudentModal"]').forEach(btn => {
-      btn.addEventListener("click", function () {
-        const courseId  = this.dataset.courseId;
-        const studentId = this.dataset.studentId;
-        document.getElementById("excludeStudentForm").setAttribute("action", `/admin/courses/${courseId}/students/${studentId}/exclude`);
-      });
-    });
+  // Edit Progress Test Modal
+  document.querySelectorAll('[data-bs-target="#editProgressTestModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const ptId = this.dataset.ptId;
+      const week = this.dataset.ptWeek;
+      const date = this.dataset.ptDate;
+      const time = this.dataset.ptTime;
+      const close = this.dataset.ptClose;
 
-    // Withdraw Student Modal
-    document.querySelectorAll('[data-bs-target="#withdrawStudentModal"]').forEach(btn => {
-      btn.addEventListener("click", function () {
-        const courseId  = this.dataset.courseId;
-        const studentId = this.dataset.studentId;
-        document.getElementById("withdrawStudentForm").setAttribute("action", `/admin/courses/${courseId}/students/${studentId}/withdraw`);
-      });
-    });
-
-
-    
-    // Initialize Select2 for skills and levels multiselects
-    $('#skills').select2({
-      placeholder: 'Select skills',
-      allowClear: true,
-      width: '100%'
-    });
-    $('#levels').select2({
-      placeholder: 'Select levels',
-      allowClear: true,
-      width: '100%'
-    });
-
-    // Initialize FilePond for video file input
-    const videoInputElement = document.querySelector('input[id="video"]');
-    FilePond.create(videoInputElement, {
-      server: {
-        process: {
-          url: '{{ route("upload.file") }}',
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          }
-        },
-        revert: {
-          url: '{{ route("upload.file.revert") }}',
-          method: 'DELETE',
-          headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-          }
-        }
-      },
-      acceptedFileTypes: ['video/*'],
-      onprocessfilestart: () => {
-        document.getElementById('submitBtn').disabled = true;
-      },
-      onprocessfile: (error, file) => {
-        document.getElementById('submitBtn').disabled = false;
-        if (!error) {
-          let serverResponse = file.serverId;
-          try {
-            serverResponse = JSON.parse(file.serverId);
-          } catch(e) { }
-          document.getElementById('video_path').value = serverResponse.path;
-        }
-      },
-      onprocessfileabort: () => {
-        document.getElementById('submitBtn').disabled = false;
-      },
-      onprocessfileerror: () => {
-        document.getElementById('submitBtn').disabled = false;
+      document.getElementById("editProgressTestForm").setAttribute("action", `/admin/courses/{{ $course->id }}/progress-tests/${ptId}`);
+      document.getElementById("editPtWeek").value = week;
+      document.getElementById("editPtDate").value = date;
+      document.getElementById("editPtTime").value = time;
+      
+      // Convert close_at to datetime-local format
+      if (close) {
+        const closeDate = new Date(close.replace(' ', 'T'));
+        document.getElementById("editPtClose").value = closeDate.toISOString().slice(0, 16);
       }
     });
   });
-</script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(button => {
-      button.addEventListener("click", function () {
-        const courseId = this.dataset.courseId;
-        document.getElementById("updateStatusForm").setAttribute("action", `/admin/courses/${courseId}/update-status`);
-      });
+
+  // Delete Progress Test Modal
+  document.querySelectorAll('[data-bs-target="#deleteProgressTestModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const ptId = this.dataset.ptId;
+      document.getElementById("deleteProgressTestForm").setAttribute("action", `/admin/courses/{{ $course->id }}/progress-tests/${ptId}`);
     });
   });
+
+  // Cancel Course Modal
+  document.querySelectorAll('[data-bs-target="#cancelCourseModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const courseId = this.dataset.courseId;
+      document.getElementById("cancelCourseForm").setAttribute("action", "/admin/courses/" + courseId + "/cancel");
+    });
+  });
+
+  // Update Status Modal
+  document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(button => {
+    button.addEventListener("click", function () {
+      const courseId = this.dataset.courseId;
+      document.getElementById("updateStatusForm").setAttribute("action", `/admin/courses/${courseId}/update-status`);
+    });
+  });
+
+  // Exclude Student Modal
+  document.querySelectorAll('[data-bs-target="#excludeStudentModal"]').forEach(btn => {
+    btn.addEventListener("click", function () {
+      const courseId  = this.dataset.courseId;
+      const studentId = this.dataset.studentId;
+      document.getElementById("excludeStudentForm").setAttribute("action", `/admin/courses/${courseId}/students/${studentId}/exclude`);
+    });
+  });
+
+  // Withdraw Student Modal
+  document.querySelectorAll('[data-bs-target="#withdrawStudentModal"]').forEach(btn => {
+    btn.addEventListener("click", function () {
+      const courseId  = this.dataset.courseId;
+      const studentId = this.dataset.studentId;
+      document.getElementById("withdrawStudentForm").setAttribute("action", `/admin/courses/${courseId}/students/${studentId}/withdraw`);
+    });
+  });
+});
+
+// Function to update schedule status via AJAX
+function updateScheduleStatus(scheduleId, status) {
+  if (confirm(`Are you sure you want to change the schedule status to "${status}"?`)) {
+    fetch(`/admin/courses/{{ $course->id }}/schedules/${scheduleId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+      location.reload(); // Reload to show updated status
+    });
+  }
+}
 </script>
 
 @endsection

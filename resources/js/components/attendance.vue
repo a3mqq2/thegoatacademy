@@ -5,9 +5,25 @@
       <div class="spinner"></div>
     </div>
 
-    <!-- Closed notice -->
-    <div v-if="isClosed" class="alert alert-warning text-center">
+    <!-- Header with admin indicator -->
+    <header class="text-center mb-4" v-if="isAdmin || isClosed">
+      <div v-if="isAdmin" class="mb-2">
+        <span class="badge bg-warning text-dark">
+          <i class="fa fa-shield-alt me-1" /> Admin Mode - Time Limit Bypassed
+        </span>
+      </div>
+    </header>
+
+    <!-- Closed notice (only show if not admin) -->
+    <div v-if="isClosed && !isAdmin" class="alert alert-warning text-center">
+      <i class="fa fa-lock me-1" />
       Editing window has closed. You cannot modify attendance anymore.
+    </div>
+
+    <!-- Admin override notice (show if closed but admin) -->
+    <div v-if="isClosed && isAdmin" class="alert alert-info text-center">
+      <i class="fa fa-info-circle me-1" />
+      Editing window has closed, but you can still modify attendance as an administrator.
     </div>
 
     <div v-if="course && course.students">
@@ -26,18 +42,29 @@
             <tr
               v-for="(student, index) in course.students"
               :key="student.id"
-              :class="{ disabled: !canModify(student) || isClosed }"
+              :class="{ 
+                disabled: !canModify(student) || (!canEdit && !isAdmin),
+                'admin-override-row': isClosed && isAdmin && canModify(student)
+              }"
             >
               <td>{{ index + 1 }}</td>
-              <td>{{ student.name }}</td>
+              <td>
+                {{ student.name }}
+                <div v-if="isClosed && isAdmin && canModify(student)" class="admin-indicator">
+                  <small class="text-warning">
+                    <i class="fa fa-unlock-alt"></i> Admin Override
+                  </small>
+                </div>
+              </td>
               <td class="text-center">
                 <label class="switch m-0">
                   <input
                     type="checkbox"
                     v-model="student.attendancePresent"
-                    :disabled="!canModify(student) || isClosed"
+                    :disabled="!canModify(student) || !canEdit"
+                    :class="{ 'admin-override': isClosed && isAdmin }"
                   />
-                  <span class="slider round"></span>
+                  <span class="slider round" :class="{ 'admin-override-slider': isClosed && isAdmin }"></span>
                 </label>
               </td>
               <td class="text-center">
@@ -45,9 +72,10 @@
                   <input
                     type="checkbox"
                     v-model="student.homeworkSubmitted"
-                    :disabled="!canModify(student) || isClosed"
+                    :disabled="!canModify(student) || !canEdit"
+                    :class="{ 'admin-override': isClosed && isAdmin }"
                   />
-                  <span class="slider round"></span>
+                  <span class="slider round" :class="{ 'admin-override-slider': isClosed && isAdmin }"></span>
                 </label>
               </td>
               <td>
@@ -55,7 +83,8 @@
                   type="text"
                   v-model="student.notes"
                   class="form-control form-control-sm"
-                  :disabled="!canModify(student) || isClosed"
+                  :disabled="!canModify(student) || !canEdit"
+                  :class="{ 'admin-override': isClosed && isAdmin }"
                   placeholder="Notes..."
                 />
               </td>
@@ -68,17 +97,29 @@
     <button
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
-      :disabled="!anyModifiable || isClosed"
+      :disabled="!anyModifiable || !canEdit"
+      :class="{ 'btn-warning': isClosed && isAdmin }"
     >
-      <i class="fa fa-save info-icon"></i> Save Attendance
+      <i class="fa fa-save info-icon"></i> 
+      {{ isClosed && isAdmin ? 'Save Attendance (Admin Override)' : 'Save Attendance' }}
     </button>
 
     <a
-      href="/instructor/courses/?status=ongoing"
-      class="btn btn-secondary mt-4 btn-sm text-light"
+        v-if="!isAdmin"
+        class="btn btn-secondary btn-sm text-light"
+        href="/instructor/courses?status=ongoing"
+      >
+        <i class="fa fa-arrow-left" /> Back
+      </a>
+
+      <a
+      v-else
+      class="btn btn-secondary btn-sm text-light"
+      href="/admin/courses?status=ongoing"
     >
-      <i class="fa fa-arrow-left"></i> Back
+      <i class="fa fa-arrow-left" /> Back
     </a>
+    
   </div>
 </template>
 
@@ -96,6 +137,7 @@ export default {
       default: () => new Date().toISOString().substring(0, 10),
     },
     scheduleId: { type: Number, default: null },
+    isAdmin: { type: Boolean, default: false }
   },
   setup(props) {
     const globalLoading = ref(false);
@@ -140,18 +182,24 @@ export default {
       return Date.now() >= closeMs;
     });
 
+    // New computed property to determine if editing is allowed
+    const canEdit = computed(() => {
+      return !isClosed.value || props.isAdmin;
+    });
+
     const cannotMark = (student) => student.absencesCount >= 6;
     const canModify = (student) =>
       !["withdrawn", "excluded"].includes(student.pivot?.status);
 
     const anyModifiable = computed(() =>
       course.value?.students?.some(
-        (st) => canModify(st) && !isClosed.value
+        (st) => canModify(st) && canEdit.value
       )
     );
 
     const submitAttendance = async () => {
-      if (!anyModifiable.value) return;
+      if (!anyModifiable.value || !canEdit.value) return;
+      
       const payload = course.value.students.map((st) => ({
         student_id: st.id,
         attendance: st.attendancePresent ? "present" : "absent",
@@ -164,8 +212,14 @@ export default {
         await instance.post(`/courses/${props.courseId}/attendance`, {
           course_schedule_id: schedule.value.id,
           students: payload,
+          admin_override: props.isAdmin && isClosed.value // Flag for backend
         });
-        toastr.success("Attendance has been saved successfully!");
+        
+        const message = isClosed.value && props.isAdmin 
+          ? 'Attendance has been saved successfully (Admin Override)!'
+          : 'Attendance has been saved successfully!';
+        
+        toastr.success(message);
       } catch (error) {
         console.error("Error saving attendance", error);
         toastr.error("Error saving attendance. Please try again later.");
@@ -215,10 +269,12 @@ export default {
       course,
       schedule,
       isClosed,
+      canEdit,
       canModify,
       cannotMark,
       anyModifiable,
       submitAttendance,
+      isAdmin: props.isAdmin
     };
   },
 };
@@ -250,6 +306,15 @@ export default {
 .attendance-table .disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.admin-override-row {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+}
+
+.admin-indicator {
+  margin-top: 2px;
 }
 
 .submit-btn {
@@ -312,5 +377,43 @@ export default {
 .switch input:checked + .slider:before {
   transform: translateX(26px);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Admin override styling */
+.admin-override {
+  border: 2px solid #ffc107 !important;
+  background-color: #fff3cd;
+}
+
+.admin-override:focus {
+  border-color: #ff6b35 !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.admin-override-slider {
+  border: 2px solid #ffc107;
+  background-color: #fff3cd !important;
+}
+
+.admin-override-slider:before {
+  background-color: #ffc107 !important;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background-color: #ffb300;
+  border-color: #ffb300;
+}
+
+.badge {
+  font-size: 0.75em;
+}
+
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
 </style>

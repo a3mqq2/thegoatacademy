@@ -17,6 +17,7 @@
         @if(isset($progressTest))
           :progress-test-id="{{ $progressTest->id }}"
         @endif
+        :is-admin="{{get_area_name() == 'admin'}}" 
       ></progress-test>
     </div>
   </div>

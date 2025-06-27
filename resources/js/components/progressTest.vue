@@ -13,11 +13,24 @@
       <p class="text-muted mb-0">
         <i class="fa fa-calendar me-1" /> Date : {{ progressTest.date }}
       </p>
+      <!-- Admin indicator -->
+      <div v-if="isAdmin" class="mt-2">
+        <span class="badge bg-warning text-dark">
+          <i class="fa fa-shield-alt me-1" /> Admin Mode - Time Limit Bypassed
+        </span>
+      </div>
     </header>
 
-    <!-- Closed notice -->
-    <div v-if="isClosed" class="alert alert-warning text-center">
+    <!-- Closed notice (only show if not admin) -->
+    <div v-if="isClosed && !isAdmin" class="alert alert-warning text-center">
+      <i class="fa fa-lock me-1" />
       Editing window has closed. You cannot modify scores anymore.
+    </div>
+
+    <!-- Admin override notice (show if closed but admin) -->
+    <div v-if="isClosed && isAdmin" class="alert alert-info text-center">
+      <i class="fa fa-info-circle me-1" />
+      Editing window has closed, but you can still modify scores as an administrator.
     </div>
 
     <!-- Skills summary -->
@@ -81,8 +94,9 @@
                 min="0"
                 step="0.01"
                 :placeholder="`0-${skill.pivot.progress_test_max}`"
-                :disabled="isClosed"
+                :disabled="canEdit ? false : isClosed"
                 @input="updateStudentStats(student)"
+                :class="{ 'admin-override': isClosed && isAdmin }"
               />
             </td>
             <!-- total score -->
@@ -133,17 +147,30 @@
     <!-- Buttons -->
     <footer class="d-flex justify-content-between mt-4">
       <a
+        v-if="!isAdmin"
         class="btn btn-secondary btn-sm text-light"
         href="/instructor/courses?status=ongoing"
       >
         <i class="fa fa-arrow-left" /> Back
       </a>
+
+      <a
+      v-else
+      class="btn btn-secondary btn-sm text-light"
+      href="/admin/courses?status=ongoing"
+    >
+      <i class="fa fa-arrow-left" /> Back
+    </a>
+
+
       <button
         class="btn btn-primary"
-        :disabled="isClosed || skills.length === 0"
+        :disabled="!canEdit || skills.length === 0"
         @click="submitProgressTest"
+        :class="{ 'btn-warning': isClosed && isAdmin }"
       >
-        <i class="fa fa-save" /> Save Scores
+        <i class="fa fa-save" /> 
+        {{ isClosed && isAdmin ? 'Save Scores (Admin Override)' : 'Save Scores' }}
       </button>
     </footer>
   </div>
@@ -157,7 +184,8 @@ import toastr from 'toastr'
 export default {
   name: 'ProgressTest',
   props: {
-    progressTestId: { type: Number, required: true }
+    progressTestId: { type: Number, required: true },
+    isAdmin: { type: Boolean, default: false }
   },
 
   setup(props) {
@@ -176,6 +204,11 @@ export default {
 
       // now() >= close_at?
       return Date.now() >= closeDate.getTime()
+    })
+
+    // New computed property to determine if editing is allowed
+    const canEdit = computed(() => {
+      return !isClosed.value || props.isAdmin
     })
 
     const ready = computed(
@@ -282,7 +315,7 @@ export default {
     }
 
     const submitProgressTest = async () => {
-      if (!ready.value || isClosed.value || skills.value.length === 0) return
+      if (!ready.value || !canEdit.value || skills.value.length === 0) return
       
       const payload = studentsList.value.map((st) => ({
         student_id: st.id,
@@ -294,10 +327,17 @@ export default {
           `/progress-tests/${props.progressTestId}`,
           {
             date: progressTest.value.date,
-            students: payload
+            students: payload,
+            admin_override: props.isAdmin && isClosed.value // Flag for backend
           }
         )
-        toastr.success('Progress test scores saved successfully')
+
+        
+        const message = isClosed.value && props.isAdmin 
+          ? 'Progress test scores saved successfully (Admin Override)'
+          : 'Progress test scores saved successfully'
+        
+        toastr.success(message)
         
         // Refresh data to update status
         await fetchData()
@@ -315,6 +355,7 @@ export default {
       skills,
       studentsList,
       isClosed,
+      canEdit,
       ready,
       totalMaxScore,
       classAverageTotal,
@@ -323,7 +364,8 @@ export default {
       updateStudentStats,
       getSkillAverage,
       getScoreClass,
-      submitProgressTest
+      submitProgressTest,
+      isAdmin: props.isAdmin
     }
   }
 }
@@ -364,5 +406,27 @@ export default {
 }
 .badge {
   font-size: 0.75em;
+}
+
+/* Admin override styling */
+.admin-override {
+  border: 2px solid #ffc107 !important;
+  background-color: #fff3cd;
+}
+
+.admin-override:focus {
+  border-color: #ff6b35 !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background-color: #ffb300;
+  border-color: #ffb300;
 }
 </style>
