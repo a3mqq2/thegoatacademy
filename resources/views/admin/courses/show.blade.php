@@ -361,7 +361,7 @@
                         </button>
 
                         {{-- Status Control --}}
-                        <div class="btn-group" role="group">
+                        {{-- <div class="btn-group" role="group">
                           <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                                   type="button" 
                                   data-bs-toggle="dropdown">
@@ -378,7 +378,7 @@
                               <i class="fa fa-times text-danger"></i> Absent
                             </a></li>
                           </ul>
-                        </div>
+                        </div> --}}
 
                         {{-- Attendance Control --}}
                         @if($sch->attendance_taken_at)
