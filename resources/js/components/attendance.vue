@@ -6,10 +6,10 @@
     </div>
 
     <!-- Header with admin indicator -->
-    <header class="text-center mb-4" v-if="isAdmin || isClosed">
-      <div v-if="isAdmin" class="mb-2">
-        <span class="badge bg-warning text-dark">
-          <i class="fa fa-shield-alt me-1" /> Admin Mode - Time Limit Bypassed
+    <header class="text-center mb-4" v-if="isAdmin">
+      <div class="mb-2">
+        <span class="badge bg-success text-white">
+          <i class="fa fa-shield-alt me-1" /> Admin Mode - Unlimited Access
         </span>
       </div>
     </header>
@@ -20,10 +20,10 @@
       Editing window has closed. You cannot modify attendance anymore.
     </div>
 
-    <!-- Admin override notice (show if closed but admin) -->
-    <div v-if="isClosed && isAdmin" class="alert alert-info text-center">
-      <i class="fa fa-info-circle me-1" />
-      Editing window has closed, but you can still modify attendance as an administrator.
+    <!-- Admin unlimited access notice -->
+    <div v-if="isAdmin && isClosed" class="alert alert-info text-center">
+      <i class="fa fa-unlock-alt me-1" />
+      Session editing window is normally closed, but you have unlimited admin access.
     </div>
 
     <div v-if="course && course.students">
@@ -43,16 +43,16 @@
               v-for="(student, index) in course.students"
               :key="student.id"
               :class="{ 
-                disabled: !canModify(student) || (!canEdit && !isAdmin),
-                'admin-override-row': isClosed && isAdmin && canModify(student)
+                disabled: !canModify(student) || !canEdit,
+                'admin-override-row': isAdmin && isClosed
               }"
             >
               <td>{{ index + 1 }}</td>
               <td>
                 {{ student.name }}
-                <div v-if="isClosed && isAdmin && canModify(student)" class="admin-indicator">
-                  <small class="text-warning">
-                    <i class="fa fa-unlock-alt"></i> Admin Override
+                <div v-if="isAdmin && isClosed" class="admin-indicator">
+                  <small class="text-success">
+                    <i class="fa fa-unlock-alt"></i> Admin Access
                   </small>
                 </div>
               </td>
@@ -62,9 +62,9 @@
                     type="checkbox"
                     v-model="student.attendancePresent"
                     :disabled="!canModify(student) || !canEdit"
-                    :class="{ 'admin-override': isClosed && isAdmin }"
+                    :class="{ 'admin-override': isAdmin && isClosed }"
                   />
-                  <span class="slider round" :class="{ 'admin-override-slider': isClosed && isAdmin }"></span>
+                  <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
                 </label>
               </td>
               <td class="text-center">
@@ -73,9 +73,9 @@
                     type="checkbox"
                     v-model="student.homeworkSubmitted"
                     :disabled="!canModify(student) || !canEdit"
-                    :class="{ 'admin-override': isClosed && isAdmin }"
+                    :class="{ 'admin-override': isAdmin && isClosed }"
                   />
-                  <span class="slider round" :class="{ 'admin-override-slider': isClosed && isAdmin }"></span>
+                  <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
                 </label>
               </td>
               <td>
@@ -84,7 +84,7 @@
                   v-model="student.notes"
                   class="form-control form-control-sm"
                   :disabled="!canModify(student) || !canEdit"
-                  :class="{ 'admin-override': isClosed && isAdmin }"
+                  :class="{ 'admin-override': isAdmin && isClosed }"
                   placeholder="Notes..."
                 />
               </td>
@@ -98,10 +98,10 @@
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
       :disabled="!anyModifiable || !canEdit"
-      :class="{ 'btn-warning': isClosed && isAdmin }"
+      :class="{ 'btn-success': isAdmin, 'btn-warning': isAdmin && isClosed }"
     >
       <i class="fa fa-save info-icon"></i> 
-      {{ isClosed && isAdmin ? 'Save Attendance (Admin Override)' : 'Save Attendance' }}
+      {{ isAdmin && isClosed ? 'Save Attendance (Admin Override)' : 'Save Attendance' }}
     </button>
 
     <a
@@ -182,23 +182,38 @@ export default {
       return Date.now() >= closeMs;
     });
 
-    // New computed property to determine if editing is allowed
+    // منطق التحرير البسيط والواضح
     const canEdit = computed(() => {
-      return !isClosed.value || props.isAdmin;
+      // الـ Admin يقدر يعدل أي وقت
+      if (props.isAdmin) return true;
+      
+      // الـ Instructor يقدر يعدل فقط قبل الإغلاق
+      return !isClosed.value;
     });
 
     const cannotMark = (student) => student.absencesCount >= 6;
     const canModify = (student) =>
       !["withdrawn", "excluded"].includes(student.pivot?.status);
 
-    const anyModifiable = computed(() =>
-      course.value?.students?.some(
-        (st) => canModify(st) && canEdit.value
-      )
-    );
+    // منطق anyModifiable - بسيط ومباشر
+    const anyModifiable = computed(() => {
+      if (!course.value?.students) return false;
+      
+      return course.value.students.some((st) => {
+        // يجب أن يكون الطالب قابل للتعديل
+        if (!canModify(st)) return false;
+        
+        // ويجب أن يكون المستخدم يقدر يحرر
+        return canEdit.value;
+      });
+    });
 
     const submitAttendance = async () => {
-      if (!anyModifiable.value || !canEdit.value) return;
+      // التحقق الأساسي
+      if (!anyModifiable.value || !canEdit.value) {
+        toastr.error('Cannot modify attendance at this time.');
+        return;
+      }
       
       const payload = course.value.students.map((st) => ({
         student_id: st.id,
@@ -212,14 +227,22 @@ export default {
         await instance.post(`/courses/${props.courseId}/attendance`, {
           course_schedule_id: schedule.value.id,
           students: payload,
-          admin_override: props.isAdmin && isClosed.value // Flag for backend
+          admin_override: props.isAdmin, // إشارة للـ Backend أن هذا Admin
+          is_admin_edit: props.isAdmin && isClosed.value // إشارة إضافية للتعديل بعد الإغلاق
         });
         
-        const message = isClosed.value && props.isAdmin 
-          ? 'Attendance has been saved successfully (Admin Override)!'
-          : 'Attendance has been saved successfully!';
+        let message = 'Attendance has been saved successfully!';
+        if (props.isAdmin && isClosed.value) {
+          message = 'Attendance has been saved successfully (Admin Override)!';
+        } else if (props.isAdmin) {
+          message = 'Attendance has been saved successfully (Admin)!';
+        }
         
         toastr.success(message);
+        
+        // إعادة تحميل البيانات لإظهار آخر التحديثات
+        await fetchData();
+        
       } catch (error) {
         console.error("Error saving attendance", error);
         toastr.error("Error saving attendance. Please try again later.");
@@ -309,8 +332,8 @@ export default {
 }
 
 .admin-override-row {
-  background-color: #fff3cd;
-  border: 1px solid #ffc107;
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
 }
 
 .admin-indicator {
@@ -380,22 +403,32 @@ export default {
 
 /* Admin override styling */
 .admin-override {
-  border: 2px solid #ffc107 !important;
-  background-color: #fff3cd;
+  border: 2px solid #17a2b8 !important;
+  background-color: #d1ecf1 !important;
 }
 
 .admin-override:focus {
-  border-color: #ff6b35 !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+  border-color: #138496 !important;
+  box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
 }
 
 .admin-override-slider {
-  border: 2px solid #ffc107;
-  background-color: #fff3cd !important;
+  border: 2px solid #17a2b8;
+  background-color: #d1ecf1 !important;
 }
 
 .admin-override-slider:before {
-  background-color: #ffc107 !important;
+  background-color: #17a2b8 !important;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
 }
 
 .btn-warning {
