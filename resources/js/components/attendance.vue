@@ -14,6 +14,15 @@
       </div>
     </header>
 
+    <!-- Debug info (remove in production) -->
+    <div v-if="isAdmin" class="alert alert-secondary">
+      <strong>Debug Info:</strong><br>
+      isAdmin: {{ isAdmin }}<br>
+      isClosed: {{ isClosed }}<br>
+      canEdit: {{ canEdit }}<br>
+      anyModifiable: {{ anyModifiable }}
+    </div>
+
     <!-- Closed notice (only show if not admin) -->
     <div v-if="isClosed && !isAdmin" class="alert alert-warning text-center">
       <i class="fa fa-lock me-1" />
@@ -43,7 +52,7 @@
               v-for="(student, index) in course.students"
               :key="student.id"
               :class="{ 
-                disabled: !canModify(student) || !canEdit,
+                disabled: !canModify(student) || (!isAdmin && !canEdit),
                 'admin-override-row': isAdmin && isClosed
               }"
             >
@@ -61,7 +70,7 @@
                   <input
                     type="checkbox"
                     v-model="student.attendancePresent"
-                    :disabled="!canModify(student) || !canEdit"
+                    :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                     :class="{ 'admin-override': isAdmin && isClosed }"
                   />
                   <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
@@ -72,7 +81,7 @@
                   <input
                     type="checkbox"
                     v-model="student.homeworkSubmitted"
-                    :disabled="!canModify(student) || !canEdit"
+                    :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                     :class="{ 'admin-override': isAdmin && isClosed }"
                   />
                   <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
@@ -83,7 +92,7 @@
                   type="text"
                   v-model="student.notes"
                   class="form-control form-control-sm"
-                  :disabled="!canModify(student) || !canEdit"
+                  :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                   :class="{ 'admin-override': isAdmin && isClosed }"
                   placeholder="Notes..."
                 />
@@ -97,7 +106,7 @@
     <button
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
-      :disabled="!anyModifiable || !canEdit"
+      :disabled="!anyModifiable || (!isAdmin && !canEdit)"
       :class="{ 'btn-success': isAdmin, 'btn-warning': isAdmin && isClosed }"
     >
       <i class="fa fa-save info-icon"></i> 
@@ -182,13 +191,21 @@ export default {
       return Date.now() >= closeMs;
     });
 
-    // منطق التحرير البسيط والواضح
+    // منطق التحرير البسيط والواضح مع debugging
     const canEdit = computed(() => {
+      console.log('Admin status:', props.isAdmin);
+      console.log('isClosed:', isClosed.value);
+      
       // الـ Admin يقدر يعدل أي وقت
-      if (props.isAdmin) return true;
+      if (props.isAdmin) {
+        console.log('Admin can always edit');
+        return true;
+      }
       
       // الـ Instructor يقدر يعدل فقط قبل الإغلاق
-      return !isClosed.value;
+      const canInstructorEdit = !isClosed.value;
+      console.log('Instructor can edit:', canInstructorEdit);
+      return canInstructorEdit;
     });
 
     const cannotMark = (student) => student.absencesCount >= 6;
