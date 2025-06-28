@@ -253,11 +253,11 @@ export default {
         // تحديث existing_id للطلاب من الـ response
         if (response.data.attendance_records) {
           response.data.attendance_records.forEach(record => {
-            const student = course.value.students.find(s => s.id === record.student_id);
+            const student = course.value.students.find(s => s.id == record.student_id);
             if (student) {
               student.existing_id = record.id;
               // تحديث القيم للتأكد من التطابق
-              student.attendancePresent = record.attendance === 'present';
+              student.attendancePresent = record.attendance == 'present';
               student.homeworkSubmitted = record.homework_submitted;
               student.notes = record.notes || '';
             }
@@ -296,8 +296,8 @@ export default {
             name: st.name,
             phone: st.phone,
             absencesCount: st.absencesCount ?? 0,
-            attendancePresent: ex.attendance === "present",
-            homeworkSubmitted: ex.homework_submitted === 1,
+            attendancePresent: ex.attendance == "present",
+            homeworkSubmitted: ex.homework_submitted == 1,
             notes: ex.notes || "",
             existing_id: ex.id || null, // هذا مهم!
             pivot: st.pivot || {},
