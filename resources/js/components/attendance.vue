@@ -43,7 +43,7 @@
               v-for="(student, index) in course.students"
               :key="student.id"
               :class="{ 
-                disabled: !canModify(student) || (!canEdit && !isAdmin),
+                disabled: !canModify(student) || (!isAdmin && !canEdit),
                 'admin-override-row': isAdmin && isClosed
               }"
             >
@@ -61,7 +61,7 @@
                   <input
                     type="checkbox"
                     v-model="student.attendancePresent"
-                    :disabled="!canModify(student) || (!canEdit && !isAdmin)"
+                    :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                     :class="{ 'admin-override': isAdmin && isClosed }"
                   />
                   <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
@@ -72,7 +72,7 @@
                   <input
                     type="checkbox"
                     v-model="student.homeworkSubmitted"
-                    :disabled="!canModify(student) || (!canEdit && !isAdmin)"
+                    :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                     :class="{ 'admin-override': isAdmin && isClosed }"
                   />
                   <span class="slider round" :class="{ 'admin-override-slider': isAdmin && isClosed }"></span>
@@ -83,7 +83,7 @@
                   type="text"
                   v-model="student.notes"
                   class="form-control form-control-sm"
-                  :disabled="!canModify(student) || (!canEdit && !isAdmin)"
+                  :disabled="!canModify(student) || (!isAdmin && !canEdit)"
                   :class="{ 'admin-override': isAdmin && isClosed }"
                   placeholder="Notes..."
                 />
@@ -97,7 +97,7 @@
     <button
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
-      :disabled="!anyModifiable || (!canEdit && !isAdmin)"
+      :disabled="!anyModifiable || (!isAdmin && !canEdit)"
       :class="{ 'btn-success': isAdmin, 'btn-warning': isAdmin && isClosed }"
     >
       <i class="fa fa-save info-icon"></i> 
