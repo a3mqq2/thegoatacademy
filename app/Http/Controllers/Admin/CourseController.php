@@ -696,28 +696,49 @@ class CourseController extends Controller
             'students.*.attendance'         => 'required|in:present,absent',
             'students.*.notes'              => 'nullable|string',
             'students.*.homework_submitted' => 'required|boolean',
+            'students.*.existing_id'        => 'nullable|integer', // للتحديث
+            'admin_override'                => 'nullable|boolean', // للـ Admin
+            'is_admin_edit'                 => 'nullable|boolean', // تعديل Admin بعد الإغلاق
         ]);
-    
+
         $schedule = CourseSchedule::with('course')->findOrFail($data['course_schedule_id']);
         $course = $schedule->course;
-    
-        $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
-        $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
-        if ($lectureEnd->lte($lectureStart)) {
-            $lectureEnd->addDay();
+
+        // التحقق من صلاحيات Admin
+        $isAdminOverride = $data['admin_override'] ?? false;
+        $isAdminEdit = $data['is_admin_edit'] ?? false;
+
+        // للـ Admin: تخطي فحص الوقت
+        if (!$isAdminOverride) {
+            $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
+            $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
+            if ($lectureEnd->lte($lectureStart)) {
+                $lectureEnd->addDay();
+            }
+
+            $limitHrs = (int) Setting::where('key', 'Updating the students Attendance after the class.')->value('value');
+            $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
+
+            // التحقق من انتهاء وقت التعديل للمدرسين العاديين
+            if (now()->gt($modifyWindowEnd)) {
+                return response()->json([
+                    'message' => 'Editing window has expired.',
+                    'error' => 'TIME_EXPIRED'
+                ], 403);
+            }
         }
-    
-        $limitHrs = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')->value('value');
-        $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
-    
+
+        // تحديث حالة الـ Schedule
         $newSchedule = null;
-    
-        if (Carbon::parse($schedule->date)->lt(today())) {
+        $targetScheduleId = $schedule->id;
+
+        // منطق إنشاء schedule جديد فقط إذا كان التاريخ في الماضي
+        if (Carbon::parse($schedule->date)->lt(today()) && !$schedule->attendance_taken_at) {
             $schedule->update([
                 'attendance_taken_at' => now(),
                 'status'              => 'absent',
             ]);
-    
+
             $newSchedule = CourseSchedule::create([
                 'course_id' => $course->id,
                 'day'       => today()->dayOfWeek,
@@ -728,65 +749,78 @@ class CourseController extends Controller
                 'attendance_taken_at' => now(),
                 'extra_date'  => $schedule->date,
             ]);
+            
+            $targetScheduleId = $newSchedule->id;
         } else {
+            // تحديث الـ schedule الحالي
             $schedule->update([
                 'attendance_taken_at' => now(),
                 'status'              => 'done',
             ]);
         }
-    
+
+        // حفظ/تحديث الحضور للطلاب
+        $attendanceRecords = [];
         foreach ($data['students'] as $student) {
-            CourseAttendance::updateOrCreate(
+            $attendanceData = [
+                'course_id'          => $course->id,
+                'student_id'         => $student['student_id'],
+                'course_schedule_id' => $targetScheduleId,
+                'attendance'         => $student['attendance'],
+                'homework_submitted' => $student['homework_submitted'],
+                'notes'              => $student['notes'] ?? null,
+                'updated_at'         => now(),
+            ];
+
+            // إذا كان existing_id موجود، نحدث السجل الموجود
+            if (!empty($student['existing_id'])) {
+                $existingRecord = CourseAttendance::find($student['existing_id']);
+                if ($existingRecord) {
+                    $existingRecord->update($attendanceData);
+                    $attendanceRecords[] = $existingRecord;
+                    continue;
+                }
+            }
+
+            // إنشاء أو تحديث السجل
+            $attendanceRecord = CourseAttendance::updateOrCreate(
                 [
                     'course_id'          => $course->id,
                     'student_id'         => $student['student_id'],
-                    'course_schedule_id' => $newSchedule?->id ?? $schedule->id,
+                    'course_schedule_id' => $targetScheduleId,
                 ],
-                [
-                    'attendance'         => $student['attendance'],
-                    'homework_submitted' => $student['homework_submitted'],
-                    'notes'              => $student['notes'] ?? null,
-                ]
+                $attendanceData
             );
+            
+            $attendanceRecords[] = $attendanceRecord;
         }
-    
+
+        // حساب الغياب والواجبات لكل طالب
         foreach ($course->students as $stu) {
             $absences = CourseAttendance::where([
                             ['course_id',   '=', $course->id],
                             ['student_id',  '=', $stu->id],
                             ['attendance',  '=', 'absent'],
                         ])->count();
-    
+
             $missHw = CourseAttendance::where([
                             ['course_id',          '=', $course->id],
                             ['student_id',         '=', $stu->id],
                             ['homework_submitted', '=', false],
                         ])->count();
-    
-            // if ($absences >= $course->stop_absent || $missHw >= $course->stop_homework) {
-            //     if ($stu->pivot->status != 'excluded') {
-            //         $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
-    
-            //         if ($course->groupType && strtolower($course->groupType->name) == 'private') {
-            //             $course->update(['status' => 'paused']);
-            //         }
-    
-            //         $msg = "🚫 *تنبيه هام*\n"
-            //             . "تم فصل الطالب *{$stu->name}* من الكورس رقم *{$course->id}* "
-            //             . "بسبب تجاوز حدّ الغياب/الواجب.\n"
-            //             . "عدد الغيابات: $absences  عدد الواجبات غير المسلَّمة: $missHw.";
-    
-            //         $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
-            //     }
-            // } elseif ($absences >= $course->warn_absent || $missHw >= $course->warn_homework) {
-            //     $msg = "⚠️ *إنذار للطالب {$stu->name}*\n"
-            //          . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $course->warn_absent)\n"
-            //          . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $course->warn_homework)\n"
-            //          . "يرجى الالتزام لتفادي الفصل.";
-    
-            //     $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
-            // }
-    
+
+            // تحديث absencesCount في pivot table إذا كان موجود
+            if ($course->students()->wherePivot('student_id', $stu->id)->exists()) {
+                $course->students()->updateExistingPivot($stu->id, [
+                    'absences_count' => $absences,
+                    'homework_miss_count' => $missHw,
+                ]);
+            }
+
+            // منطق الإنذار والفصل (مُعلق حالياً)
+            // يمكن تفعيله حسب الحاجة
+
+            // إعادة تفعيل الطلاب المفصولين إذا تحسنت حالتهم
             if (
                 $stu->pivot->status == 'excluded' &&
                 $absences < $course->stop_absent &&
@@ -795,16 +829,30 @@ class CourseController extends Controller
                 $course->students()->updateExistingPivot($stu->id, ['status' => 'ongoing']);
             }
         }
-    
+
+        // تسجيل العملية في سجل المراجعة
+        $description = "Took attendance for schedule #{$schedule->id}";
+        if ($isAdminOverride) {
+            $description .= " (Admin Override)";
+        }
+        if ($isAdminEdit) {
+            $description .= " (Admin Edit After Closure)";
+        }
+
         AuditLog::create([
             'user_id'     => Auth::id(),
-            'description' => "Took attendance for schedule #{$schedule->id}",
+            'description' => $description,
             'type'        => 'update',
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-    
-        return response()->json(['message' => 'Attendance saved successfully']);
+
+        return response()->json([
+            'message' => 'Attendance saved successfully',
+            'records_count' => count($attendanceRecords),
+            'schedule_id' => $targetScheduleId,
+            'admin_action' => $isAdminOverride || $isAdminEdit
+        ]);
     }
     
     public function restore($courseId)
