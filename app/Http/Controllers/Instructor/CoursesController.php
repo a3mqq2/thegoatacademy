@@ -50,7 +50,7 @@ class CoursesController extends Controller
 
     public function take_attendance($course, $schedule)
     {
-        $course = auth()->user()->courses()->findOrFail($course);
+        $course = Course::findOrFail($course);
         return view('instructor.courses.take_attendance', compact('course','schedule'));
     }
 
