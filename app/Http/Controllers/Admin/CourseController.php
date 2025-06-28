@@ -809,13 +809,6 @@ class CourseController extends Controller
                             ['homework_submitted', '=', false],
                         ])->count();
 
-            // تحديث absencesCount في pivot table إذا كان موجود
-            if ($course->students()->wherePivot('student_id', $stu->id)->exists()) {
-                $course->students()->updateExistingPivot($stu->id, [
-                    'absences_count' => $absences,
-                    'homework_miss_count' => $missHw,
-                ]);
-            }
 
             // منطق الإنذار والفصل (مُعلق حالياً)
             // يمكن تفعيله حسب الحاجة
