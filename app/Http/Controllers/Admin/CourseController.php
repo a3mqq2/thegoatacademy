@@ -706,76 +706,18 @@ class CourseController extends Controller
         $isAdminOverride = $data['admin_override'] ?? false;
         $isAdminEdit = $data['is_admin_edit'] ?? false;
     
-        // للـ Admin: تخطي فحص الوقت
-        if (!$isAdminOverride) {
-            $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
-            $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
-            if ($lectureEnd->lte($lectureStart)) {
-                $lectureEnd->addDay();
-            }
-    
-            $limitHrs = (int) Setting::where('key', 'Updating the students Attendance after the class.')->value('value');
-            $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
-    
-            // التحقق من انتهاء وقت التعديل للمدرسين العاديين
-            if (now()->gt($modifyWindowEnd)) {
-                return response()->json([
-                    'message' => 'Editing window has expired.',
-                    'error' => 'TIME_EXPIRED'
-                ], 403);
-            }
-        }
-    
-        // تحديث حالة الـ Schedule
-        $newSchedule = null;
-        $targetScheduleId = $schedule->id;
-        $scheduleChanged = false;
-    
-        // منطق إنشاء schedule جديد فقط إذا كان التاريخ في الماضي
-        if (Carbon::parse($schedule->date)->lt(today()) && !$schedule->attendance_taken_at) {
-            \Log::info('Creating new schedule for past date', [
-                'original_schedule_id' => $schedule->id,
-                'original_date' => $schedule->date,
-                'status' => $schedule->status
-            ]);
-    
-            $schedule->update([
-                'attendance_taken_at' => now(),
-                'status'              => 'absent',
-            ]);
-    
-            $newSchedule = CourseSchedule::create([
-                'course_id' => $course->id,
-                'day'       => today()->dayOfWeek,
-                'date'      => today()->toDateString(),
-                'from_time' => $schedule->from_time,
-                'to_time'   => $schedule->to_time,
-                'status'    => 'done',
-                'attendance_taken_at' => now(),
-                'extra_date'  => $schedule->date,
-            ]);
-            
-            $targetScheduleId = $newSchedule->id;
-            $scheduleChanged = true;
-    
-            \Log::info('New schedule created', [
-                'new_schedule_id' => $newSchedule->id,
-                'target_schedule_id' => $targetScheduleId
-            ]);
-        } else {
-            // تحديث الـ schedule الحالي
-            $schedule->update([
-                'attendance_taken_at' => now(),
-                'status'              => 'done',
-            ]);
-        }
+        // تحديث حالة الـ Schedule مباشرة
+        $schedule->update([
+            'attendance_taken_at' => now(),
+            'status'              => 'done',
+        ]);
     
         // استخدام transaction للضمان
         $attendanceRecords = [];
         
-        DB::transaction(function() use ($data, $course, $targetScheduleId, &$attendanceRecords) {
+        DB::transaction(function() use ($data, $course, $schedule, &$attendanceRecords) {
             \Log::info('Starting attendance save process', [
-                'target_schedule_id' => $targetScheduleId,
+                'schedule_id' => $schedule->id,
                 'students_count' => count($data['students'])
             ]);
             
@@ -791,7 +733,7 @@ class CourseController extends Controller
                 $fullAttendanceData = [
                     'course_id'          => $course->id,
                     'student_id'         => $student['student_id'],
-                    'course_schedule_id' => $targetScheduleId,
+                    'course_schedule_id' => $schedule->id,
                     'attendance'         => $student['attendance'],
                     'homework_submitted' => $student['homework_submitted'],
                     'notes'              => $student['notes'] ?? null,
@@ -811,7 +753,7 @@ class CourseController extends Controller
                     $existingRecord = CourseAttendance::where([
                         'course_id'          => $course->id,
                         'student_id'         => $student['student_id'],
-                        'course_schedule_id' => $targetScheduleId,
+                        'course_schedule_id' => $schedule->id,
                     ])->first();
                     \Log::info("Found by combination: " . ($existingRecord ? 'YES' : 'NO'));
                 }
@@ -887,9 +829,7 @@ class CourseController extends Controller
         return response()->json([
             'message' => 'Attendance saved successfully',
             'records_count' => count($attendanceRecords),
-            'schedule_id' => $targetScheduleId,
-            'original_schedule_id' => $schedule->id,
-            'schedule_changed' => $scheduleChanged,
+            'schedule_id' => $schedule->id,
             'admin_action' => $isAdminOverride || $isAdminEdit,
             'attendance_records' => collect($attendanceRecords)->map(function($record) {
                 return [
