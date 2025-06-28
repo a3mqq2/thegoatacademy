@@ -213,67 +213,87 @@ export default {
     };
 
     // إزالة منطق anyModifiable - غير مطلوب
-
     const submitAttendance = async () => {
-      // التحقق الأساسي المبسط
-      if (!course.value?.students?.length) {
-        toastr.error('No students found.');
-        return;
-      }
+  // التحقق الأساسي المبسط
+  if (!course.value?.students?.length) {
+    toastr.error('No students found.');
+    return;
+  }
+  
+  const payload = course.value.students.map((st) => ({
+    student_id: st.id,
+    attendance: st.attendancePresent ? "present" : "absent",
+    notes: st.notes || "",
+    homework_submitted: st.homeworkSubmitted ? 1 : 0,
+    existing_id: st.existing_id || null,
+  }));
+
+  console.log('Sending payload:', payload);
+  console.log('Current schedule ID:', schedule.value.id);
+
+  try {
+    const response = await instance.post(`/courses/${props.courseId}/attendance`, {
+      course_schedule_id: schedule.value.id,
+      students: payload,
+      admin_override: props.isAdmin,
+      is_admin_edit: props.isAdmin && isClosed.value
+    });
+    
+    console.log('Server response:', response.data);
+    
+    // تحديث schedule.id إذا تم إنشاء schedule جديد
+    if (response.data.schedule_id && response.data.schedule_id !== schedule.value.id) {
+      console.log('Schedule ID changed from', schedule.value.id, 'to', response.data.schedule_id);
+      schedule.value.id = response.data.schedule_id;
       
-      const payload = course.value.students.map((st) => ({
-        student_id: st.id,
-        attendance: st.attendancePresent ? "present" : "absent",
-        notes: st.notes || "",
-        homework_submitted: st.homeworkSubmitted ? 1 : 0, // تأكيد القيمة
-        existing_id: st.existing_id || null,
-      }));
-
-      console.log('Sending payload:', payload); // للتأكد من البيانات
-
-      try {
-        const response = await instance.post(`/courses/${props.courseId}/attendance`, {
-          course_schedule_id: schedule.value.id,
-          students: payload,
-          admin_override: props.isAdmin,
-          is_admin_edit: props.isAdmin && isClosed.value
-        });
-        
-        console.log('Server response:', response.data); // للتأكد من الاستجابة
-        
-        let message = 'Attendance has been saved successfully!';
-        if (props.isAdmin && isClosed.value) {
-          message = 'Attendance has been saved successfully (Admin Override)!';
-        } else if (props.isAdmin) {
-          message = 'Attendance has been saved successfully (Admin)!';
-        }
-        
-        toastr.success(message);
-        
-        // تحديث existing_id للطلاب من الـ response
-        if (response.data.attendance_records) {
-          response.data.attendance_records.forEach(record => {
-            const student = course.value.students.find(s => s.id == record.student_id);
-            if (student) {
-              student.existing_id = record.id;
-              // تحديث القيم للتأكد من التطابق
-              student.attendancePresent = record.attendance == 'present';
-              student.homeworkSubmitted = record.homework_submitted;
-              student.notes = record.notes || '';
-            }
-          });
-        }
-        
-        // بدلاً من إعادة تحميل كل البيانات، نحدث schedule.attendances فقط
-        if (schedule.value && response.data.attendance_records) {
-          schedule.value.attendances = response.data.attendance_records;
-        }
-        
-      } catch (error) {
-        console.error("Error saving attendance", error);
-        toastr.error("Error saving attendance. Please try again later.");
+      // تحديث الـ URL أيضاً إذا لزم الأمر
+      if (window.history.replaceState) {
+        const newUrl = window.location.pathname.replace(
+          /schedule_id=\d+/, 
+          `schedule_id=${response.data.schedule_id}`
+        );
+        window.history.replaceState({}, '', newUrl);
       }
-    };
+    }
+    
+    let message = 'Attendance has been saved successfully!';
+    if (props.isAdmin && isClosed.value) {
+      message = 'Attendance has been saved successfully (Admin Override)!';
+    } else if (props.isAdmin) {
+      message = 'Attendance has been saved successfully (Admin)!';
+    }
+    
+    toastr.success(message);
+    
+    // تحديث existing_id للطلاب من الـ response
+    if (response.data.attendance_records) {
+      response.data.attendance_records.forEach(record => {
+        const student = course.value.students.find(s => s.id == record.student_id);
+        if (student) {
+          student.existing_id = record.id;
+          student.attendancePresent = record.attendance == 'present';
+          student.homeworkSubmitted = record.homework_submitted;
+          student.notes = record.notes || '';
+        }
+      });
+    }
+    
+    // تحديث schedule.attendances
+    if (schedule.value && response.data.attendance_records) {
+      schedule.value.attendances = response.data.attendance_records;
+    }
+    
+    // في حالة تغيير الـ schedule، قد نحتاج لإعادة تحميل البيانات
+    if (response.data.schedule_changed) {
+      console.log('Schedule changed, reloading data...');
+      await fetchData();
+    }
+    
+  } catch (error) {
+    console.error("Error saving attendance", error);
+    toastr.error("Error saving attendance. Please try again later.");
+  }
+};
 
     const fetchData = async () => {
       globalLoading.value = true;
