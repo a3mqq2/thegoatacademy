@@ -686,7 +686,6 @@ class CourseController extends Controller
         }
     }
 
-
     public function store_attendance(Request $request, WaapiService $waapi)
     {
         $data = $request->validate([
@@ -700,14 +699,14 @@ class CourseController extends Controller
             'admin_override'                => 'nullable|boolean', // للـ Admin
             'is_admin_edit'                 => 'nullable|boolean', // تعديل Admin بعد الإغلاق
         ]);
-
+    
         $schedule = CourseSchedule::with('course')->findOrFail($data['course_schedule_id']);
         $course = $schedule->course;
-
+    
         // التحقق من صلاحيات Admin
         $isAdminOverride = $data['admin_override'] ?? false;
         $isAdminEdit = $data['is_admin_edit'] ?? false;
-
+    
         // للـ Admin: تخطي فحص الوقت
         if (!$isAdminOverride) {
             $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
@@ -715,10 +714,10 @@ class CourseController extends Controller
             if ($lectureEnd->lte($lectureStart)) {
                 $lectureEnd->addDay();
             }
-
+    
             $limitHrs = (int) Setting::where('key', 'Updating the students Attendance after the class.')->value('value');
             $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
-
+    
             // التحقق من انتهاء وقت التعديل للمدرسين العاديين
             if (now()->gt($modifyWindowEnd)) {
                 return response()->json([
@@ -727,18 +726,18 @@ class CourseController extends Controller
                 ], 403);
             }
         }
-
+    
         // تحديث حالة الـ Schedule
         $newSchedule = null;
         $targetScheduleId = $schedule->id;
-
+    
         // منطق إنشاء schedule جديد فقط إذا كان التاريخ في الماضي
         if (Carbon::parse($schedule->date)->lt(today()) && !$schedule->attendance_taken_at) {
             $schedule->update([
                 'attendance_taken_at' => now(),
                 'status'              => 'absent',
             ]);
-
+    
             $newSchedule = CourseSchedule::create([
                 'course_id' => $course->id,
                 'day'       => today()->dayOfWeek,
@@ -758,43 +757,77 @@ class CourseController extends Controller
                 'status'              => 'done',
             ]);
         }
-
-        // حفظ/تحديث الحضور للطلاب
+    
+        // استخدام transaction للضمان
         $attendanceRecords = [];
-        foreach ($data['students'] as $student) {
-            $attendanceData = [
-                'course_id'          => $course->id,
-                'student_id'         => $student['student_id'],
-                'course_schedule_id' => $targetScheduleId,
-                'attendance'         => $student['attendance'],
-                'homework_submitted' => $student['homework_submitted'],
-                'notes'              => $student['notes'] ?? null,
-                'updated_at'         => now(),
-            ];
-
-            // إذا كان existing_id موجود، نحدث السجل الموجود
-            if (!empty($student['existing_id'])) {
-                $existingRecord = CourseAttendance::find($student['existing_id']);
+        
+        DB::transaction(function() use ($data, $course, $targetScheduleId, &$attendanceRecords) {
+            \Log::info('Starting attendance save process', [
+                'target_schedule_id' => $targetScheduleId,
+                'students_count' => count($data['students'])
+            ]);
+            
+            foreach ($data['students'] as $index => $student) {
+                \Log::info("Processing student {$index}", [
+                    'student_id' => $student['student_id'],
+                    'existing_id' => $student['existing_id'] ?? 'null',
+                    'attendance' => $student['attendance']
+                ]);
+                
+                $attendanceData = [
+                    'attendance'         => $student['attendance'],
+                    'homework_submitted' => $student['homework_submitted'],
+                    'notes'              => $student['notes'] ?? null,
+                    'updated_at'         => now(),
+                ];
+    
+                // البحث عن السجل الموجود أولاً
+                $existingRecord = null;
+                
+                // إذا كان existing_id موجود، نبحث به
+                if (!empty($student['existing_id'])) {
+                    $existingRecord = CourseAttendance::find($student['existing_id']);
+                    \Log::info("Found by existing_id: " . ($existingRecord ? 'YES' : 'NO'));
+                }
+                
+                // إذا لم نجد بالـ existing_id، نبحث بالـ combination
+                if (!$existingRecord) {
+                    $existingRecord = CourseAttendance::where([
+                        'course_id'          => $course->id,
+                        'student_id'         => $student['student_id'],
+                        'course_schedule_id' => $targetScheduleId,
+                    ])->first();
+                    \Log::info("Found by combination: " . ($existingRecord ? 'YES' : 'NO'));
+                }
+    
                 if ($existingRecord) {
+                    // تحديث السجل الموجود
+                    \Log::info("Updating existing record ID: {$existingRecord->id}");
                     $existingRecord->update($attendanceData);
                     $attendanceRecords[] = $existingRecord;
-                    continue;
+                } else {
+                    // إنشاء سجل جديد
+                    \Log::info("Creating new record");
+                    $newRecord = CourseAttendance::create([
+                        'course_id'          => $course->id,
+                        'student_id'         => $student['student_id'],
+                        'course_schedule_id' => $targetScheduleId,
+                        'attendance'         => $student['attendance'],
+                        'homework_submitted' => $student['homework_submitted'],
+                        'notes'              => $student['notes'] ?? null,
+                        'created_at'         => now(),
+                        'updated_at'         => now(),
+                    ]);
+                    \Log::info("Created new record ID: {$newRecord->id}");
+                    $attendanceRecords[] = $newRecord;
                 }
             }
-
-            // إنشاء أو تحديث السجل
-            $attendanceRecord = CourseAttendance::updateOrCreate(
-                [
-                    'course_id'          => $course->id,
-                    'student_id'         => $student['student_id'],
-                    'course_schedule_id' => $targetScheduleId,
-                ],
-                $attendanceData
-            );
             
-            $attendanceRecords[] = $attendanceRecord;
-        }
-
+            \Log::info('Attendance save completed', [
+                'records_created_updated' => count($attendanceRecords)
+            ]);
+        });
+    
         // حساب الغياب والواجبات لكل طالب
         foreach ($course->students as $stu) {
             $absences = CourseAttendance::where([
@@ -802,17 +835,24 @@ class CourseController extends Controller
                             ['student_id',  '=', $stu->id],
                             ['attendance',  '=', 'absent'],
                         ])->count();
-
+    
             $missHw = CourseAttendance::where([
                             ['course_id',          '=', $course->id],
                             ['student_id',         '=', $stu->id],
                             ['homework_submitted', '=', false],
                         ])->count();
-
-
+    
+            // تحديث absencesCount في pivot table إذا كان موجود
+            if ($course->students()->wherePivot('student_id', $stu->id)->exists()) {
+                $course->students()->updateExistingPivot($stu->id, [
+                    'absences_count' => $absences,
+                    'homework_miss_count' => $missHw,
+                ]);
+            }
+    
             // منطق الإنذار والفصل (مُعلق حالياً)
             // يمكن تفعيله حسب الحاجة
-
+    
             // إعادة تفعيل الطلاب المفصولين إذا تحسنت حالتهم
             if (
                 $stu->pivot->status == 'excluded' &&
@@ -822,7 +862,7 @@ class CourseController extends Controller
                 $course->students()->updateExistingPivot($stu->id, ['status' => 'ongoing']);
             }
         }
-
+    
         // تسجيل العملية في سجل المراجعة
         $description = "Took attendance for schedule #{$schedule->id}";
         if ($isAdminOverride) {
@@ -831,7 +871,7 @@ class CourseController extends Controller
         if ($isAdminEdit) {
             $description .= " (Admin Edit After Closure)";
         }
-
+    
         AuditLog::create([
             'user_id'     => Auth::id(),
             'description' => $description,
@@ -839,7 +879,7 @@ class CourseController extends Controller
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-
+    
         return response()->json([
             'message' => 'Attendance saved successfully',
             'records_count' => count($attendanceRecords),
