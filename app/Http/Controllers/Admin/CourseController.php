@@ -763,29 +763,29 @@ class CourseController extends Controller
                             ['homework_submitted', '=', false],
                         ])->count();
     
-            if ($absences >= $course->stop_absent || $missHw >= $course->stop_homework) {
-                if ($stu->pivot->status != 'excluded') {
-                    $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
+            // if ($absences >= $course->stop_absent || $missHw >= $course->stop_homework) {
+            //     if ($stu->pivot->status != 'excluded') {
+            //         $course->students()->updateExistingPivot($stu->id, ['status' => 'excluded']);
     
-                    if ($course->groupType && strtolower($course->groupType->name) == 'private') {
-                        $course->update(['status' => 'paused']);
-                    }
+            //         if ($course->groupType && strtolower($course->groupType->name) == 'private') {
+            //             $course->update(['status' => 'paused']);
+            //         }
     
-                    $msg = "🚫 *تنبيه هام*\n"
-                        . "تم فصل الطالب *{$stu->name}* من الكورس رقم *{$course->id}* "
-                        . "بسبب تجاوز حدّ الغياب/الواجب.\n"
-                        . "عدد الغيابات: $absences  عدد الواجبات غير المسلَّمة: $missHw.";
+            //         $msg = "🚫 *تنبيه هام*\n"
+            //             . "تم فصل الطالب *{$stu->name}* من الكورس رقم *{$course->id}* "
+            //             . "بسبب تجاوز حدّ الغياب/الواجب.\n"
+            //             . "عدد الغيابات: $absences  عدد الواجبات غير المسلَّمة: $missHw.";
     
-                    $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
-                }
-            } elseif ($absences >= $course->warn_absent || $missHw >= $course->warn_homework) {
-                $msg = "⚠️ *إنذار للطالب {$stu->name}*\n"
-                     . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $course->warn_absent)\n"
-                     . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $course->warn_homework)\n"
-                     . "يرجى الالتزام لتفادي الفصل.";
+            //         $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
+            //     }
+            // } elseif ($absences >= $course->warn_absent || $missHw >= $course->warn_homework) {
+            //     $msg = "⚠️ *إنذار للطالب {$stu->name}*\n"
+            //          . "عدد غياباتك الحالية: $absences (الحدّ الإنذاري $course->warn_absent)\n"
+            //          . "عدد الواجبات غير المسلَّمة: $missHw (الحدّ الإنذاري $course->warn_homework)\n"
+            //          . "يرجى الالتزام لتفادي الفصل.";
     
-                $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
-            }
+            //     $waapi->sendText(formatLibyanPhone($stu->phone), $msg);
+            // }
     
             if (
                 $stu->pivot->status == 'excluded' &&
