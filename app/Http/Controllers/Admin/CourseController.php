@@ -698,14 +698,14 @@ class CourseController extends Controller
             'admin_override'                => 'nullable|boolean',
             'is_admin_edit'                 => 'nullable|boolean',
         ]);
-
+    
         $schedule = CourseSchedule::with('course')->findOrFail($data['course_schedule_id']);
         $course = $schedule->course;
-
+    
         // التحقق من صلاحيات Admin
         $isAdminOverride = $data['admin_override'] ?? false;
         $isAdminEdit = $data['is_admin_edit'] ?? false;
-
+    
         // للـ Admin: تخطي فحص الوقت
         if (!$isAdminOverride) {
             $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
@@ -713,10 +713,10 @@ class CourseController extends Controller
             if ($lectureEnd->lte($lectureStart)) {
                 $lectureEnd->addDay();
             }
-
+    
             $limitHrs = (int) Setting::where('key', 'Updating the students Attendance after the class.')->value('value');
             $modifyWindowEnd = $lectureEnd->copy()->addHours($limitHrs);
-
+    
             // التحقق من انتهاء وقت التعديل للمدرسين العاديين
             if (now()->gt($modifyWindowEnd)) {
                 return response()->json([
@@ -725,12 +725,12 @@ class CourseController extends Controller
                 ], 403);
             }
         }
-
+    
         // تحديث حالة الـ Schedule
         $newSchedule = null;
         $targetScheduleId = $schedule->id;
         $scheduleChanged = false;
-
+    
         // منطق إنشاء schedule جديد فقط إذا كان التاريخ في الماضي
         if (Carbon::parse($schedule->date)->lt(today()) && !$schedule->attendance_taken_at) {
             \Log::info('Creating new schedule for past date', [
@@ -738,12 +738,12 @@ class CourseController extends Controller
                 'original_date' => $schedule->date,
                 'status' => $schedule->status
             ]);
-
+    
             $schedule->update([
                 'attendance_taken_at' => now(),
                 'status'              => 'absent',
             ]);
-
+    
             $newSchedule = CourseSchedule::create([
                 'course_id' => $course->id,
                 'day'       => today()->dayOfWeek,
@@ -757,7 +757,7 @@ class CourseController extends Controller
             
             $targetScheduleId = $newSchedule->id;
             $scheduleChanged = true;
-
+    
             \Log::info('New schedule created', [
                 'new_schedule_id' => $newSchedule->id,
                 'target_schedule_id' => $targetScheduleId
@@ -769,7 +769,7 @@ class CourseController extends Controller
                 'status'              => 'done',
             ]);
         }
-
+    
         // استخدام transaction للضمان
         $attendanceRecords = [];
         
@@ -796,7 +796,7 @@ class CourseController extends Controller
                     'homework_submitted' => $student['homework_submitted'],
                     'notes'              => $student['notes'] ?? null,
                 ];
-
+    
                 // البحث عن السجل الموجود أولاً
                 $existingRecord = null;
                 
@@ -815,7 +815,7 @@ class CourseController extends Controller
                     ])->first();
                     \Log::info("Found by combination: " . ($existingRecord ? 'YES' : 'NO'));
                 }
-
+    
                 if ($existingRecord) {
                     // تحديث السجل الموجود بكل البيانات
                     \Log::info("Updating existing record ID: {$existingRecord->id}");
@@ -841,7 +841,7 @@ class CourseController extends Controller
                 'records_created_updated' => count($attendanceRecords)
             ]);
         });
-
+    
         // حساب الغياب والواجبات لكل طالب
         foreach ($course->students as $stu) {
             $absences = CourseAttendance::where([
@@ -849,13 +849,13 @@ class CourseController extends Controller
                             ['student_id',  '=', $stu->id],
                             ['attendance',  '=', 'absent'],
                         ])->count();
-
+    
             $missHw = CourseAttendance::where([
                             ['course_id',          '=', $course->id],
                             ['student_id',         '=', $stu->id],
                             ['homework_submitted', '=', false],
                         ])->count();
-
+    
             // إعادة تفعيل الطلاب المفصولين إذا تحسنت حالتهم
             if (
                 $stu->pivot->status == 'excluded' &&
@@ -865,7 +865,7 @@ class CourseController extends Controller
                 $course->students()->updateExistingPivot($stu->id, ['status' => 'ongoing']);
             }
         }
-
+    
         // تسجيل العملية في سجل المراجعة
         $description = "Took attendance for schedule #{$schedule->id}";
         if ($isAdminOverride) {
@@ -874,7 +874,7 @@ class CourseController extends Controller
         if ($isAdminEdit) {
             $description .= " (Admin Edit After Closure)";
         }
-
+    
         AuditLog::create([
             'user_id'     => Auth::id(),
             'description' => $description,
@@ -882,7 +882,7 @@ class CourseController extends Controller
             'entity_id'   => $course->id,
             'entity_type' => Course::class,
         ]);
-
+    
         // إرجاع معلومات كاملة عن العملية
         return response()->json([
             'message' => 'Attendance saved successfully',
@@ -891,7 +891,7 @@ class CourseController extends Controller
             'original_schedule_id' => $schedule->id,
             'schedule_changed' => $scheduleChanged,
             'admin_action' => $isAdminOverride || $isAdminEdit,
-            'attendance_records' => $attendanceRecords->map(function($record) {
+            'attendance_records' => collect($attendanceRecords)->map(function($record) {
                 return [
                     'id' => $record->id,
                     'student_id' => $record->student_id,
@@ -899,7 +899,7 @@ class CourseController extends Controller
                     'homework_submitted' => $record->homework_submitted,
                     'notes' => $record->notes,
                 ];
-            })
+            })->toArray()
         ]);
     }
     public function restore($courseId)
