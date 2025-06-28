@@ -771,14 +771,18 @@ class CourseController extends Controller
                 \Log::info("Processing student {$index}", [
                     'student_id' => $student['student_id'],
                     'existing_id' => $student['existing_id'] ?? 'null',
-                    'attendance' => $student['attendance']
+                    'attendance' => $student['attendance'],
+                    'homework_submitted' => $student['homework_submitted']
                 ]);
                 
-                $attendanceData = [
+                // البيانات الكاملة للحفظ
+                $fullAttendanceData = [
+                    'course_id'          => $course->id,
+                    'student_id'         => $student['student_id'],
+                    'course_schedule_id' => $targetScheduleId,
                     'attendance'         => $student['attendance'],
                     'homework_submitted' => $student['homework_submitted'],
                     'notes'              => $student['notes'] ?? null,
-                    'updated_at'         => now(),
                 ];
     
                 // البحث عن السجل الموجود أولاً
@@ -801,24 +805,31 @@ class CourseController extends Controller
                 }
     
                 if ($existingRecord) {
-                    // تحديث السجل الموجود
+                    // تحديث السجل الموجود بكل البيانات
                     \Log::info("Updating existing record ID: {$existingRecord->id}");
-                    $existingRecord->update($attendanceData);
+                    $existingRecord->update($fullAttendanceData);
                     $attendanceRecords[] = $existingRecord;
                 } else {
-                    // إنشاء سجل جديد
-                    \Log::info("Creating new record");
-                    $newRecord = CourseAttendance::create([
-                        'course_id'          => $course->id,
-                        'student_id'         => $student['student_id'],
-                        'course_schedule_id' => $targetScheduleId,
-                        'attendance'         => $student['attendance'],
-                        'homework_submitted' => $student['homework_submitted'],
-                        'notes'              => $student['notes'] ?? null,
-                        'created_at'         => now(),
-                        'updated_at'         => now(),
+                    // إنشاء سجل جديد بكل البيانات
+                    \Log::info("Creating new record with full data", $fullAttendanceData);
+                    
+                    // تحقق من البيانات قبل الحفظ
+                    \Log::info("Data before create:", [
+                        'attendance_value' => $fullAttendanceData['attendance'],
+                        'homework_value' => $fullAttendanceData['homework_submitted'],
+                        'attendance_type' => gettype($fullAttendanceData['attendance']),
+                        'homework_type' => gettype($fullAttendanceData['homework_submitted'])
                     ]);
-                    \Log::info("Created new record ID: {$newRecord->id}");
+                    
+                    $newRecord = CourseAttendance::create($fullAttendanceData);
+                    
+                    // تحقق من البيانات بعد الحفظ
+                    \Log::info("Data after create:", [
+                        'record_id' => $newRecord->id,
+                        'saved_attendance' => $newRecord->attendance,
+                        'saved_homework' => $newRecord->homework_submitted
+                    ]);
+                    
                     $attendanceRecords[] = $newRecord;
                 }
             }
@@ -841,7 +852,14 @@ class CourseController extends Controller
                             ['student_id',         '=', $stu->id],
                             ['homework_submitted', '=', false],
                         ])->count();
-   
+    
+            // تحديث absencesCount في pivot table إذا كان موجود
+            if ($course->students()->wherePivot('student_id', $stu->id)->exists()) {
+                $course->students()->updateExistingPivot($stu->id, [
+                    'absences_count' => $absences,
+                    'homework_miss_count' => $missHw,
+                ]);
+            }
     
             // منطق الإنذار والفصل (مُعلق حالياً)
             // يمكن تفعيله حسب الحاجة
