@@ -14,14 +14,6 @@
       </div>
     </header>
 
-    <!-- Debug info (remove in production) -->
-    <div v-if="isAdmin" class="alert alert-secondary">
-      <strong>Debug Info:</strong><br>
-      isAdmin: {{ isAdmin }}<br>
-      isClosed: {{ isClosed }}<br>
-      canEdit: {{ canEdit }}<br>
-      anyModifiable: {{ anyModifiable }}
-    </div>
 
     <!-- Closed notice (only show if not admin) -->
     <div v-if="isClosed && !isAdmin" class="alert alert-warning text-center">
