@@ -14,6 +14,13 @@
       </div>
     </header>
 
+    <!-- Debug info (remove in production) -->
+    <div v-if="isAdmin" class="alert alert-secondary">
+      <strong>Debug Info:</strong><br>
+      isAdmin: {{ isAdmin }}<br>
+      isClosed: {{ isClosed }}<br>
+      canEdit: {{ canEdit }}
+    </div>
 
     <!-- Closed notice (only show if not admin) -->
     <div v-if="isClosed && !isAdmin" class="alert alert-warning text-center">
@@ -98,7 +105,7 @@
     <button
       class="btn btn-primary submit-btn"
       @click="submitAttendance"
-      :disabled="!anyModifiable || (!isAdmin && !canEdit)"
+      :disabled="false"
       :class="{ 'btn-success': isAdmin, 'btn-warning': isAdmin && isClosed }"
     >
       <i class="fa fa-save info-icon"></i> 
@@ -201,26 +208,16 @@ export default {
     });
 
     const cannotMark = (student) => student.absencesCount >= 6;
-    const canModify = (student) =>
-      !["withdrawn", "excluded"].includes(student.pivot?.status);
+    const canModify = (student) => {
+      return !["withdrawn", "excluded"].includes(student.pivot?.status);
+    };
 
-    // منطق anyModifiable - بسيط ومباشر
-    const anyModifiable = computed(() => {
-      if (!course.value?.students) return false;
-      
-      return course.value.students.some((st) => {
-        // يجب أن يكون الطالب قابل للتعديل
-        if (!canModify(st)) return false;
-        
-        // ويجب أن يكون المستخدم يقدر يحرر
-        return canEdit.value;
-      });
-    });
+    // إزالة منطق anyModifiable - غير مطلوب
 
     const submitAttendance = async () => {
-      // التحقق الأساسي
-      if (!anyModifiable.value || !canEdit.value) {
-        toastr.error('Cannot modify attendance at this time.');
+      // التحقق الأساسي المبسط
+      if (!course.value?.students?.length) {
+        toastr.error('No students found.');
         return;
       }
       
@@ -228,17 +225,21 @@ export default {
         student_id: st.id,
         attendance: st.attendancePresent ? "present" : "absent",
         notes: st.notes || "",
-        homework_submitted: st.homeworkSubmitted ? 1 : 0,
+        homework_submitted: st.homeworkSubmitted ? 1 : 0, // تأكيد القيمة
         existing_id: st.existing_id || null,
       }));
 
+      console.log('Sending payload:', payload); // للتأكد من البيانات
+
       try {
-        await instance.post(`/courses/${props.courseId}/attendance`, {
+        const response = await instance.post(`/courses/${props.courseId}/attendance`, {
           course_schedule_id: schedule.value.id,
           students: payload,
-          admin_override: props.isAdmin, // إشارة للـ Backend أن هذا Admin
-          is_admin_edit: props.isAdmin && isClosed.value // إشارة إضافية للتعديل بعد الإغلاق
+          admin_override: props.isAdmin,
+          is_admin_edit: props.isAdmin && isClosed.value
         });
+        
+        console.log('Server response:', response.data); // للتأكد من الاستجابة
         
         let message = 'Attendance has been saved successfully!';
         if (props.isAdmin && isClosed.value) {
@@ -249,8 +250,24 @@ export default {
         
         toastr.success(message);
         
-        // إعادة تحميل البيانات لإظهار آخر التحديثات
-        await fetchData();
+        // تحديث existing_id للطلاب من الـ response
+        if (response.data.attendance_records) {
+          response.data.attendance_records.forEach(record => {
+            const student = course.value.students.find(s => s.id === record.student_id);
+            if (student) {
+              student.existing_id = record.id;
+              // تحديث القيم للتأكد من التطابق
+              student.attendancePresent = record.attendance === 'present';
+              student.homeworkSubmitted = record.homework_submitted;
+              student.notes = record.notes || '';
+            }
+          });
+        }
+        
+        // بدلاً من إعادة تحميل كل البيانات، نحدث schedule.attendances فقط
+        if (schedule.value && response.data.attendance_records) {
+          schedule.value.attendances = response.data.attendance_records;
+        }
         
       } catch (error) {
         console.error("Error saving attendance", error);
@@ -279,10 +296,10 @@ export default {
             name: st.name,
             phone: st.phone,
             absencesCount: st.absencesCount ?? 0,
-            attendancePresent: ex.attendance == "present",
-            homeworkSubmitted: ex.homework_submitted == 1,
+            attendancePresent: ex.attendance === "present",
+            homeworkSubmitted: ex.homework_submitted === 1,
             notes: ex.notes || "",
-            existing_id: ex.id || null,
+            existing_id: ex.id || null, // هذا مهم!
             pivot: st.pivot || {},
           };
         });
@@ -304,7 +321,6 @@ export default {
       canEdit,
       canModify,
       cannotMark,
-      anyModifiable,
       submitAttendance,
       isAdmin: props.isAdmin
     };

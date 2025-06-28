@@ -685,7 +685,6 @@ class CourseController extends Controller
             return redirect()->back()->withErrors(['Course Not Found']);
         }
     }
-
     public function store_attendance(Request $request, WaapiService $waapi)
     {
         $data = $request->validate([
@@ -853,6 +852,14 @@ class CourseController extends Controller
                             ['homework_submitted', '=', false],
                         ])->count();
     
+            // تحديث absencesCount في pivot table إذا كان موجود
+            if ($course->students()->wherePivot('student_id', $stu->id)->exists()) {
+                $course->students()->updateExistingPivot($stu->id, [
+                    'absences_count' => $absences,
+                    'homework_miss_count' => $missHw,
+                ]);
+            }
+    
             // منطق الإنذار والفصل (مُعلق حالياً)
             // يمكن تفعيله حسب الحاجة
     
@@ -890,7 +897,6 @@ class CourseController extends Controller
             'admin_action' => $isAdminOverride || $isAdminEdit
         ]);
     }
-    
     public function restore($courseId)
     {
 
