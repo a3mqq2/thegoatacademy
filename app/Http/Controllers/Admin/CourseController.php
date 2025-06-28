@@ -852,6 +852,8 @@ class CourseController extends Controller
                             ['homework_submitted', '=', false],
                         ])->count();
     
+   
+    
             // منطق الإنذار والفصل (مُعلق حالياً)
             // يمكن تفعيله حسب الحاجة
     
