@@ -701,10 +701,6 @@ class CourseController extends Controller
         $schedule = CourseSchedule::with('course')->findOrFail($data['course_schedule_id']);
         $course = $schedule->course;
     
-        if ($course->instructor_id != Auth::id()) {
-            return response()->json(['message' => 'Access denied.'], 403);
-        }
-    
         $lectureStart = Carbon::parse("{$schedule->date} {$schedule->from_time}");
         $lectureEnd = Carbon::parse("{$schedule->date} {$schedule->to_time}");
         if ($lectureEnd->lte($lectureStart)) {
