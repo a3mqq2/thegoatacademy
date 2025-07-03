@@ -100,18 +100,15 @@ th, td {
     <div class="header">
         <h1 class="title">
             {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} EXAM RESULTS (#{{ $exam->course_id }})
-            <span class="exam-type-badge">{{ strtoupper($exam->exam_type) }} SKILLS ONLY</span>
         </h1>
         <div class="sub-details">
             <div style="position: absolute; top:210px;">
-                Examiner: {{ optional($exam->examiner)->name ?? 'Unassigned' }}<br>
+                Instructor : {{ optional($exam->instructor)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}<br>
-                Course Type: {{ $exam->course->courseType->name }}
             </div>
             <div style="text-align: right; position: absolute; top:210px; left:250px;">
                 Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
                 Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}<br>
-                Status: {{ strtoupper($exam->status) }}
             </div>
         </div>
     </div>
