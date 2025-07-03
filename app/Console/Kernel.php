@@ -16,7 +16,6 @@ class Kernel extends BaseKernel
         $schedule->command('courses:send-daily-image')->dailyAt('11:00');
         $schedule->command('exams:update-overdue')->dailyAt('02:00');
         $schedule->command('attendance:whatsapp-remind')->everyMinute();
-        $schedule->command('courses:update-status')->daily();
         $schedule->command('progress-tests:whatsapp-notify')->everyMinute();
         // $schedule->command('courseschedules:update-statuses')->everyMinute();
     }
