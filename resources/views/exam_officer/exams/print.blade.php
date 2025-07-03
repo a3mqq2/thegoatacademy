@@ -103,7 +103,7 @@ th, td {
         </h1>
         <div class="sub-details">
             <div style="position: absolute; top:210px;">
-                Instructor : {{ optional($exam->instructor)->name ?? 'Unassigned' }}<br>
+                Instructor : {{ optional($exam->course->instructor)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}<br>
             </div>
             <div style="text-align: right; position: absolute; top:210px; left:250px;">
