@@ -312,7 +312,6 @@ class CourseController extends Controller
     }
 
   
-    
     public function update(Request $request, Course $course)
     {
         $validator = Validator::make($request->all(), [
@@ -335,10 +334,9 @@ class CourseController extends Controller
             'whatsapp_group_link'   => 'nullable',
             'levels'                => 'nullable|array',
             'levels.*'              => 'exists:levels,id',
+            'progress_tests'        => 'nullable|array',
         ]);
     
-
-
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
@@ -353,10 +351,11 @@ class CourseController extends Controller
                 : Carbon::parse($data[$f])->toDateString();
         }
     
-        $students    = $data['students']   ?? [];
-        $levels      = $data['levels']     ?? [];
-        $rawSchedule = $data['schedule']   ?? [];
-        $selected    = $request->input('selected_days', []);
+        $students          = $data['students']   ?? [];
+        $levels            = $data['levels']     ?? [];
+        $rawSchedule       = $data['schedule']   ?? [];
+        $progressTestsData = $data['progress_tests'] ?? [];
+        $selected          = $request->input('selected_days', []);
     
         if (count($students) > $data['student_capacity']) {
             return response()->json([
@@ -402,23 +401,10 @@ class CourseController extends Controller
                 'student_count'        => count($students),
                 'meeting_platform_id'  => $data['meeting_platform_id'] ?? null,
                 'whatsapp_group_link'  => $data['whatsapp_group_link'] ?? null,
-                'progress_test_day'     => $request->progress_test_day,
+                'progress_test_day'    => $request->progress_test_day,
             ]);
     
             $course->schedules()->delete();
-
-
-            $course->progressTests()->delete();
-            foreach($request->progress_tests as $progress_test)
-            {
-                ProgressTest::updateOrCreate([
-                    'date' => $progress_test['date'],
-                    'course_id' => $course->id,
-                    'week' => $progress_test['week'],
-                ]);
-            }
-            
-
             foreach ($schedule as $row) {
                 $course->schedules()->create([
                     'day'       => $row['day'],
@@ -426,6 +412,24 @@ class CourseController extends Controller
                     'from_time' => $row['fromTime'],
                     'to_time'   => $row['toTime'],
                 ]);
+            }
+    
+            /* rebuild progress tests and their student links */
+            $course->progressTests()->delete();
+            foreach ($progressTestsData as $ptData) {
+                $progressTest = ProgressTest::create([
+                    'date'      => $ptData['date'],
+                    'course_id' => $course->id,
+                    'week'      => $ptData['week'],
+                ]);
+    
+                foreach ($students as $student_id) {
+                    ProgressTestStudent::updateOrCreate([
+                        'progress_test_id' => $progressTest->id,
+                        'student_id'       => $student_id,
+                        'course_id'        => $course->id,
+                    ]);
+                }
             }
     
             $course->exams()->delete();
@@ -455,7 +459,7 @@ class CourseController extends Controller
     
             return response()->json([
                 'message' => 'Course updated successfully',
-                'course'  => $course->load('schedules','exams','students','levels'),
+                'course'  => $course->load('schedules','exams','students','levels','progressTests'),
             ], 200);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -465,6 +469,7 @@ class CourseController extends Controller
             ], 500);
         }
     }
+    
     
     
     public function destroy($id)
