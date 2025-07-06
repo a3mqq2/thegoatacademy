@@ -205,26 +205,26 @@
                     {{-- إذا كان يمكن التعديل وهناك درجات --}}
                     @if($canEditPT)
                       <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
-                        class="btn btn-warning btn-sm">
+                         class="btn btn-warning btn-sm">
                         <i class="fa fa-edit"></i> Edit Grades
                       </a>
                     @endif
                     
                     {{-- عرض الدرجات --}}
                     <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
-                      class="btn btn-info btn-sm">
+                       class="btn btn-info btn-sm">
                       <i class="fa fa-eye"></i> View
                     </a>
                     
                     {{-- تحميل النتائج --}}
                     <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" 
-                      class="btn btn-danger text-light btn-sm">
+                       class="btn btn-danger text-light btn-sm">
                       <i class="fa fa-print"></i> Download
                     </a>
                   @elseif($canEditPT)
                     {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
                     <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
-                      class="btn btn-primary btn-sm">
+                       class="btn btn-primary btn-sm">
                       <i class="fa fa-plus"></i> Add Grades
                     </a>
                   @endif
