@@ -209,14 +209,6 @@
                     </td>
                     <td>
                       @if($hasGrades)
-                        {{-- إذا كان يمكن التعديل وهناك درجات --}}
-                        @if($canEditPT)
-                          <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
-                             class="btn btn-warning btn-sm">
-                            <i class="fa fa-edit"></i> Edit
-                          </a>
-                        @endif
-                        
                         {{-- عرض الدرجات --}}
                         <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
                            class="btn btn-info btn-sm">
@@ -229,10 +221,10 @@
                           <i class="fa fa-print"></i> Download
                         </a>
                       @elseif($canEditPT)
-                        {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
-                        <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
+                        {{-- إذا كان يمكن إضافة أو تعديل الدرجات --}}
+                        <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
                            class="btn btn-primary btn-sm">
-                          <i class="fa fa-plus"></i> Add Grades
+                          <i class="fa fa-plus"></i> Add/Edit Grades
                         </a>
                       @else
                         <span class="text-muted">No actions available</span>
@@ -308,17 +300,11 @@
                                 data-bs-target="#attendanceModal-{{ $sch->id }}">
                           <i class="fa fa-eye"></i> View
                         </button>
-                        
-                        {{-- تعديل الحضور --}}
-                        @if($canEditSchedule)
-                          <a href="{{ route('instructor.courses.edit_attendance', [
-                              'course'         => $course->id,
-                              'CourseSchedule' => $sch->id,
-                            ]) }}"
-                            class="btn btn-warning btn-sm">
-                            <i class="fa fa-edit"></i> Edit
-                          </a>
-                        @endif
+                      @endif
+
+                      {{-- إذا لم تكن هناك أي أعمال متاحة --}}
+                      @if(!$canEditSchedule || $course->status != "ongoing")
+                        <span class="text-muted">No actions</span>
                       @endif
                     </td>
                   </tr>
