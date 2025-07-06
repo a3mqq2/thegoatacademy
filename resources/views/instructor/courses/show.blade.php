@@ -203,7 +203,7 @@
                     $sch     = $row['schedule'];
                     $closeAt = \Carbon\Carbon::parse($sch->close_at);
                     $today   = now()->toDateString();
-                    $showBtn = ($row['date'] == $today) && now()->lt($closeAt);
+                    $showBtn = now()->lt($closeAt);
                   @endphp
                   <tr
                   @if ($sch->status == "absent")
