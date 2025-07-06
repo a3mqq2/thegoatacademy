@@ -320,11 +320,6 @@
                           </a>
                         @endif
                       @endif
-
-                      {{-- إذا لم تكن هناك أي أعمال متاحة --}}
-                      @if(!$canEditSchedule || $course->status != "ongoing")
-                        <span class="text-muted">No actions</span>
-                      @endif
                     </td>
                   </tr>
                 @endif
