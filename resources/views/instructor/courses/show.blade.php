@@ -22,8 +22,11 @@
   .exam-row td {color: #fff !important;}
   .progress-row{background:#ffc107;color:#000}
   .badge{font-size:.8rem}
-  .can-edit{background-color: #e8f5e8;}
+  .can-edit{background-color: #f0f9ff;}
   .cannot-edit{background-color: #f8f9fa;}
+  .btn-group-sm .btn{padding: 0.25rem 0.5rem; font-size: 0.75rem;}
+  .table td{padding: 0.5rem 0.75rem; vertical-align: middle;}
+  .badge{font-size: 0.75rem; font-weight: 500;}
 </style>
 @endpush
 
@@ -163,9 +166,7 @@
                 <th>#</th>
                 <th>Day</th>
                 <th>Date</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Close At</th>
+                <th>Time</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Actions</th>
               </tr>
@@ -252,33 +253,23 @@
                     $today = now()->toDateString();
                     $canTakeAttendanceToday = ($row['date'] == $today) && $now->gte($scheduleStartTime) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
                   @endphp
-                  <tr @if ($sch->status == "absent") class="text-dark" @endif class="@if($canEditSchedule) can-edit @else cannot-edit @endif">
+                  <tr @if ($sch->status == "absent") class="table-danger" @endif class="@if($canEditSchedule) can-edit @else cannot-edit @endif">
                     <td>{{ $lecCounter }}</td>
                     <td>
                       {{ $row['day'] }} 
                       @if ($row['schedule']->extra_date)
-                        <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
+                        <small class="badge bg-info">Extra</small>
                       @endif
                     </td>
                     <td>{{ $row['date'] }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['close_at'])->format('Y-m-d H:i') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }} - {{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
                     <td class="text-center">
                       @if ($sch->status == "pending")
-                        <span class="badge badge-warning bg-warning">
-                          <i class="fa fa-hourglass-end"></i> Pending
-                        </span>
-                      @endif
-                      @if ($sch->status == "done")
-                        <span class="badge badge-success bg-success">
-                          <i class="fa fa-check"></i> Done
-                        </span>
-                      @endif
-                      @if ($sch->status == "absent")
-                        <span class="badge badge-danger bg-danger">
-                          <i class="fa fa-times"></i> Absent
-                        </span>
+                        <span class="badge bg-warning"><i class="fa fa-clock"></i> Pending</span>
+                      @elseif ($sch->status == "done")
+                        <span class="badge bg-success"><i class="fa fa-check"></i> Done</span>
+                      @elseif ($sch->status == "absent")
+                        <span class="badge bg-danger"><i class="fa fa-times"></i> Absent</span>
                       @endif
                     </td>
                     <td class="text-center">
@@ -288,23 +279,17 @@
                             'course'         => $course->id,
                             'CourseSchedule' => $sch->id,
                           ]) }}"
-                          class="btn btn-primary btn-sm">
-                          <i class="fa fa-edit"></i> Take Attendance
+                          class="btn btn-sm btn-primary" title="Take Attendance">
+                          <i class="fa fa-user-check"></i> Take
                         </a>
-                      @endif
-                      
-                      {{-- عرض وتعديل الحضور --}}
-                      @if($sch->attendance_taken_at && $course->status == "ongoing")
-                        <button class="btn btn-success btn-sm"
+                      @elseif($sch->attendance_taken_at && $course->status == "ongoing")
+                        <button class="btn btn-sm btn-outline-success"
                                 data-bs-toggle="modal"
-                                data-bs-target="#attendanceModal-{{ $sch->id }}">
+                                data-bs-target="#attendanceModal-{{ $sch->id }}" title="View Attendance">
                           <i class="fa fa-eye"></i> View
                         </button>
-                      @endif
-
-                      {{-- إذا لم تكن هناك أي أعمال متاحة --}}
-                      @if(!$canEditSchedule || $course->status != "ongoing")
-                        <span class="text-muted">No actions</span>
+                      @else
+                        <span class="text-muted">-</span>
                       @endif
                     </td>
                   </tr>
