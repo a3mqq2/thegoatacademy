@@ -153,176 +153,170 @@
           $midPoint   = ceil($course->schedules->count() / 2);
           $lecCounter = 0;
         @endphp
-  
-        <div class="table-responsive">
-          <table class="table table-bordered align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>#</th>
-                <th>Day</th>
-                <th>Date</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Close At</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Day</th>
+            <th>Date</th>
+            <th>From</th>
+            <th>To</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($timeline as $row)
+            {{-- Progress Test --}}
+            @if($row['type'] == 'progress')
+              @php
+                $pt = $row['pt'];
+                $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
+                
+                // التحقق من الشروط للـ Progress Test
+                $ptCloseAt = \Carbon\Carbon::parse($pt->close_at);
+                $ptDate = \Carbon\Carbon::parse($row['date']);
+                $ptStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
+                $now = now();
+                
+                // يمكن التعديل إذا:
+                // 1. لم يتم إغلاق الاختبار بعد
+                // 2. تاريخ ووقت الاختبار أكبر من الوقت الحالي
+                $canEditPT = $now->lt($ptCloseAt) && $now->lt($ptStartTime);
+                
+                $closed = $now->gt($ptCloseAt);
+              @endphp
+              <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) text-light @endif">
+                <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
+                <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
+                <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                <td>
+                  @if($hasGrades)
+                    <i class="fa fa-check text-success"></i>
+                  @elseif($closed)
+                    <i class="fa fa-times text-light"></i>
+                  @else
+                    <i class="fa fa-hourglass-end text-warning"></i>
+                  @endif
+                </td>
+                <td>
+                  @if($hasGrades)
+                    {{-- إذا كان يمكن التعديل وهناك درجات --}}
+                    @if($canEditPT)
+                      <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
+                        class="btn btn-warning btn-sm">
+                        <i class="fa fa-edit"></i> Edit Grades
+                      </a>
+                    @endif
+                    
+                    {{-- عرض الدرجات --}}
+                    <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
+                      class="btn btn-info btn-sm">
+                      <i class="fa fa-eye"></i> View
+                    </a>
+                    
+                    {{-- تحميل النتائج --}}
+                    <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" 
+                      class="btn btn-danger text-light btn-sm">
+                      <i class="fa fa-print"></i> Download
+                    </a>
+                  @elseif($canEditPT)
+                    {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
+                    <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
+                      class="btn btn-primary btn-sm">
+                      <i class="fa fa-plus"></i> Add Grades
+                    </a>
+                  @endif
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @foreach($timeline as $row)
-                {{-- Progress Test --}}
-                @if($row['type'] == 'progress')
-                  @php
-                    $pt = $row['pt'];
-                    $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
+            @else
+              {{-- Lecture --}}
+              @php
+                $lecCounter++;
+                $sch = $row['schedule'];
+                
+                // التحقق من الشروط للـ Course Schedule
+                $scheduleCloseAt = \Carbon\Carbon::parse($sch->close_at);
+                $scheduleDate = \Carbon\Carbon::parse($row['date']);
+                $scheduleStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['from']);
+                $now = now();
+                
+                // يمكن التعديل إذا:
+                // 1. لم يتم إغلاق الجدولة بعد
+                // 2. تاريخ ووقت الدرس أكبر من الوقت الحالي
+                $canEditSchedule = $now->lt($scheduleCloseAt) && $now->lt($scheduleStartTime);
+                
+                // يمكن أخذ الحضور اليوم إذا كان الدرس اليوم ولم ينتهي الوقت
+                $today = now()->toDateString();
+                $canTakeAttendanceToday = ($row['date'] == $today) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
+              @endphp
+              <tr @if ($sch->status == "absent") class="text-dark" @endif>
+                <td>{{ $lecCounter }}</td>
+                <td>
+                  {{ $row['day'] }} 
+                  @if ($row['schedule']->extra_date)
+                    <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
+                  @endif
+                </td>
+                <td>{{ $row['date'] }}</td>
+                <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
+                <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
+                <td class="text-center">
+                  @if ($sch->status == "pending")
+                    <span class="badge badge-warning bg-warning">
+                      <i class="fa fa-hourglass-end"></i>
+                    </span>
+                  @endif
+                  @if ($sch->status == "done")
+                    <span class="badge badge-success bg-success">
+                      <i class="fa fa-check"></i>
+                    </span>
+                  @endif
+                  @if ($sch->status == "absent")
+                    <span class="badge badge-danger bg-danger">
+                      <i class="fa fa-times"></i>
+                    </span>
+                  @endif
+                </td>
+                <td class="text-center">
+                  {{-- أخذ الحضور اليوم --}}
+                  @if($canTakeAttendanceToday)
+                    <a href="{{ route('instructor.courses.take_attendance', [
+                        'course'         => $course->id,
+                        'CourseSchedule' => $sch->id,
+                      ]) }}"
+                      class="btn btn-primary btn-sm">
+                      <i class="fa fa-edit"></i> Take Attendance
+                    </a>
+                  @endif
+                  
+                  {{-- عرض الحضور --}}
+                  @if($sch->attendance_taken_at && $course->status == "ongoing")
+                    <button class="btn btn-success btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#attendanceModal-{{ $sch->id }}">
+                      <i class="fa fa-eye"></i> View
+                    </button>
                     
-                    // التحقق من الشروط للـ Progress Test
-                    $ptCloseAt = \Carbon\Carbon::parse($pt->close_at);
-                    $ptDate = \Carbon\Carbon::parse($row['date']);
-                    $ptStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
-                    $now = now();
-                    
-                    // يمكن التعديل إذا:
-                    // 1. لم يتم إغلاق الاختبار بعد
-                    // 2. تاريخ ووقت الاختبار أكبر من الوقت الحالي
-                    $canEditPT = $now->lt($ptCloseAt) && $now->lt($ptStartTime);
-                    
-                    $closed = $now->gt($ptCloseAt);
-                  @endphp
-                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) text-light @endif">
-                    <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
-                    <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                    <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
-                    <td>{{$row['close_at']}}</td>
-                    <td>
-                      @if($hasGrades)
-                        <i class="fa fa-check text-success"></i>
-                      @elseif($closed)
-                        <i class="fa fa-times text-light"></i>
-                      @else
-                        <i class="fa fa-hourglass-end text-warning"></i>
-                      @endif
-                    </td>
-                    <td>
-                      @if($hasGrades)
-                        {{-- إذا كان يمكن التعديل وهناك درجات --}}
-                        @if($canEditPT)
-                          <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
-                            class="btn btn-warning btn-sm">
-                            <i class="fa fa-edit"></i> Edit Grades
-                          </a>
-                        @endif
-                        
-                        {{-- عرض الدرجات --}}
-                        <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
-                          class="btn btn-info btn-sm">
-                          <i class="fa fa-eye"></i> View
-                        </a>
-                        
-                        {{-- تحميل النتائج --}}
-                        <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" 
-                          class="btn btn-danger text-light btn-sm">
-                          <i class="fa fa-print"></i> Download
-                        </a>
-                      @elseif($canEditPT)
-                        {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
-                        <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
-                          class="btn btn-primary btn-sm">
-                          <i class="fa fa-plus"></i> Add Grades
-                        </a>
-                      @endif
-                    </td>
-                  </tr>
-                @else
-                  {{-- Lecture --}}
-                  @php
-                    $lecCounter++;
-                    $sch = $row['schedule'];
-                    
-                    // التحقق من الشروط للـ Course Schedule
-                    $scheduleCloseAt = \Carbon\Carbon::parse($sch->close_at);
-                    $scheduleDate = \Carbon\Carbon::parse($row['date']);
-                    $scheduleStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['from']);
-                    $now = now();
-                    
-                    // يمكن التعديل إذا:
-                    // 1. لم يتم إغلاق الجدولة بعد
-                    // 2. تاريخ ووقت الدرس أكبر من الوقت الحالي
-                    $canEditSchedule = $now->lt($scheduleCloseAt) && $now->lt($scheduleStartTime);
-                    
-                    // يمكن أخذ الحضور اليوم إذا كان الدرس اليوم ولم ينتهي الوقت
-                    $today = now()->toDateString();
-                    $canTakeAttendanceToday = ($row['date'] == $today) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
-                  @endphp
-                  <tr @if ($sch->status == "absent") class="text-dark" @endif>
-                    <td>{{ $lecCounter }}</td>
-                    <td>
-                      {{ $row['day'] }} 
-                      @if ($row['schedule']->extra_date)
-                        <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
-                      @endif
-                    </td>
-                    <td>{{ $row['date'] }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
-                    <td>
-                      {{$row['close_at']}}
-                    </td>
-                    <td class="text-center">
-                      @if ($sch->status == "pending")
-                        <span class="badge badge-warning bg-warning">
-                          <i class="fa fa-hourglass-end"></i>
-                        </span>
-                      @endif
-                      @if ($sch->status == "done")
-                        <span class="badge badge-success bg-success">
-                          <i class="fa fa-check"></i>
-                        </span>
-                      @endif
-                      @if ($sch->status == "absent")
-                        <span class="badge badge-danger bg-danger">
-                          <i class="fa fa-times"></i>
-                        </span>
-                      @endif
-                    </td>
-                    <td class="text-center">
-                      {{-- أخذ الحضور اليوم --}}
-                      @if($canTakeAttendanceToday)
-                        <a href="{{ route('instructor.courses.take_attendance', [
-                            'course'         => $course->id,
-                            'CourseSchedule' => $sch->id,
-                          ]) }}"
-                          class="btn btn-primary btn-sm">
-                          <i class="fa fa-edit"></i> Take Attendance
-                        </a>
-                      @endif
-                      
-                      {{-- عرض الحضور --}}
-                      @if($sch->attendance_taken_at && $course->status == "ongoing")
-                        <button class="btn btn-success btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#attendanceModal-{{ $sch->id }}">
-                          <i class="fa fa-eye"></i> View
-                        </button>
-                        
-                        {{-- تعديل الحضور --}}
-                        @if($canEditSchedule)
-                          <a href="{{ route('instructor.courses.edit_attendance', [
-                              'course'         => $course->id,
-                              'CourseSchedule' => $sch->id,
-                            ]) }}"
-                            class="btn btn-warning btn-sm">
-                            <i class="fa fa-edit"></i> Edit
-                          </a>
-                        @endif
-                      @endif
-                    </td>
-                  </tr>
-                @endif
-              @endforeach
-            </tbody>
-          </table>
-        </div>
+                    {{-- تعديل الحضور --}}
+                    @if($canEditSchedule)
+                      <a href="{{ route('instructor.courses.edit_attendance', [
+                          'course'         => $course->id,
+                          'CourseSchedule' => $sch->id,
+                        ]) }}"
+                        class="btn btn-warning btn-sm">
+                        <i class="fa fa-edit"></i> Edit
+                      </a>
+                    @endif
+                  @endif
+                </td>
+              </tr>
+            @endif
+          @endforeach
+        </tbody>
+      </table>
+    </div>
       @else
         <p class="p-3 mb-0 text-muted">No schedule entries.</p>
       @endif
