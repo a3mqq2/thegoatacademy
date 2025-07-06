@@ -34,7 +34,7 @@
 <div class="container">
 
 
-  {{-- ================= OVERVIEW ================= --}}
+  {{-- ==== OVERVIEW ==== --}}
   <div class="card mt-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h4 class="text-light"><i class="fa fa-info-circle"></i> Course #{{ $course->id }}</h4>
@@ -80,7 +80,7 @@
     </div>
   </div>
 
-  {{-- ================= SCHEDULE + PROGRESS ================= --}}
+  {{-- ==== SCHEDULE + PROGRESS ==== --}}
   
   {{-- absences count --}}
   @php
@@ -168,7 +168,7 @@
             <tbody>
               @foreach($timeline as $row)
                 {{-- Progress Test --}}
-                @if($row['type'] === 'progress')
+                @if($row['type'] == 'progress')
                 @php
                 $pt        = $row['pt'];
                 $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
@@ -203,7 +203,7 @@
                     $sch     = $row['schedule'];
                     $closeAt = \Carbon\Carbon::parse($sch->close_at);
                     $today   = now()->toDateString();
-                    $showBtn = ($row['date'] === $today) && now()->lt($closeAt);
+                    $showBtn = ($row['date'] == $today) && now()->lt($closeAt);
                   @endphp
                   <tr
                   @if ($sch->status == "absent")
@@ -324,7 +324,7 @@
 
 
 
-{{-- ================= STUDENTS ================= --}}
+{{-- ==== STUDENTS ==== --}}
 <div class="card">
   <div class="card-header">
     <h5 class="text-light"><i class="fa fa-users"></i> Enrolled Students</h5>
@@ -378,7 +378,7 @@
 
 </div>
 
-{{-- ===== Attendance Detail Modals ===== --}}
+{{-- ==== Attendance Detail Modals ==== --}}
 @foreach($course->schedules as $sc)
   @if($sc->attendance_taken_at)
     <div class="modal fade" id="attendanceModal-{{ $sc->id }}" tabindex="-1">
