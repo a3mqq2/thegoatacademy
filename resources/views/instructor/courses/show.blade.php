@@ -181,14 +181,13 @@
                     
                     // التحقق من الشروط للـ Progress Test
                     $ptCloseAt = \Carbon\Carbon::parse($pt->close_at);
-                    $ptDate = \Carbon\Carbon::parse($row['date']);
-                    $ptStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
+                    $ptDateTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
                     $now = now();
                     
                     // يمكن التعديل إذا:
-                    // 1. الوقت الحالي >= وقت بداية الاختبار
+                    // 1. الوقت الحالي >= وقت الاختبار
                     // 2. الوقت الحالي < وقت الإغلاق
-                    $canEditPT = $now->gte($ptStartTime) && $now->lt($ptCloseAt);
+                    $canEditPT = $now->gte($ptDateTime) && $now->lt($ptCloseAt);
                     
                     $closed = $now->gt($ptCloseAt);
                   @endphp
