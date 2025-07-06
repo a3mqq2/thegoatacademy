@@ -241,7 +241,7 @@
             <tbody>
               @foreach($timeline as $row)
                 {{-- Progress Test --}}
-                @if($row['type'] === 'progress')
+                @if($row['type'] == 'progress')
                 @php
                 $pt        = $row['pt'];
                 $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
@@ -318,7 +318,7 @@
                     $sch = $row['schedule'];
                     $closeAt = \Carbon\Carbon::parse($sch->close_at);
                     $today = now()->toDateString();
-                    $isToday = ($row['date'] === $today);
+                    $isToday = ($row['date'] == $today);
                     $canTakeAttendance = $isToday && now()->lt($closeAt);
                   @endphp
                   <tr>
