@@ -206,6 +206,7 @@
               'from'     => $s->from_time,
               'to'       => $s->to_time,
               'schedule' => $s,
+              'close_at' => $s->close_at
             ]);
           }
           foreach ($course->progressTests as $pt) {
@@ -232,6 +233,7 @@
                 <th>Date</th>
                 <th>From</th>
                 <th>To</th>
+                <th>Close At</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Admin Actions</th>
               </tr>
@@ -248,7 +250,7 @@
                 <tr class="progress-row text-center text-dark">
                     <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
                     <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                    <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                    <td colspan="4">{{ date('h:i A', strtotime($row['time'])) }}</td>
                     <td class="status-indicator">
                         @if($hasGrades)
                             <span class="badge bg-success">
@@ -330,6 +332,9 @@
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
+                    <td>
+                      {{$sch->close_at}}
+                    </td>
                     <td class="text-center status-indicator">
                       @if ($sch->status == "pending")
                           <span class="badge bg-warning">
