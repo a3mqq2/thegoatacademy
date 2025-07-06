@@ -134,6 +134,7 @@
               'from'     => $s->from_time,
               'to'       => $s->to_time,
               'schedule' => $s,
+              'close_at' => $s->close_at,
             ]);
           }
           foreach ($course->progressTests as $pt) {
@@ -145,6 +146,7 @@
               'date' => $pt->date,
               'time' => $pt->time,
               'id'   => $pt->id,
+              'close_at' => $pt->close_at,
             ]);
           }
           $timeline   = $timeline->sortBy('date')->values();
@@ -161,6 +163,7 @@
                 <th>Date</th>
                 <th>From</th>
                 <th>To</th>
+                <th>Close At</th>
                 <th class="text-center">Status</th>
                 <th class="text-center">Actions</th>
               </tr>
@@ -190,6 +193,7 @@
                     <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
                     <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
                     <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                    <td>{{$row['close_at']}}</td>
                     <td>
                       @if($hasGrades)
                         <i class="fa fa-check text-success"></i>
@@ -261,6 +265,9 @@
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
+                    <td>
+                      {{$row['close_at']}}
+                    </td>
                     <td class="text-center">
                       @if ($sch->status == "pending")
                         <span class="badge badge-warning bg-warning">
