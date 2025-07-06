@@ -22,6 +22,8 @@
   .exam-row td {color: #fff !important;}
   .progress-row{background:#ffc107;color:#000}
   .badge{font-size:.8rem}
+  .can-edit{background-color: #e8f5e8;}
+  .cannot-edit{background-color: #f8f9fa;}
 </style>
 @endpush
 
@@ -33,13 +35,14 @@
 
 <div class="container">
 
-
   {{-- ==== OVERVIEW ==== --}}
   <div class="card mt-3">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h4 class="text-light"><i class="fa fa-info-circle"></i> Course #{{ $course->id }}</h4>
-      <a href="{{route('instructor.courses.print', $course)}}" class="btn btn-danger btn-sm"><i class="fa fa-print"></i> Print Course </a>
-      <a href="{{ route('instructor.courses.index',['status'=>'ongoing']) }}" class="btn btn-outline-light btn-sm"><i class="fa fa-arrow-left"></i> Back</a>
+      <div>
+        <a href="{{route('instructor.courses.print', $course)}}" class="btn btn-danger btn-sm"><i class="fa fa-print"></i> Print Course </a>
+        <a href="{{ route('instructor.courses.index',['status'=>'ongoing']) }}" class="btn btn-outline-light btn-sm"><i class="fa fa-arrow-left"></i> Back</a>
+      </div>
     </div>
     <div class="card-body p-0">
       @php
@@ -153,284 +156,291 @@
           $midPoint   = ceil($course->schedules->count() / 2);
           $lecCounter = 0;
         @endphp
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Day</th>
-            <th>Date</th>
-            <th>From</th>
-            <th>To</th>
-            <th class="text-center">Status</th>
-            <th class="text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($timeline as $row)
-            {{-- Progress Test --}}
-            @if($row['type'] == 'progress')
-              @php
-                $pt = $row['pt'];
-                $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
-                
-                // التحقق من الشروط للـ Progress Test
-                $ptCloseAt = \Carbon\Carbon::parse($pt->close_at);
-                $ptDate = \Carbon\Carbon::parse($row['date']);
-                $ptStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
-                $now = now();
-                
-                // يمكن التعديل إذا:
-                // 1. لم يتم إغلاق الاختبار بعد
-                // 2. تاريخ ووقت الاختبار أكبر من الوقت الحالي
-                $canEditPT = $now->lt($ptCloseAt) && $now->lt($ptStartTime);
-                
-                $closed = $now->gt($ptCloseAt);
-              @endphp
-              <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) text-light @endif">
-                <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
-                <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
-                <td colspan="3">{{ date('h:i A', strtotime($row['time'])) }}</td>
-                <td>
-                  @if($hasGrades)
-                    <i class="fa fa-check text-success"></i>
-                  @elseif($closed)
-                    <i class="fa fa-times text-light"></i>
-                  @else
-                    <i class="fa fa-hourglass-end text-warning"></i>
-                  @endif
-                </td>
-                <td>
-                  @if($hasGrades)
-                    {{-- إذا كان يمكن التعديل وهناك درجات --}}
-                    @if($canEditPT)
-                      <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
-                         class="btn btn-warning btn-sm">
-                        <i class="fa fa-edit"></i> Edit Grades
-                      </a>
-                    @endif
-                    
-                    {{-- عرض الدرجات --}}
-                    <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
-                       class="btn btn-info btn-sm">
-                      <i class="fa fa-eye"></i> View
-                    </a>
-                    
-                    {{-- تحميل النتائج --}}
-                    <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" 
-                       class="btn btn-danger text-light btn-sm">
-                      <i class="fa fa-print"></i> Download
-                    </a>
-                  @elseif($canEditPT)
-                    {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
-                    <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
-                       class="btn btn-primary btn-sm">
-                      <i class="fa fa-plus"></i> Add Grades
-                    </a>
-                  @endif
-                </td>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Day</th>
+                <th>Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Close At</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Actions</th>
               </tr>
-            @else
-              {{-- Lecture --}}
-              @php
-                $lecCounter++;
-                $sch = $row['schedule'];
-                
-                // التحقق من الشروط للـ Course Schedule
-                $scheduleCloseAt = \Carbon\Carbon::parse($sch->close_at);
-                $scheduleDate = \Carbon\Carbon::parse($row['date']);
-                $scheduleStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['from']);
-                $now = now();
-                
-                // يمكن التعديل إذا:
-                // 1. لم يتم إغلاق الجدولة بعد
-                // 2. تاريخ ووقت الدرس أكبر من الوقت الحالي
-                $canEditSchedule = $now->lt($scheduleCloseAt) && $now->lt($scheduleStartTime);
-                
-                // يمكن أخذ الحضور اليوم إذا كان الدرس اليوم ولم ينتهي الوقت
-                $today = now()->toDateString();
-                $canTakeAttendanceToday = ($row['date'] == $today) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
-              @endphp
-              <tr @if ($sch->status == "absent") class="text-dark" @endif>
-                <td>{{ $lecCounter }}</td>
-                <td>
-                  {{ $row['day'] }} 
-                  @if ($row['schedule']->extra_date)
-                    <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
-                  @endif
-                </td>
-                <td>{{ $row['date'] }}</td>
-                <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
-                <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
-                <td class="text-center">
-                  @if ($sch->status == "pending")
-                    <span class="badge badge-warning bg-warning">
-                      <i class="fa fa-hourglass-end"></i>
-                    </span>
-                  @endif
-                  @if ($sch->status == "done")
-                    <span class="badge badge-success bg-success">
-                      <i class="fa fa-check"></i>
-                    </span>
-                  @endif
-                  @if ($sch->status == "absent")
-                    <span class="badge badge-danger bg-danger">
-                      <i class="fa fa-times"></i>
-                    </span>
-                  @endif
-                </td>
-                <td class="text-center">
-                  {{-- أخذ الحضور اليوم --}}
-                  @if($canTakeAttendanceToday)
-                    <a href="{{ route('instructor.courses.take_attendance', [
-                        'course'         => $course->id,
-                        'CourseSchedule' => $sch->id,
-                      ]) }}"
-                      class="btn btn-primary btn-sm">
-                      <i class="fa fa-edit"></i> Take Attendance
-                    </a>
-                  @endif
-                  
-                  {{-- عرض الحضور --}}
-                  @if($sch->attendance_taken_at && $course->status == "ongoing")
-                    <button class="btn btn-success btn-sm"
-                            data-bs-toggle="modal"
-                            data-bs-target="#attendanceModal-{{ $sch->id }}">
-                      <i class="fa fa-eye"></i> View
-                    </button>
+            </thead>
+            <tbody>
+              @foreach($timeline as $row)
+                {{-- Progress Test --}}
+                @if($row['type'] == 'progress')
+                  @php
+                    $pt = $row['pt'];
+                    $hasGrades = $pt->progressTestStudents->pluck('grades')->flatten()->isNotEmpty();
                     
-                    {{-- تعديل الحضور --}}
-                    @if($canEditSchedule)
-                      <a href="{{ route('instructor.courses.edit_attendance', [
-                          'course'         => $course->id,
-                          'CourseSchedule' => $sch->id,
-                        ]) }}"
-                        class="btn btn-warning btn-sm">
-                        <i class="fa fa-edit"></i> Edit
-                      </a>
-                    @endif
-                  @endif
-                </td>
-              </tr>
-            @endif
-          @endforeach
-        </tbody>
-      </table>
-    </div>
+                    // التحقق من الشروط للـ Progress Test
+                    $ptCloseAt = \Carbon\Carbon::parse($pt->close_at);
+                    $ptDate = \Carbon\Carbon::parse($row['date']);
+                    $ptStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['time']);
+                    $now = now();
+                    
+                    // يمكن التعديل إذا:
+                    // 1. الوقت الحالي >= وقت بداية الاختبار
+                    // 2. الوقت الحالي < وقت الإغلاق
+                    $canEditPT = $now->gte($ptStartTime) && $now->lt($ptCloseAt);
+                    
+                    $closed = $now->gt($ptCloseAt);
+                  @endphp
+                  <tr class="progress-row text-center text-dark @if($closed && ! $hasGrades) text-light @endif @if($canEditPT) can-edit @else cannot-edit @endif">
+                    <td colspan="1">Progress Test – Week {{ $row['week'] }}</td>
+                    <td>{{ $row['date'] }} ({{ $row['day'] }})</td>
+                    <td colspan="2">{{ date('h:i A', strtotime($row['time'])) }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['close_at'])->format('Y-m-d H:i') }}</td>
+                    <td>
+                      @if($hasGrades)
+                        <i class="fa fa-check text-success"></i>
+                      @elseif($closed)
+                        <i class="fa fa-times text-danger"></i>
+                      @elseif($canEditPT)
+                        <i class="fa fa-clock text-info"></i>
+                      @else
+                        <i class="fa fa-hourglass-end text-warning"></i>
+                      @endif
+                    </td>
+                    <td>
+                      @if($hasGrades)
+                        {{-- إذا كان يمكن التعديل وهناك درجات --}}
+                        @if($canEditPT)
+                          <a href="{{ route('instructor.courses.progress_tests.edit', $row['id']) }}" 
+                             class="btn btn-warning btn-sm">
+                            <i class="fa fa-edit"></i> Edit
+                          </a>
+                        @endif
+                        
+                        {{-- عرض الدرجات --}}
+                        <a href="{{ route('instructor.courses.progress_tests.show', $row['id']) }}" 
+                           class="btn btn-info btn-sm">
+                          <i class="fa fa-eye"></i> View
+                        </a>
+                        
+                        {{-- تحميل النتائج --}}
+                        <a href="{{ route('instructor.courses.progress_tests.print', $row['id']) }}" 
+                           class="btn btn-danger text-light btn-sm">
+                          <i class="fa fa-print"></i> Download
+                        </a>
+                      @elseif($canEditPT)
+                        {{-- إذا كان يمكن التعديل وليس هناك درجات بعد --}}
+                        <a href="{{ route('instructor.courses.progress_tests.grades', $row['id']) }}" 
+                           class="btn btn-primary btn-sm">
+                          <i class="fa fa-plus"></i> Add Grades
+                        </a>
+                      @else
+                        <span class="text-muted">No actions available</span>
+                      @endif
+                    </td>
+                  </tr>
+                @else
+                  {{-- Lecture --}}
+                  @php
+                    $lecCounter++;
+                    $sch = $row['schedule'];
+                    
+                    // التحقق من الشروط للـ Course Schedule
+                    $scheduleCloseAt = \Carbon\Carbon::parse($sch->close_at);
+                    $scheduleDate = \Carbon\Carbon::parse($row['date']);
+                    $scheduleStartTime = \Carbon\Carbon::parse($row['date'] . ' ' . $row['from']);
+                    $now = now();
+                    
+                    // يمكن التعديل إذا:
+                    // 1. الوقت الحالي >= وقت بداية المحاضرة
+                    // 2. الوقت الحالي < وقت الإغلاق
+                    $canEditSchedule = $now->gte($scheduleStartTime) && $now->lt($scheduleCloseAt);
+                    
+                    // يمكن أخذ الحضور اليوم إذا كان الدرس اليوم ولم ينتهي الوقت
+                    $today = now()->toDateString();
+                    $canTakeAttendanceToday = ($row['date'] == $today) && $now->gte($scheduleStartTime) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
+                  @endphp
+                  <tr @if ($sch->status == "absent") class="text-dark" @endif class="@if($canEditSchedule) can-edit @else cannot-edit @endif">
+                    <td>{{ $lecCounter }}</td>
+                    <td>
+                      {{ $row['day'] }} 
+                      @if ($row['schedule']->extra_date)
+                        <div class="badge badge-info m-2 bg-info">IS EXTRA</div>
+                      @endif
+                    </td>
+                    <td>{{ $row['date'] }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
+                    <td>{{ \Carbon\Carbon::parse($row['close_at'])->format('Y-m-d H:i') }}</td>
+                    <td class="text-center">
+                      @if ($sch->status == "pending")
+                        <span class="badge badge-warning bg-warning">
+                          <i class="fa fa-hourglass-end"></i> Pending
+                        </span>
+                      @endif
+                      @if ($sch->status == "done")
+                        <span class="badge badge-success bg-success">
+                          <i class="fa fa-check"></i> Done
+                        </span>
+                      @endif
+                      @if ($sch->status == "absent")
+                        <span class="badge badge-danger bg-danger">
+                          <i class="fa fa-times"></i> Absent
+                        </span>
+                      @endif
+                    </td>
+                    <td class="text-center">
+                      {{-- أخذ الحضور للدرس الحالي --}}
+                      @if($canTakeAttendanceToday && !$sch->attendance_taken_at)
+                        <a href="{{ route('instructor.courses.take_attendance', [
+                            'course'         => $course->id,
+                            'CourseSchedule' => $sch->id,
+                          ]) }}"
+                          class="btn btn-primary btn-sm">
+                          <i class="fa fa-edit"></i> Take Attendance
+                        </a>
+                      @endif
+                      
+                      {{-- عرض الحضور --}}
+                      @if($sch->attendance_taken_at && $course->status == "ongoing")
+                        <button class="btn btn-success btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#attendanceModal-{{ $sch->id }}">
+                          <i class="fa fa-eye"></i> View
+                        </button>
+                        
+                        {{-- تعديل الحضور --}}
+                        @if($canEditSchedule)
+                          <a href="{{ route('instructor.courses.edit_attendance', [
+                              'course'         => $course->id,
+                              'CourseSchedule' => $sch->id,
+                            ]) }}"
+                            class="btn btn-warning btn-sm">
+                            <i class="fa fa-edit"></i> Edit
+                          </a>
+                        @endif
+                      @endif
+
+                      {{-- إذا لم تكن هناك أي أعمال متاحة --}}
+                      @if(!$canTakeAttendanceToday && !$sch->attendance_taken_at && !$canEditSchedule)
+                        <span class="text-muted">No actions</span>
+                      @endif
+                    </td>
+                  </tr>
+                @endif
+              @endforeach
+            </tbody>
+          </table>
+        </div>
       @else
         <p class="p-3 mb-0 text-muted">No schedule entries.</p>
       @endif
     </div>
   </div>
   
-  
-  
-{{-- Progress Test Grades Modals --}}
-@foreach($course->progressTests as $pt)
-  <div class="modal fade" id="progressModal-{{ $pt->id }}" tabindex="-1" aria-labelledby="progressModalLabel-{{ $pt->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="progressModalLabel-{{ $pt->id }}">
-            Progress Test Grades – Week {{ $pt->week }} ({{ $pt->date }}) 
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="table-responsive">
-            <table class="table table-bordered mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>#</th>
-                  <th>Student</th>
-                  @foreach($course->courseType->skills as $skill)
-                    <th class="text-center">{{ $skill->name }}</th>
-                  @endforeach
-                </tr>
-              </thead>
-              <tbody>
-                @foreach($pt->progressTestStudents as $i => $pts)
+  {{-- Progress Test Grades Modals --}}
+  @foreach($course->progressTests as $pt)
+    <div class="modal fade" id="progressModal-{{ $pt->id }}" tabindex="-1" aria-labelledby="progressModalLabel-{{ $pt->id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="progressModalLabel-{{ $pt->id }}">
+              Progress Test Grades – Week {{ $pt->week }} ({{ $pt->date }}) 
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="table-responsive">
+              <table class="table table-bordered mb-0">
+                <thead class="table-light">
                   <tr>
-                    <td>{{ $i+1 }}</td>
-                    <td>
-                      {{ $pts->student->name }}<br>
-                      <small class="text-muted">{{ $pts->student->phone }}</small>
-                    </td>
+                    <th>#</th>
+                    <th>Student</th>
                     @foreach($course->courseType->skills as $skill)
-                      @php
-                        $g = $pts->grades
-                                ->where('course_type_skill_id', $skill->pivot->id)
-                                ->first();
-                      @endphp
-                      <td class="text-center">{{ $g ? $g->progress_test_grade : '-' }}</td>
+                      <th class="text-center">{{ $skill->name }}</th>
                     @endforeach
                   </tr>
-                @endforeach
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @foreach($pt->progressTestStudents as $i => $pts)
+                    <tr>
+                      <td>{{ $i+1 }}</td>
+                      <td>
+                        {{ $pts->student->name }}<br>
+                        <small class="text-muted">{{ $pts->student->phone }}</small>
+                      </td>
+                      @foreach($course->courseType->skills as $skill)
+                        @php
+                          $g = $pts->grades
+                                  ->where('course_type_skill_id', $skill->pivot->id)
+                                  ->first();
+                        @endphp
+                        <td class="text-center">{{ $g ? $g->progress_test_grade : '-' }}</td>
+                      @endforeach
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-@endforeach
+  @endforeach
 
-
-
-{{-- ==== STUDENTS ==== --}}
-<div class="card">
-  <div class="card-header">
-    <h5 class="text-light"><i class="fa fa-users"></i> Enrolled Students</h5>
-  </div>
-  <div class="card-body p-0">
-    @if($course->students->count())
-      <table class="table mb-0">
-        <thead class="table-light">
-          <tr>
-            <th style="width:50px">#</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th style="width:120px">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($course->students as $i => $st)
-            @php
-              $badge = match($st->pivot->status) {
-                'ongoing'   => 'info',
-                'withdrawn' => 'warning',
-                default     => 'danger',
-              };
-            @endphp
+  {{-- ==== STUDENTS ==== --}}
+  <div class="card">
+    <div class="card-header">
+      <h5 class="text-light"><i class="fa fa-users"></i> Enrolled Students</h5>
+    </div>
+    <div class="card-body p-0">
+      @if($course->students->count())
+        <table class="table mb-0">
+          <thead class="table-light">
             <tr>
-              <td>{{ $i + 1 }}</td>
-              <td>{{ $st->name }}</td>
-              <td>{{ $st->phone }}</td>
-              <td>
-                <span class="badge bg-{{ $badge }}">
-                  {{ ucfirst($st->pivot->status) }}
-                </span>
-              </td>
-              <td>
-                <a href="{{ route('instructor.courses.students.stats', [$course->id, $st->id]) }}"
-                   class="btn btn-sm btn-info">
-                  Show Stats
-                </a>
-              </td>
+              <th style="width:50px">#</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th style="width:120px">Actions</th>
             </tr>
-          @endforeach
-        </tbody>
-      </table>
-    @else
-      <p class="p-3 mb-0 text-muted">No students enrolled.</p>
-    @endif
+          </thead>
+          <tbody>
+            @foreach($course->students as $i => $st)
+              @php
+                $badge = match($st->pivot->status) {
+                  'ongoing'   => 'info',
+                  'withdrawn' => 'warning',
+                  default     => 'danger',
+                };
+              @endphp
+              <tr>
+                <td>{{ $i + 1 }}</td>
+                <td>{{ $st->name }}</td>
+                <td>{{ $st->phone }}</td>
+                <td>
+                  <span class="badge bg-{{ $badge }}">
+                    {{ ucfirst($st->pivot->status) }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ route('instructor.courses.students.stats', [$course->id, $st->id]) }}"
+                     class="btn btn-sm btn-info">
+                    Show Stats
+                  </a>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      @else
+        <p class="p-3 mb-0 text-muted">No students enrolled.</p>
+      @endif
+    </div>
   </div>
-</div>
-
 
 </div>
 
@@ -440,14 +450,39 @@
     <div class="modal fade" id="attendanceModal-{{ $sc->id }}" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
-          <div class="modal-header"><h5 class="modal-title">Attendance – {{ $sc->date }} ({{ $dayName[$sc->day] ?? $sc->day }})</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-header">
+            <h5 class="modal-title">Attendance – {{ $sc->date }} ({{ $dayName[$sc->day] ?? $sc->day }})</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
           <div class="modal-body p-0">
             @if($sc->attendances->count())
-              <table>
-                <thead><tr><th>#</th><th>Student</th><th>Status</th><th>Homework</th><th>Notes</th></tr></thead>
+              <table class="table table-bordered mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th>Status</th>
+                    <th>Homework</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
                 <tbody>
                   @foreach($sc->attendances as $a)
-                    <tr><td>{{ $loop->iteration }}</td><td>{{ $a->student->name ?? 'Unknown' }}</td><td>{{ ucfirst($a->attendance) }}</td><td>{{ $a->homework_submitted?'Yes':'No' }}</td><td>{{ $a->notes ?: '-' }}</td></tr>
+                    <tr>
+                      <td>{{ $loop->iteration }}</td>
+                      <td>{{ $a->student->name ?? 'Unknown' }}</td>
+                      <td>
+                        <span class="badge bg-{{ $a->attendance == 'present' ? 'success' : 'danger' }}">
+                          {{ ucfirst($a->attendance) }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge bg-{{ $a->homework_submitted ? 'success' : 'warning' }}">
+                          {{ $a->homework_submitted ? 'Yes' : 'No' }}
+                        </span>
+                      </td>
+                      <td>{{ $a->notes ?: '-' }}</td>
+                    </tr>
                   @endforeach
                 </tbody>
               </table>
@@ -455,7 +490,9 @@
               <p class="p-3 mb-0 text-muted">No attendance records.</p>
             @endif
           </div>
-          <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
         </div>
       </div>
     </div>
