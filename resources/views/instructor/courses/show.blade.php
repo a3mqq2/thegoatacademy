@@ -8,6 +8,58 @@
   <li class="breadcrumb-item active"><i class="fa fa-info-circle"></i> Course Details</li>
 @endsection
 
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // تحديث العد التنازلي كل ثانية
+    function updateCountdowns() {
+        document.querySelectorAll('.countdown').forEach(function(element) {
+            const target = new Date(element.dataset.target);
+            const now = new Date();
+            const diff = target - now;
+            
+            if (diff > 0) {
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                let timeString = '';
+                if (days > 0) {
+                    timeString = `${days}d ${hours}h ${minutes}m`;
+                } else if (hours > 0) {
+                    timeString = `${hours}h ${minutes}m ${seconds}s`;
+                } else if (minutes > 0) {
+                    timeString = `${minutes}m ${seconds}s`;
+                } else {
+                    timeString = `${seconds}s`;
+                }
+                
+                element.querySelector('.countdown-time').textContent = timeString;
+                
+                // تغيير اللون عند اقتراب الوقت
+                if (diff < 3600000) { // أقل من ساعة
+                    element.classList.remove('text-primary', 'text-warning');
+                    element.classList.add('text-danger');
+                } else if (diff < 86400000) { // أقل من يوم
+                    element.classList.remove('text-primary');
+                    element.classList.add('text-warning');
+                }
+            } else {
+                element.querySelector('.countdown-time').textContent = 'Expired';
+                element.classList.remove('text-primary', 'text-warning');
+                element.classList.add('text-danger');
+            }
+        });
+    }
+    
+    // تشغيل العد التنازلي فوراً ثم كل ثانية
+    updateCountdowns();
+    setInterval(updateCountdowns, 1000);
+});
+</script>
+@endpush
+
 @push('styles')
 <style>
   :root{--primary:#6f42c1;--secondary:#007bff;--bg:#f0f2f5;--card:#fff;--sh:0 6px 14px rgba(0,0,0,.08)}
@@ -170,8 +222,7 @@
                 <th>Day</th>
                 <th>Date</th>
                 <th>Time</th>
-                <th style="width: 120px" class="text-center">Status</th>
-                <th style="width: 140px" class="text-center">Actions</th>
+                <th style="width: 200px" class="text-center">Status & Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -267,30 +318,31 @@
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }} - {{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
                     <td class="text-center">
                       @if ($sch->status == "pending")
-                        <span class="badge bg-warning">Pending</span>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                          <span class="badge bg-warning">Pending</span>
+                          @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
+                            <a href="{{ route('instructor.courses.take_attendance', [
+                                'course'         => $course->id,
+                                'CourseSchedule' => $sch->id,
+                              ]) }}"
+                              class="btn btn-sm btn-primary">
+                              <i class="fa fa-user-check"></i> Take
+                            </a>
+                          @endif
+                        </div>
                       @elseif ($sch->status == "done")
-                        <span class="badge bg-success">Done</span>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                          <span class="badge bg-success">Done</span>
+                          @if($sch->attendance_taken_at && $course->status == "ongoing")
+                            <button class="btn btn-sm btn-outline-success"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#attendanceModal-{{ $sch->id }}">
+                              <i class="fa fa-eye"></i> View
+                            </button>
+                          @endif
+                        </div>
                       @elseif ($sch->status == "absent")
                         <span class="badge bg-danger">Absent</span>
-                      @endif
-                    </td>
-                    <td class="text-center">
-                      @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
-                        <a href="{{ route('instructor.courses.take_attendance', [
-                            'course'         => $course->id,
-                            'CourseSchedule' => $sch->id,
-                          ]) }}"
-                          class="btn btn-sm btn-primary">
-                          <i class="fa fa-user-check"></i> Take
-                        </a>
-                      @elseif($sch->attendance_taken_at && $course->status == "ongoing")
-                        <button class="btn btn-sm btn-outline-success"
-                                data-bs-toggle="modal"
-                                data-bs-target="#attendanceModal-{{ $sch->id }}">
-                          <i class="fa fa-eye"></i> View
-                        </button>
-                      @else
-                        <span class="text-muted">-</span>
                       @endif
                     </td>
                   </tr>
