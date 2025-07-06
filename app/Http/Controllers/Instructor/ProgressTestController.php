@@ -33,8 +33,8 @@ class ProgressTestController extends Controller
     
             // فلترة المهارات لإرجاع Progress Skills فقط
             $progressSkills = $progressTest->course->courseType->skills->filter(function($skill) {
-                return $skill->pivot->skill_type === 'progress' || 
-                       ($skill->pivot->skill_type === 'legacy' && $skill->pivot->progress_test_max > 0);
+                return $skill->pivot->skill_type == 'progress' || 
+                       ($skill->pivot->skill_type == 'legacy' && $skill->pivot->progress_test_max > 0);
             });
     
             // إضافة Progress Skills إلى البيانات

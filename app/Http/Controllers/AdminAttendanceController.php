@@ -46,7 +46,7 @@ class AdminAttendanceController extends Controller
                     'name' => $student->name,
                     'phone' => $student->phone,
                     'absencesCount' => $this->getStudentAbsencesCount($student, $course),
-                    'attendancePresent' => $attendance ? ($attendance->attendance === 'present') : false,
+                    'attendancePresent' => $attendance ? ($attendance->attendance == 'present') : false,
                     'homeworkSubmitted' => $attendance ? ($attendance->homework_submitted == 1) : false,
                     'notes' => $attendance ? $attendance->notes : '',
                     'existing_id' => $attendance ? $attendance->id : null,
