@@ -290,8 +290,8 @@
                       @endif
                     </td>
                     <td class="text-center">
-                      {{-- أخذ الحضور للدرس الحالي --}}
-                      @if($canTakeAttendanceToday && !$sch->attendance_taken_at)
+                      {{-- أخذ الحضور --}}
+                      @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
                         <a href="{{ route('instructor.courses.take_attendance', [
                             'course'         => $course->id,
                             'CourseSchedule' => $sch->id,
@@ -301,7 +301,7 @@
                         </a>
                       @endif
                       
-                      {{-- عرض الحضور --}}
+                      {{-- عرض وتعديل الحضور --}}
                       @if($sch->attendance_taken_at && $course->status == "ongoing")
                         <button class="btn btn-success btn-sm"
                                 data-bs-toggle="modal"
@@ -322,7 +322,7 @@
                       @endif
 
                       {{-- إذا لم تكن هناك أي أعمال متاحة --}}
-                      @if(!$canTakeAttendanceToday && !$sch->attendance_taken_at && !$canEditSchedule)
+                      @if(!$canEditSchedule || $course->status != "ongoing")
                         <span class="text-muted">No actions</span>
                       @endif
                     </td>
