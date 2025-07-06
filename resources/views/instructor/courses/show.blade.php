@@ -27,6 +27,9 @@
   .btn-group-sm .btn{padding: 0.25rem 0.5rem; font-size: 0.75rem;}
   .table td{padding: 0.5rem 0.75rem; vertical-align: middle;}
   .badge{font-size: 0.75rem; font-weight: 500;}
+  .progress-row{background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important;}
+  .table-sm td{padding: 0.4rem 0.6rem;}
+  .btn-sm{padding: 0.3rem 0.6rem; font-size: 0.8rem;}
 </style>
 @endpush
 
@@ -163,12 +166,12 @@
           <table class="table table-bordered align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>#</th>
+                <th style="width: 60px">#</th>
                 <th>Day</th>
                 <th>Date</th>
                 <th>Time</th>
-                <th class="text-center">Status</th>
-                <th class="text-center">Actions</th>
+                <th style="width: 120px" class="text-center">Status</th>
+                <th style="width: 140px" class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -252,39 +255,38 @@
                     $today = now()->toDateString();
                     $canTakeAttendanceToday = ($row['date'] == $today) && $now->gte($scheduleStartTime) && $now->lt($scheduleCloseAt) && $course->status == "ongoing";
                   @endphp
-                  <tr @if ($sch->status == "absent") class="table-danger" @endif class="@if($canEditSchedule) can-edit @else cannot-edit @endif">
-                    <td>{{ $lecCounter }}</td>
+                  <tr @if ($sch->status == "absent") class="table-danger" @elseif($canEditSchedule) class="table-light" @endif>
+                    <td><strong>{{ $lecCounter }}</strong></td>
                     <td>
                       {{ $row['day'] }} 
                       @if ($row['schedule']->extra_date)
-                        <small class="badge bg-info">Extra</small>
+                        <small class="badge bg-info ms-1">Extra</small>
                       @endif
                     </td>
                     <td>{{ $row['date'] }}</td>
                     <td>{{ \Carbon\Carbon::parse($row['from'])->format('g:i A') }} - {{ \Carbon\Carbon::parse($row['to'])->format('g:i A') }}</td>
                     <td class="text-center">
                       @if ($sch->status == "pending")
-                        <span class="badge bg-warning"><i class="fa fa-clock"></i> Pending</span>
+                        <span class="badge bg-warning">Pending</span>
                       @elseif ($sch->status == "done")
-                        <span class="badge bg-success"><i class="fa fa-check"></i> Done</span>
+                        <span class="badge bg-success">Done</span>
                       @elseif ($sch->status == "absent")
-                        <span class="badge bg-danger"><i class="fa fa-times"></i> Absent</span>
+                        <span class="badge bg-danger">Absent</span>
                       @endif
                     </td>
                     <td class="text-center">
-                      {{-- أخذ الحضور --}}
                       @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
                         <a href="{{ route('instructor.courses.take_attendance', [
                             'course'         => $course->id,
                             'CourseSchedule' => $sch->id,
                           ]) }}"
-                          class="btn btn-sm btn-primary" title="Take Attendance">
+                          class="btn btn-sm btn-primary">
                           <i class="fa fa-user-check"></i> Take
                         </a>
                       @elseif($sch->attendance_taken_at && $course->status == "ongoing")
                         <button class="btn btn-sm btn-outline-success"
                                 data-bs-toggle="modal"
-                                data-bs-target="#attendanceModal-{{ $sch->id }}" title="View Attendance">
+                                data-bs-target="#attendanceModal-{{ $sch->id }}">
                           <i class="fa fa-eye"></i> View
                         </button>
                       @else
