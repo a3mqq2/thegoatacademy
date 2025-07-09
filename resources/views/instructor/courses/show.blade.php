@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
                           <span class="countdown-time">Loading...</span>
                         </div>
                       @else
-                        <small class="text-muted">{{$scheduleCloseAt->toISOString()}}</small>
+                        <small class="text-muted">{{$scheduleCloseAt->format('Y-m-d H:i')}}</small>
                       @endif
                     </td>
                     <td class="text-center">
