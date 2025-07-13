@@ -18,6 +18,9 @@ class Kernel extends BaseKernel
         $schedule->command('attendance:whatsapp-remind')->everyMinute();
         $schedule->command('progress-tests:whatsapp-notify')->everyMinute();
         // $schedule->command('courseschedules:update-statuses')->everyMinute();
+
+        // courses:update-status
+        $schedule->command('courses:update-status')->dailyAt('00:00');
     }
 
     /**

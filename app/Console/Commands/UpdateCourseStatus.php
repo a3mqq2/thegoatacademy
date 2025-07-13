@@ -16,11 +16,6 @@ class UpdateCourseStatus extends Command
     {
         DB::transaction(function () {
             $today = Carbon::today();
-
-            Course::whereDate('end_date', '<', $today)
-                ->whereNotIn('status', ['completed', 'canceled', 'paused'])
-                ->update(['status' => 'completed']);
-
             Course::whereDate('start_date', '<=', $today)
                 ->whereNotIn('status', ['ongoing', 'completed', 'canceled', 'paused'])
                 ->update(['status' => 'ongoing']);
