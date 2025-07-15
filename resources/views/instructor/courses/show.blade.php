@@ -354,8 +354,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td class="text-center">
 
-                      @dd($sch->date == Carbon\Carbon::today() )
-                      
+                      @if ($sch->date == Carbon\Carbon::today())
+                          @dd('test')
+                      @endif
+
 
                       @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
                         <a href="{{ route('instructor.courses.take_attendance', [
