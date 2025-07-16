@@ -26,15 +26,14 @@ class UpdateCourseScheduleStatuses extends Command
             })
             ->update(['status' => 'done']);
 
-        CourseSchedule::whereNull('attendance_taken_at')
+        $schedules = CourseSchedule::whereNull('attendance_taken_at')
             ->whereNotNull('close_at')
             ->where('close_at', '<=', $now)
             ->where('status', '!=', 'absent')
-            ->where('date', '>', $cutoffDate)
             ->whereHas('course', function ($q) {
                 $q->where('status', 'ongoing');
-            })
-            ->update(['status' => 'absent']);
+            })->update(['status' => 'absent']);
+
 
         $courses = Course::where('status', 'ongoing')
             ->with([

@@ -312,6 +312,7 @@ class CourseController extends Controller
     }
 
   
+ 
     public function update(Request $request, Course $course)
     {
         $validator = Validator::make($request->all(), [
@@ -404,43 +405,53 @@ class CourseController extends Controller
                 'progress_test_day'    => $request->progress_test_day,
             ]);
     
-            $course->schedules()->delete();
+            /* schedules: update or create */
             foreach ($schedule as $row) {
-                $course->schedules()->create([
-                    'day'       => $row['day'],
-                    'date'      => $row['date'],
-                    'from_time' => $row['fromTime'],
-                    'to_time'   => $row['toTime'],
-                ]);
+                $course->schedules()->updateOrCreate(
+                    ['date' => $row['date']],
+                    [
+                        'day'       => $row['day'],
+                        'from_time' => $row['fromTime'],
+                        'to_time'   => $row['toTime'],
+                    ]
+                );
             }
     
-            /* rebuild progress tests and their student links */
-            $course->progressTests()->delete();
+            /* progress tests: update or create */
             foreach ($progressTestsData as $ptData) {
-                $progressTest = ProgressTest::create([
-                    'date'      => $ptData['date'],
-                    'course_id' => $course->id,
-                    'week'      => $ptData['week'],
-                ]);
+                $progressTest = ProgressTest::updateOrCreate(
+                    [
+                        'course_id' => $course->id,
+                        'week'      => $ptData['week'],
+                    ],
+                    [
+                        'date'      => $ptData['date'],
+                    ]
+                );
     
                 foreach ($students as $student_id) {
-                    ProgressTestStudent::updateOrCreate([
-                        'progress_test_id' => $progressTest->id,
-                        'student_id'       => $student_id,
-                        'course_id'        => $course->id,
-                    ]);
+                    ProgressTestStudent::updateOrCreate(
+                        [
+                            'progress_test_id' => $progressTest->id,
+                            'student_id'       => $student_id,
+                            'course_id'        => $course->id,
+                        ],
+                        []
+                    );
                 }
             }
     
-            $course->exams()->delete();
+            /* exams: update or create */
             $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
             foreach ($examMap as $type => $field) {
                 if ($data[$field]) {
-                    $course->exams()->create([
-                        'exam_type' => $type,
-                        'exam_date' => $data[$field],
-                        'status'    => 'new',
-                    ]);
+                    $course->exams()->updateOrCreate(
+                        ['exam_type' => $type],
+                        [
+                            'exam_date' => $data[$field],
+                            'status'    => 'new',
+                        ]
+                    );
                 }
             }
     
@@ -469,6 +480,7 @@ class CourseController extends Controller
             ], 500);
         }
     }
+    
     
     
     

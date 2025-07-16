@@ -188,7 +188,14 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="card mt-3">
     <div class="card-header">
       <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
+      <!-- Add this button for instructors -->
+      <div class="ms-auto">
+        <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addExtraDayModal">
+          <i class="fa fa-plus"></i> Add Extra Day
+        </button>
+      </div>
     </div>
+    
     <div class="card-body p-0">
       @if($course->schedules->count())
         @php
@@ -354,11 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td class="text-center">
 
-                      @if ($sch->date == Carbon\Carbon::today())
-                          @dd('test')
-                      @endif
-
-
+                    
                       @if(!$sch->attendance_taken_at && $canEditSchedule && $course->status == "ongoing")
                         <a href="{{ route('instructor.courses.take_attendance', [
                             'course'         => $course->id,
@@ -549,4 +552,62 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   @endif
 @endforeach
+<div class="modal fade" id="addExtraDayModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ route('admin.courses.schedules.store', $course) }}">
+      @csrf
+      <!-- Hidden input to always mark as extra -->
+      <input type="hidden" name="extra_date" value="1">
+      
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fa fa-plus"></i> Add Extra Day</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fa fa-info-circle"></i> 
+            This will add an extra class day to the course schedule.
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Day</label>
+              <select name="day" class="form-select" required>
+                <option value="">Select Day</option>
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">From Time</label>
+              <input type="time" name="from_time" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">To Time</label>
+              <input type="time" name="to_time" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fa fa-plus"></i> Add Extra Day
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 @endsection

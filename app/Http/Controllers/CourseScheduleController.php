@@ -23,7 +23,7 @@ class CourseScheduleController extends Controller
             'date' => 'required|date|after_or_equal:today',
             'day' => 'required|integer|between:0,6',
             'from_time' => 'required|date_format:H:i',
-            'to_time' => 'required|date_format:H:i|after:from_time',
+            'to_time' => 'required',
             'extra_date' => 'nullable|boolean'
         ]);
 
