@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endforeach
 <div class="modal fade" id="addExtraDayModal" tabindex="-1">
   <div class="modal-dialog">
-    <form method="POST" action="{{ route('admin.courses.schedules.store', $course) }}">
+    <form method="POST" action="{{ route('instructor.courses.schedules.store', $course) }}">
       @csrf
       <!-- Hidden input to always mark as extra -->
       <input type="hidden" name="extra_date" value="1">

@@ -30,14 +30,6 @@ class CourseScheduleController extends Controller
         try {
             DB::beginTransaction();
 
-            // Check for duplicate schedules on the same date
-            $existingSchedule = $course->schedules()
-                ->where('date', $request->date)
-                ->first();
-
-            if ($existingSchedule) {
-                return redirect()->back()->with('error', 'A schedule already exists for this date.');
-            }
 
             // Create close_at time (assuming 2 hours after to_time)
             $closeAt = Carbon::parse($request->date . ' ' . $request->to_time)
