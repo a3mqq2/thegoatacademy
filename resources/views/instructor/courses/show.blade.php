@@ -157,42 +157,25 @@ document.addEventListener('DOMContentLoaded', function() {
     })->count();
   @endphp
 
-  @if ($absences > 0)
-  <div class="alert alert-warning border">
-    <h5 class=""><i class="fa fa-info-circle"></i> Important Notes:</h5>
-    <ul class="mb-0">
-      <li>
-        You are allowed 
-        <strong>{{ $course->allowed_abcences_instructor ?? 0 }}</strong> absences in this course.
-      </li>
-      @php
-        $absentCount = $course->schedules()->where('status', 'absent')->count();
-        $allowed = (int) ($course->allowed_abcences_instructor ?? 0);
-        $remaining = max(0, $allowed - $absentCount);
-      @endphp
-      <li>
-        You have used 
-        <strong>{{ $absentCount }}</strong> of your allowed absences.
-      </li>
-      <li>
-        You have 
-        <strong>{{ $remaining }}</strong> remaining.
-      </li>
-      <li>
-        If you exceed the allowed limit, <strong>the course will be paused automatically.</strong>
-      </li>
-    </ul>
-  </div>
-  @endif
   
   <div class="card mt-3">
     <div class="card-header">
       <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
       <!-- Add this button for instructors -->
+      @php
+    //  get all extra schedules in course
+        $extraSchedules = $course->schedules->where('extra_date', true);
+        $allowedExtraDays = $course->allowed_abcences_instructor;
+
+
+      @endphp
       <div class="ms-auto">
-        <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addExtraDayModal">
-          <i class="fa fa-plus"></i> Add Extra Day
-        </button>
+        {{-- check can add extra scheduke --}}
+        @if($extraSchedules->count() < $allowedExtraDays)
+          <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addExtraDayModal">
+            <i class="fa fa-plus"></i> Add Extra Day
+          </button>
+        @endif
       </div>
     </div>
     
