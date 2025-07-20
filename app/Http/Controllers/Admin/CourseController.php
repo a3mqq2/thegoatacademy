@@ -413,6 +413,8 @@ class CourseController extends Controller
                         'day'       => $row['day'],
                         'from_time' => $row['fromTime'],
                         'to_time'   => $row['toTime'],
+                        'close_at'  => Carbon::createFromFormat('Y-m-d H:i', "{$row['date']} {$row['toTime']}")
+                            ->addHours((int) Setting::where('key', 'Updating the students’ Attendance after the class.')->value('value')),
                     ]
                 );
             }

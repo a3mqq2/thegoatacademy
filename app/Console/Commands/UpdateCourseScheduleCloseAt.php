@@ -7,6 +7,8 @@ use App\Models\CourseSchedule;
 use App\Models\Setting;
 use Carbon\Carbon;
 
+// SELECT course_id, COUNT(*) AS open_schedules_count FROM course_schedules WHERE close_at IS NULL GROUP BY course_id;
+
 class UpdateCourseScheduleCloseAt extends Command
 {
     protected $signature = 'course-schedule:update-close-at';
