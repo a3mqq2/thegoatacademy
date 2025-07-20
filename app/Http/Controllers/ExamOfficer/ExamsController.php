@@ -80,6 +80,12 @@ class ExamsController extends Controller
             $query->where('examiner_id', Auth::id());
         }
 
+
+        // where has course status is not paused or cancelled
+        $query->whereHas('course', function($subQuery) {
+            $subQuery->whereNotIn('status', ['paused', 'cancelled']);
+        });
+
         $exams = $query
             ->orderBy('exam_date', 'asc')
             ->orderBy('time', 'asc') // لو حابب كمان ترتيب بالوقت داخل نفس اليوم
