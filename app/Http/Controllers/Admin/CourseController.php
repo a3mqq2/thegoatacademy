@@ -451,7 +451,6 @@ class CourseController extends Controller
                         ['exam_type' => $type],
                         [
                             'exam_date' => $data[$field],
-                            'status'    => 'new',
                         ]
                     );
                 }
