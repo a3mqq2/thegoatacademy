@@ -132,7 +132,6 @@ class Course extends Model
 
          public function generateSchedule()
          {
-             /* ────── from / to times ────── */
              $first = $this->schedules()->orderBy('id')->first();
              $fromTime = $first?->from_time;
              $toTime   = $first?->to_time;
@@ -148,7 +147,6 @@ class Course extends Model
                  $toTime  = Carbon::createFromFormat('H:i', $fromTime)->addMinutes($minutes)->format('H:i');
              }
          
-             /* ────── days mapping ────── */
              $map = ['Sat'=>6,'Sun'=>0,'Mon'=>1,'Tue'=>2,'Wed'=>3,'Thu'=>4,'Fri'=>5];
              $selectedDays = collect(explode('-', (string) $this->days))
                  ->filter(fn ($l) => isset($map[$l]))
@@ -162,7 +160,6 @@ class Course extends Model
              $occupied   = [];
              $classDates = [];
          
-             /* pre-test */
              $pre = $this->pre_test_date
                  ? Carbon::parse($this->pre_test_date)
                  : Carbon::parse($this->start_date);
@@ -174,7 +171,6 @@ class Course extends Model
              $this->pre_test_date            = $pre->toDateString();
              $occupied[$pre->toDateString()] = true;
          
-             /* first half */
              $cur = $pre->copy()->addDay();
              while (count($classDates) < $half) {
                  if (in_array($cur->dayOfWeek, $selectedDays, true) && !isset($occupied[$cur->toDateString()])) {
@@ -184,7 +180,6 @@ class Course extends Model
                  $cur->addDay();
              }
          
-             /* mid-exam */
              $mid = $this->mid_exam_date ? Carbon::parse($this->mid_exam_date)->startOfDay() : null;
              $ref = $classDates[$half-1]->copy()->addDay();
              if (!$mid || $mid->lte($ref)) $mid = $ref;
@@ -194,7 +189,6 @@ class Course extends Model
              $this->mid_exam_date            = $mid->toDateString();
              $occupied[$mid->toDateString()] = true;
          
-             /* second half */
              $cur = $mid->copy()->addDay();
              while (count($classDates) < $duration) {
                  if (in_array($cur->dayOfWeek, $selectedDays, true) && !isset($occupied[$cur->toDateString()])) {
@@ -204,7 +198,6 @@ class Course extends Model
                  $cur->addDay();
              }
          
-             /* final-exam */
              $lastLecture = end($classDates);
              $final       = $this->final_exam_date
                  ? Carbon::parse($this->final_exam_date)->startOfDay()
@@ -215,18 +208,27 @@ class Course extends Model
              $this->final_exam_date            = $final->toDateString();
              $occupied[$final->toDateString()] = true;
          
-             /* persist */
              $this->save();
-             $this->schedules()->delete();
+         
+             $closeHour = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')->value('value') ?: 2;
          
              foreach ($classDates as $i => $d) {
-                 $this->schedules()->create([
-                     'day'       => $d->format('l'),
-                     'date'      => $d->toDateString(),
-                     'from_time' => $fromTime,
-                     'to_time'   => $toTime,
-                     'order'     => $i + 1,
-                 ]);
+                 $dateStr = $d->toDateString();
+                 $existing = $this->schedules()->where('date', $dateStr)->exists();
+         
+                 if (!$existing) {
+                     $toCarbon = Carbon::createFromFormat('Y-m-d H:i', "{$dateStr} {$toTime}");
+                     $closeAt = $toCarbon->copy()->addHours($closeHour);
+         
+                     $this->schedules()->create([
+                         'day'       => $d->format('l'),
+                         'date'      => $dateStr,
+                         'from_time' => $fromTime,
+                         'to_time'   => $toTime,
+                         'order'     => $i + 1,
+                         'close_at'  => $closeAt,
+                     ]);
+                 }
              }
          }
          
