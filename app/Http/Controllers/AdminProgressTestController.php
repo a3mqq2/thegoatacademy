@@ -47,14 +47,14 @@ class AdminProgressTestController extends Controller
                 'close_at' => Carbon::parse($request->close_at)->format('Y-m-d H:i:s')
             ]);
 
-            // Create progress test student records for all enrolled students
             $enrolledStudents = $course->students()
                 ->wherePivot('status', 'ongoing')
                 ->get();
 
             foreach ($enrolledStudents as $student) {
                 $progressTest->progressTestStudents()->create([
-                    'student_id' => $student->id
+                    'student_id' => $student->id,
+                    'course_id' => $course->id
                 ]);
             }
 
