@@ -102,7 +102,6 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $rules = [
-            'name'     => 'required|string|max:255',
             'email'    => 'required|email|max:255|unique:users,email,' . $user->id,
             'phone'    => 'required|string|max:20',
             'avatar'   => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -116,7 +115,6 @@ class DashboardController extends Controller
         $validated = $request->validate($rules);
 
         $user->fill([
-            'name'  => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
             'age'   => $validated['age']   ?? $user->age,
