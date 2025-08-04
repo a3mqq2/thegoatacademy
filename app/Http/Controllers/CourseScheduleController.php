@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use App\Models\Course;
-use App\Models\CourseSchedule;
+use App\Models\Setting;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
+use App\Models\CourseSchedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class CourseScheduleController extends Controller
 {
@@ -31,9 +32,12 @@ class CourseScheduleController extends Controller
             DB::beginTransaction();
 
 
-            // Create close_at time (assuming 2 hours after to_time)
+            $hoursForClose = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')
+                                          ->value('value');
+
+
             $closeAt = Carbon::parse($request->date . ' ' . $request->to_time)
-                ->addHours(2)
+                ->addHours($hoursForClose)
                 ->format('Y-m-d H:i:s');
 
             $schedule = $course->schedules()->create([
@@ -46,7 +50,6 @@ class CourseScheduleController extends Controller
                 'status' => 'pending'
             ]);
 
-            // Log the action
             AuditLog::create([
                 'user_id' => Auth::id(),
                 'description' => "Added new schedule to course #{$course->id} for date {$request->date}",
