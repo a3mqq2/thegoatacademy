@@ -303,7 +303,7 @@ th, td {
                     
                     <td>{{ $presentStudentsCount }}/{{ $totalEnrolledStudents }}</td>
                     <td>{{ $presentStudentsCount ? round($passCount / $presentStudentsCount * 100, 1) : 0 }}%</td>
-                    <td>{{ round($passCount / max($presentStudentsCount, 1) * 100, 1) }}%</td>
+                    <td></td>
                 </tr>
             </tfoot>
         </table>
