@@ -16,43 +16,55 @@ class UpdateCourseScheduleStatuses extends Command
     public function handle(WaapiService $waapi)
     {
         $now = Carbon::now();
-        $cutoffDate = Carbon::create(2025, 6, 10, 23, 59, 59);
 
-        CourseSchedule::whereNotNull('attendance_taken_at')
-            ->where('status', '!=', 'done')
-            ->where('date', '>', $cutoffDate)
-            ->whereHas('course', function ($q) {
-                $q->where('status', 'ongoing');
-            })
-            ->update(['status' => 'done']);
+        // 1) إذا المدرس أخذ الحضور (attendance_taken_at != null)
+        $schedulesWithAttendance = CourseSchedule::with(['attendances', 'course'])
+            ->whereNotNull('attendance_taken_at')
+            ->whereHas('course', fn($q) => $q->where('status', 'ongoing'))
+            ->get();
 
-        $schedules = CourseSchedule::whereNull('attendance_taken_at')
+        foreach ($schedulesWithAttendance as $schedule) {
+            // هل يوجد طالب واحد على الأقل حاضر؟
+            $hasPresent = $schedule->attendances()
+                ->where('attendance', 'present')
+                ->exists();
+
+            $newStatus = $hasPresent ? 'done' : 'absent-S';
+
+            if ($schedule->status !== $newStatus) {
+                $schedule->update(['status' => $newStatus]);
+            }
+        }
+
+        // 2) إذا المدرس لم يأخذ الحضور قبل انتهاء الموعد (attendance_taken_at == null)
+        CourseSchedule::whereNull('attendance_taken_at')
             ->whereNotNull('close_at')
             ->where('close_at', '<=', $now)
-            ->where('status', '!=', 'absent')
-            ->whereHas('course', function ($q) {
-                $q->where('status', 'ongoing');
-            })->update(['status' => 'absent']);
+            ->where('status', '!=', 'absent-T')
+            ->whereHas('course', fn($q) => $q->where('status', 'ongoing'))
+            ->update(['status' => 'absent-T']);
 
-
+        // 3) معالجة إيقاف الدورات وتنبيهات الغياب للمُدرِّس
         $courses = Course::where('status', 'ongoing')
             ->with([
-                'schedules' => function ($q) use ($cutoffDate) {
-                    $q->where('status', 'absent')
-                      ->where('date', '>', $cutoffDate);
-                },
+                'schedules' => fn($q) => $q->whereIn('status', ['absent-T', 'absent-S']),
                 'instructor'
-            ])->get();
+            ])
+            ->get();
 
         foreach ($courses as $course) {
             $allowed = (int) ($course->allowed_abcences_instructor ?? 0);
-            $alert   = (int) ($course->alert_abcences_instructor ?? 0);
-            $absents = $course->schedules->count();
+            $alert   = (int) ($course->alert_abcences_instructor   ?? 0);
+            $absents = $course->schedules
+                ->whereIn('status', ['absent-T', 'absent-S'])
+                ->count();
 
-            if ($allowed > 0 && $absents > $allowed && $course->status != 'paused') {
+            // تجاوز الحد → إيقاف الدورة
+            if ($allowed > 0 && $absents > $allowed && $course->status !== 'paused') {
                 $course->update(['status' => 'paused']);
             }
 
+            // تجاوز عتبة التنبيه دون الوصول للإيقاف → إرسال تنبيه
             if (
                 $alert > 0 &&
                 $absents >= $alert &&
@@ -62,9 +74,10 @@ class UpdateCourseScheduleStatuses extends Command
             ) {
                 $phone = formatLibyanPhone($course->instructor->phone);
                 $msg   = "⚠️ *Instructor Absence Alert*\n"
-                       . "You have been marked absent *$absents* times in course #{$course->id}.\n"
-                       . "The allowed limit is *$allowed* absences.\n"
-                       . "Please stay committed to avoid course suspension.";
+                       . "You have been marked absent *{$absents}* times in course #{$course->id}.\n"
+                       . "Allowed limit is *{$allowed}* absences.\n"
+                       . "Please stay committed to avoid suspension.";
+                // $waapi->sendMessage($phone, $msg);
             }
         }
 

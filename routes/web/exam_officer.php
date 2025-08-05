@@ -26,3 +26,9 @@ Route::get('/logs', [DashboardController::class, 'logs'])->name('logs');
 Route::post('/exams/update-date', [ExamsController::class, 'updateDate'])->name('exams.update_date');
 Route::post('/exams/assign-examiner', [ExamsController::class, 'assignExaminer'])->name('exams.assign_examiner');
 Route::post('/exams/update_time', [ExamsController::class, 'updateTime'])->name('exams.update_time');
+
+Route::post('/exams/{exam}/students/{student}/absent', [ExamsController::class, 'markAbsent'])
+    ->name('exams.students.absent');
+
+Route::post('/exams/{exam}/students/{student}/present', [ExamsController::class, 'markPresent'])
+    ->name('exams.students.present');

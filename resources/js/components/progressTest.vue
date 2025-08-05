@@ -33,6 +33,39 @@
       Editing window has closed, but you can still modify scores as an administrator.
     </div>
 
+    <!-- Attendance Controls -->
+    <div v-if="ready && skills.length > 0" class="attendance-controls mb-3">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center gap-3">
+            <button 
+              class="btn btn-outline-primary btn-sm"
+              @click="toggleShowAbsent"
+            >
+              <i class="fa" :class="showAbsentStudents ? 'fa-eye-slash' : 'fa-eye'" />
+              {{ showAbsentStudents ? 'Hide Absent' : 'Show Absent' }}
+              <span class="badge bg-secondary ms-2">{{ absentStudentsCount }}</span>
+            </button>
+            
+            <button 
+              class="btn btn-outline-success btn-sm"
+              @click="toggleShowPresent"
+            >
+              <i class="fa" :class="showPresentStudents ? 'fa-eye-slash' : 'fa-eye'" />
+              {{ showPresentStudents ? 'Collapse Present' : 'Show Present' }}
+              <span class="badge bg-success ms-2">{{ presentStudentsCount }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 text-end">
+          <small class="text-muted">
+            Total: {{ studentsList.length }} students 
+            ({{ presentStudentsCount }} present, {{ absentStudentsCount }} absent)
+          </small>
+        </div>
+      </div>
+    </div>
+
     <!-- Skills summary -->
     <div v-if="ready && skills.length > 0" class="alert alert-light mb-3">
       <h6><i class="fa fa-star me-1" />Progress Test Skills Summary:</h6>
@@ -61,6 +94,7 @@
           <tr>
             <th style="width:60px">#</th>
             <th style="min-width:220px">Student</th>
+            <th style="width:100px" class="text-center">Status</th>
             <!-- one column per progress skill only -->
             <th v-for="skill in skills"
                 :key="skill.pivot.id"
@@ -71,17 +105,32 @@
             </th>
             <th class="text-center" style="width:80px">Total</th>
             <th class="text-center" style="width:80px">%</th>
-            <th class="text-center" style="width:100px">Status</th>
+            <th class="text-center" style="width:100px">Grades</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(student, idx) in studentsList" :key="student.id">
-            <td>{{ idx + 1 }}</td>
+          <tr v-for="(student, idx) in filteredStudentsList" 
+              :key="student.id"
+              :class="{ 'absent-row': student.status === 'absent' }">
+            <td>{{ getStudentNumber(student, idx) }}</td>
             <td>
               <strong>{{ student.name }}</strong><br />
               <small class="text-muted">
                 <i class="fa fa-phone me-1" />{{ student.phone }}
               </small>
+            </td>
+            <!-- Attendance Status -->
+            <td class="text-center">
+              <button
+                class="btn btn-sm attendance-btn"
+                :class="student.status === 'present' ? 'btn-success' : 'btn-danger'"
+                @click="toggleStudentStatus(student)"
+                :disabled="!canEdit"
+                :title="`Click to mark as ${student.status === 'present' ? 'absent' : 'present'}`"
+              >
+                <i class="fa" :class="student.status === 'present' ? 'fa-check' : 'fa-times'" />
+                {{ student.status === 'present' ? 'Present' : 'Absent' }}
+              </button>
             </td>
             <!-- score input for each progress skill -->
             <td v-for="skill in skills"
@@ -94,29 +143,35 @@
                 min="0"
                 step="0.01"
                 :placeholder="`0-${skill.pivot.progress_test_max}`"
-                :disabled="canEdit ? false : isClosed"
+                :disabled="!canEdit || student.status === 'absent'"
                 @input="updateStudentStats(student)"
-                :class="{ 'admin-override': isClosed && isAdmin }"
+                :class="{ 
+                  'admin-override': isClosed && isAdmin && student.status === 'present',
+                  'disabled-absent': student.status === 'absent'
+                }"
               />
             </td>
             <!-- total score -->
             <td class="text-center">
-              <strong :class="getScoreClass(student.totalScore, totalMaxScore)">
-                {{ student.totalScore.toFixed(1) }}
+              <strong :class="student.status === 'absent' ? 'text-muted' : getScoreClass(student.totalScore, totalMaxScore)">
+                {{ student.status === 'absent' ? 'N/A' : student.totalScore.toFixed(1) }}
               </strong>
             </td>
             <!-- percentage -->
             <td class="text-center">
-              <strong :class="getScoreClass(student.percentage, 100)">
-                {{ student.percentage.toFixed(1) }}%
+              <strong :class="student.status === 'absent' ? 'text-muted' : getScoreClass(student.percentage, 100)">
+                {{ student.status === 'absent' ? 'N/A' : student.percentage.toFixed(1) + '%' }}
               </strong>
             </td>
             <!-- status: has grades? -->
             <td class="text-center">
-              <span v-if="student.hasGrades" class="badge bg-success">
+              <span v-if="student.status === 'absent'" class="badge bg-secondary">
+                <i class="fa fa-user-times" /> Absent
+              </span>
+              <span v-else-if="student.hasGrades" class="badge bg-success">
                 <i class="fa fa-check" /> Saved
               </span>
-              <span v-else class="badge bg-secondary">
+              <span v-else class="badge bg-warning">
                 <i class="fa fa-clock" /> Pending
               </span>
             </td>
@@ -124,9 +179,9 @@
         </tbody>
         
         <!-- Summary row -->
-        <tfoot v-if="studentsList.length > 0">
+        <tfoot v-if="presentStudentsList.length > 0">
           <tr class="table-info">
-            <td colspan="2"><strong>Class Average</strong></td>
+            <td colspan="3"><strong>Present Students Average</strong></td>
             <td v-for="skill in skills" :key="skill.pivot.id" class="text-center">
               <strong>{{ getSkillAverage(skill.pivot.id).toFixed(1) }}</strong>
             </td>
@@ -137,8 +192,9 @@
               <strong>{{ classAveragePercentage.toFixed(1) }}%</strong>
             </td>
             <td class="text-center">
-              <small>{{ passCount }}/{{ studentsList.length }} Pass</small>
+              <small>{{ passCount }}/{{ presentStudentsList.length }} Pass</small>
             </td>
+            <td v-if="isAdmin"></td>
           </tr>
         </tfoot>
       </table>
@@ -155,13 +211,12 @@
       </a>
 
       <a
-      v-else
-      class="btn btn-secondary btn-sm text-light"
-      href="/admin/courses?status=ongoing"
-    >
-      <i class="fa fa-arrow-left" /> Back
-    </a>
-
+        v-else
+        class="btn btn-secondary btn-sm text-light"
+        href="/admin/courses?status=ongoing"
+      >
+        <i class="fa fa-arrow-left" /> Back
+      </a>
 
       <button
         class="btn btn-primary"
@@ -173,6 +228,46 @@
         {{ isClosed && isAdmin ? 'Save Scores (Admin Override)' : 'Save Scores' }}
       </button>
     </footer>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteModal"
+      class="modal-overlay"
+      @click="cancelDelete"
+    >
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fa fa-exclamation-triangle text-warning me-2" />
+            Confirm Delete Student
+          </h5>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to remove <strong>{{ studentToDelete?.name }}</strong> from this progress test?</p>
+          <p class="text-muted small">
+            <i class="fa fa-info-circle me-1" />
+            This action will only remove the student from this progress test. The student record will remain intact.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            @click="cancelDelete"
+          >
+            <i class="fa fa-times me-1" />
+            Cancel
+          </button>
+          <button
+            class="btn btn-danger"
+            @click="deleteStudent"
+            :disabled="deletingStudent"
+          >
+            <i class="fa fa-trash me-1" />
+            {{ deletingStudent ? 'Removing...' : 'Remove Student' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -193,6 +288,15 @@ export default {
     const progressTest = ref({ date: '', close_at: null })
     const skills = ref([])
     const studentsList = ref([])
+    
+    // Attendance visibility controls
+    const showAbsentStudents = ref(false)
+    const showPresentStudents = ref(true)
+    
+    // Delete modal state
+    const showDeleteModal = ref(false)
+    const studentToDelete = ref(null)
+    const deletingStudent = ref(false)
 
     const isClosed = computed(() => {
       const raw = progressTest.value.close_at
@@ -215,6 +319,34 @@ export default {
       () => skills.value.length >= 0 && studentsList.value.length > 0
     )
 
+    // Attendance computed properties
+    const presentStudentsList = computed(() => {
+      return studentsList.value.filter(student => student.status === 'present')
+    })
+
+    const absentStudentsList = computed(() => {
+      return studentsList.value.filter(student => student.status === 'absent')
+    })
+
+    const presentStudentsCount = computed(() => presentStudentsList.value.length)
+    const absentStudentsCount = computed(() => absentStudentsList.value.length)
+
+    // Filtered students list based on visibility settings
+    const filteredStudentsList = computed(() => {
+      let filtered = []
+      
+      if (showPresentStudents.value) {
+        filtered = [...filtered, ...presentStudentsList.value]
+      }
+      
+      if (showAbsentStudents.value) {
+        filtered = [...filtered, ...absentStudentsList.value]
+      }
+      
+      // Sort by name for consistency
+      return filtered.sort((a, b) => a.name.localeCompare(b.name))
+    })
+
     const totalMaxScore = computed(() => {
       return skills.value.reduce((sum, skill) => {
         return sum + (skill.pivot.progress_test_max || 0)
@@ -222,10 +354,10 @@ export default {
     })
 
     const classAverageTotal = computed(() => {
-      if (studentsList.value.length === 0) return 0
-      return studentsList.value.reduce((sum, student) => {
+      if (presentStudentsList.value.length === 0) return 0
+      return presentStudentsList.value.reduce((sum, student) => {
         return sum + student.totalScore
-      }, 0) / studentsList.value.length
+      }, 0) / presentStudentsList.value.length
     })
 
     const classAveragePercentage = computed(() => {
@@ -234,7 +366,7 @@ export default {
     })
 
     const passCount = computed(() => {
-      return studentsList.value.filter(student => student.percentage >= 50).length
+      return presentStudentsList.value.filter(student => student.percentage >= 50).length
     })
 
     const fetchData = async () => {
@@ -274,6 +406,7 @@ export default {
             phone: base.phone,
             scores,
             hasGrades,
+            status: rec.status || 'present', // Default to present if no status
             totalScore: 0,
             percentage: 0
           }
@@ -290,6 +423,12 @@ export default {
     }
 
     const updateStudentStats = (student) => {
+      if (student.status === 'absent') {
+        student.totalScore = 0
+        student.percentage = 0
+        return
+      }
+
       student.totalScore = Object.values(student.scores).reduce((sum, score) => {
         return sum + (parseFloat(score) || 0)
       }, 0)
@@ -300,10 +439,10 @@ export default {
     }
 
     const getSkillAverage = (skillPivotId) => {
-      if (studentsList.value.length === 0) return 0
-      return studentsList.value.reduce((sum, student) => {
+      if (presentStudentsList.value.length === 0) return 0
+      return presentStudentsList.value.reduce((sum, student) => {
         return sum + (parseFloat(student.scores[skillPivotId]) || 0)
-      }, 0) / studentsList.value.length
+      }, 0) / presentStudentsList.value.length
     }
 
     const getScoreClass = (score, maxScore) => {
@@ -314,12 +453,56 @@ export default {
       return 'text-danger'
     }
 
+    const getStudentNumber = (student, filteredIndex) => {
+      // Find the original index in the full students list
+      const originalIndex = studentsList.value.findIndex(s => s.id === student.id)
+      return originalIndex + 1
+    }
+
+    // Attendance control functions
+    const toggleShowAbsent = () => {
+      showAbsentStudents.value = !showAbsentStudents.value
+    }
+
+    const toggleShowPresent = () => {
+      showPresentStudents.value = !showPresentStudents.value
+    }
+
+    const toggleStudentStatus = async (student) => {
+      if (!canEdit.value) return
+
+      const newStatus = student.status === 'present' ? 'absent' : 'present'
+      const oldStatus = student.status
+
+      try {
+        // Optimistically update the UI
+        student.status = newStatus
+        updateStudentStats(student)
+
+        // Send API request to update status
+        await instance.put(
+          `/progress-tests/${props.progressTestId}/students/${student.id}/status`,
+          { status: newStatus }
+        )
+
+        toastr.success(`${student.name} marked as ${newStatus}`)
+        
+      } catch (e) {
+        // Revert on error
+        student.status = oldStatus
+        updateStudentStats(student)
+        console.error('Error updating student status:', e)
+        toastr.error('Error updating student attendance status')
+      }
+    }
+
     const submitProgressTest = async () => {
       if (!ready.value || !canEdit.value || skills.value.length === 0) return
       
       const payload = studentsList.value.map((st) => ({
         student_id: st.id,
-        scores: st.scores
+        scores: st.scores,
+        status: st.status
       }))
 
       try {
@@ -332,7 +515,6 @@ export default {
           }
         )
 
-        
         const message = isClosed.value && props.isAdmin 
           ? 'Progress test scores saved successfully (Admin Override)'
           : 'Progress test scores saved successfully'
@@ -344,6 +526,48 @@ export default {
       } catch (e) {
         console.error('Error saving scores:', e)
         toastr.error('Error saving progress test scores')
+      }
+    }
+
+    // Delete student functions
+    const confirmDeleteStudent = (student) => {
+      studentToDelete.value = student
+      showDeleteModal.value = true
+    }
+
+    const cancelDelete = () => {
+      showDeleteModal.value = false
+      studentToDelete.value = null
+    }
+
+    const deleteStudent = async () => {
+      if (!studentToDelete.value || deletingStudent.value) return
+      
+      deletingStudent.value = true
+      
+      try {
+        // API call to remove student from progress test
+        await instance.delete(
+          `/progress-tests/${props.progressTestId}/students/${studentToDelete.value.id}`
+        )
+        
+        // Remove student from local list
+        const index = studentsList.value.findIndex(s => s.id === studentToDelete.value.id)
+        if (index !== -1) {
+          studentsList.value.splice(index, 1)
+        }
+        
+        toastr.success(`${studentToDelete.value.name} has been removed from the progress test`)
+        
+        // Close modal
+        showDeleteModal.value = false
+        studentToDelete.value = null
+        
+      } catch (e) {
+        console.error('Error deleting student:', e)
+        toastr.error('Error removing student from progress test')
+      } finally {
+        deletingStudent.value = false
       }
     }
 
@@ -364,8 +588,27 @@ export default {
       updateStudentStats,
       getSkillAverage,
       getScoreClass,
+      getStudentNumber,
       submitProgressTest,
-      isAdmin: props.isAdmin
+      isAdmin: props.isAdmin,
+      // Attendance functionality
+      showAbsentStudents,
+      showPresentStudents,
+      presentStudentsList,
+      absentStudentsList,
+      presentStudentsCount,
+      absentStudentsCount,
+      filteredStudentsList,
+      toggleShowAbsent,
+      toggleShowPresent,
+      toggleStudentStatus,
+      // Delete functionality
+      showDeleteModal,
+      studentToDelete,
+      deletingStudent,
+      confirmDeleteStudent,
+      cancelDelete,
+      deleteStudent
     }
   }
 }
@@ -408,6 +651,37 @@ export default {
   font-size: 0.75em;
 }
 
+/* Attendance controls styling */
+.attendance-controls {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+/* Attendance button styling */
+.attendance-btn {
+  min-width: 80px;
+  font-size: 0.8rem;
+}
+
+/* Absent row styling */
+.absent-row {
+  background-color: #fff5f5;
+  opacity: 0.7;
+}
+
+.absent-row:hover {
+  background-color: #fee;
+}
+
+/* Disabled input for absent students */
+.disabled-absent {
+  background-color: #f8f9fa !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Admin override styling */
 .admin-override {
   border: 2px solid #ffc107 !important;
@@ -428,5 +702,73 @@ export default {
 .btn-warning:hover {
   background-color: #ffb300;
   border-color: #ffb300;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px 24px 0 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-title {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-footer {
+  padding: 0 24px 20px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-danger:disabled {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  opacity: 0.65;
+}
+
+/* Button group styling */
+.btn-group-vertical .btn {
+  border-radius: 4px !important;
 }
 </style>

@@ -118,6 +118,12 @@ th, td {
             // استخدام examSkills فقط للـ Mid و Final
             $skills  = $exam->course->courseType->examSkills;
             $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
+            
+            // فلترة الطلاب الحاضرين فقط
+            $presentStudents = $ongoing->filter(function($student) use ($exam) {
+                $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
+                return !$examStudent || $examStudent->status !== 'absent';
+            });
         @endphp
 
         <table>
@@ -151,7 +157,7 @@ th, td {
                 </tr>
             </thead>
             <tbody>
-                @foreach($ongoing as $i => $student)
+                @foreach($presentStudents as $i => $student)
                     @php
                         $es      = $exam->examStudents->firstWhere('student_id', $student->id);
                         $grades  = [];
@@ -194,12 +200,12 @@ th, td {
                 @endforeach
             </tbody>
             
-            <!-- إضافة إحصائيات سريعة -->
+            <!-- إضافة إحصائيات سريعة للطلاب الحاضرين فقط -->
             <tfoot>
                 <tr style="background: #444; font-weight: bold;">
-                    <td colspan="2">STATISTICS</td>
+                    <td colspan="2">STATISTICS (PRESENT ONLY)</td>
                     @php
-                        $passCount = $ongoing->filter(function($student) use ($exam, $skills) {
+                        $passCount = $presentStudents->filter(function($student) use ($exam, $skills) {
                             $es = $exam->examStudents->firstWhere('student_id', $student->id);
                             $totalGrades = 0;
                             $totalMax = 0;
@@ -214,15 +220,18 @@ th, td {
                             $per = $totalMax ? round($totalGrades / $totalMax * 100, 1) : 0;
                             return $per >= 50;
                         })->count();
-                        $totalStudents = $ongoing->count();
-                        $failCount = $totalStudents - $passCount;
+                        
+                        $presentStudentsCount = $presentStudents->count();
+                        $failCount = $presentStudentsCount - $passCount;
+                        $totalEnrolledStudents = $ongoing->count();
+                        $absentCount = $totalEnrolledStudents - $presentStudentsCount;
                     @endphp
-                    <td colspan="{{ $skills->count() }}">
-                        PASS: {{ $passCount }} | FAIL: {{ $failCount }}
+                    <td colspan="{{ $skills->count() - 1 }}">
+                        PASS: {{ $passCount }} | FAIL: {{ $failCount }} | ABSENT: {{ $absentCount }}
                     </td>
-                    <td>{{ $totalStudents }}</td>
-                    <td>{{ $totalStudents ? round($passCount / $totalStudents * 100, 1) : 0 }}%</td>
-                    <td>{{ round($passCount / max($totalStudents, 1) * 100, 1) }}%</td>
+                    <td>{{ $presentStudentsCount }}/{{ $totalEnrolledStudents }}</td>
+                    <td>{{ $presentStudentsCount ? round($passCount / $presentStudentsCount * 100, 1) : 0 }}%</td>
+                    <td>{{ round($passCount / max($presentStudentsCount, 1) * 100, 1) }}%</td>
                 </tr>
             </tfoot>
         </table>

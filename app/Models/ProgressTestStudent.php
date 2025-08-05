@@ -17,6 +17,7 @@ class ProgressTestStudent extends Model
         'student_id',
         'course_id',
         'score',
+        'status',
     ];
 
     /**

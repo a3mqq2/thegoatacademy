@@ -14,6 +14,17 @@
     // للـ Mid و Final فقط - نحصل على مهارات الامتحان فقط
     $skills = $exam->course->courseType->examSkills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
+    
+    // فصل الطلاب الحاضرين والغائبين
+    $presentStudents = $ongoing->filter(function($student) use ($exam) {
+        $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
+        return !$examStudent || $examStudent->status !== 'absent';
+    });
+    
+    $absentStudents = $ongoing->filter(function($student) use ($exam) {
+        $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
+        return $examStudent && $examStudent->status === 'absent';
+    });
 @endphp
 
 <div class="container-fluid mt-3">
@@ -93,6 +104,34 @@
                 </div>
             </div>
 
+            <!-- إحصائيات الحضور والغياب -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-user-check me-2"></i>Present Students</h5>
+                            <h3>{{ $presentStudents->count() }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-user-times me-2"></i>Absent Students</h5>
+                            <h3>{{ $absentStudents->count() }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-users me-2"></i>Total Students</h5>
+                            <h3>{{ $ongoing->count() }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             @if(!$hasTime)
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>
@@ -140,10 +179,21 @@
                             @endforeach
                         </tr>
                     </tbody>
+
                 </table>
             </div>
 
-            <h5 class="mt-4"><i class="fas fa-user-graduate text-primary me-1"></i> Enrolled Students & Grades</h5>
+            <!-- زر لإظهار/إخفاء الطلاب الغائبين -->
+            @if($absentStudents->count() > 0)
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-warning" id="toggleAbsentStudents">
+                        <i class="fas fa-eye me-1"></i>
+                        <span id="toggleText">Show Absent Students ({{ $absentStudents->count() }})</span>
+                    </button>
+                </div>
+            @endif
+
+            <h5 class="mt-4"><i class="fas fa-user-graduate text-primary me-1"></i> Present Students & Grades</h5>
 
             <form action="{{ route('exam_officer.exams.grades.store', $exam->id) }}" method="POST">
                 @csrf
@@ -167,11 +217,14 @@
                                     </th>
                                 @endforeach
                                 <th class="text-center">Percentage</th>
+                                @if($canEnter)
+                                    <th class="text-center">Actions</th>
+                                @endif
                             </tr>
                         </thead>
             
                         <tbody>
-                            @foreach($ongoing as $student)
+                            @foreach($presentStudents as $student)
                                 @php
                                     $es        = $exam->examStudents->firstWhere('student_id', $student->id);
                                     $sumGrades = 0;
@@ -217,9 +270,73 @@
                                     <td class="text-center {{ $percentage >= 50 ? 'text-success' : 'text-danger' }}">
                                         {{ $percentage }}%
                                     </td>
+                                    
+                                    @if($canEnter)
+                                        <td class="text-center">
+                                            <form action="{{ route('exam_officer.exams.students.absent', [$exam->id, $student->id]) }}" 
+                                                  method="POST" 
+                                                  style="display: inline;"
+                                                  onsubmit="return confirm('Are you sure you want to mark {{ $student->name }} as absent?')">
+                                                @csrf
+                                                @method('POST')
+                                                <button type="submit" class="btn btn-warning btn-sm" title="Mark as Absent">
+                                                    <i class="fas fa-user-times"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
+
+                        <tfoot>
+                            <tr>
+                                <th colspan="2" class="text-end">Average</th>
+                        
+                                @foreach($skills as $skill)
+                                    @php
+                                        $pivotId = $skill->pivot->id;
+                                        $avg = collect($presentStudents)->map(function($student) use ($exam, $pivotId) {
+                                            return optional(
+                                                $exam->examStudents
+                                                     ->firstWhere('student_id', $student->id)
+                                                     ?->grades
+                                                     ->firstWhere('course_type_skill_id', $pivotId)
+                                            )->grade ?: 0;
+                                        })->avg();
+                                    @endphp
+                                    <th class="text-center">{{ number_format($avg, 1) }}</th>
+                                @endforeach
+                        
+                                {{-- متوسط النسبة المئوية عبر جميع الطلاب --}}
+                                @php
+                                    $overallAvg = collect($presentStudents)->map(function($student) use ($skills, $exam) {
+                                        $sum = $maxSum = 0;
+                                        foreach($skills as $skill) {
+                                            $pv  = $skill->pivot->id;
+                                            $grade = optional(
+                                                $exam->examStudents
+                                                     ->firstWhere('student_id', $student->id)
+                                                     ?->grades
+                                                     ->firstWhere('course_type_skill_id', $pv)
+                                            )->grade ?: 0;
+                                            $max = $exam->exam_type === 'mid'
+                                                ? $skill->pivot->mid_max
+                                                : $skill->pivot->final_max;
+                                            $sum    += $grade;
+                                            $maxSum += $max;
+                                        }
+                                        return $maxSum > 0 ? ($sum / $maxSum * 100) : 0;
+                                    })->avg();
+                                @endphp
+                                <th class="text-center">{{ number_format($overallAvg, 1) }}%</th>
+                        
+                                @if($canEnter)
+                                    <th></th>
+                                @endif
+                            </tr>
+                        </tfoot>
+                        
                     </table>
                 </div>
             
@@ -233,7 +350,81 @@
                     </button>
                 </div>
             </form>
+
+            <!-- جدول الطلاب الغائبين (مخفي افتراضياً) -->
+            @if($absentStudents->count() > 0)
+                <div id="absentStudentsSection" style="display: none;">
+                    <h5 class="mt-5 text-danger"><i class="fas fa-user-times me-1"></i> Absent Students</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle table-striped">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Student Name</th>
+                                    <th class="text-center">Status</th>
+                                    @if($canEnter)
+                                        <th class="text-center">Actions</th>
+                                    @endif
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($absentStudents as $student)
+                                    <tr>
+                                        <td>{{ $student->id }}</td>
+                                        <td>{{ $student->name }}</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-user-times me-1"></i>Absent
+                                            </span>
+                                        </td>
+                                        @if($canEnter)
+                                            <td class="text-center">
+                                                <form action="{{ route('exam_officer.exams.students.present', [$exam->id, $student->id]) }}" 
+                                                      method="POST" 
+                                                      style="display: inline;"
+                                                      onsubmit="return confirm('Are you sure you want to mark {{ $student->name }} as present?')">
+                                                    @csrf
+                                                    @method('POST')
+                                                    <button type="submit" class="btn btn-success btn-sm" title="Mark as Present">
+                                                        <i class="fas fa-user-check"></i> Mark Present
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('toggleAbsentStudents');
+    const absentSection = document.getElementById('absentStudentsSection');
+    const toggleText = document.getElementById('toggleText');
+    
+    if (toggleButton && absentSection) {
+        toggleButton.addEventListener('click', function() {
+            if (absentSection.style.display === 'none') {
+                absentSection.style.display = 'block';
+                toggleText.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Hide Absent Students ({{ $absentStudents->count() }})';
+                toggleButton.classList.remove('btn-outline-warning');
+                toggleButton.classList.add('btn-warning');
+            } else {
+                absentSection.style.display = 'none';
+                toggleText.innerHTML = '<i class="fas fa-eye me-1"></i>Show Absent Students ({{ $absentStudents->count() }})';
+                toggleButton.classList.remove('btn-warning');
+                toggleButton.classList.add('btn-outline-warning');
+            }
+        });
+    }
+});
+</script>
+
 @endsection

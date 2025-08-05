@@ -85,7 +85,6 @@ class CourseScheduleController extends Controller
         try {
             DB::beginTransaction();
 
-            // Check for duplicate schedules on the same date (excluding current schedule)
             $existingSchedule = $course->schedules()
                 ->where('date', $request->date)
                 ->where('id', '!=', $schedule->id)
@@ -97,9 +96,13 @@ class CourseScheduleController extends Controller
 
             $oldData = $schedule->toArray();
 
-            // Update close_at time if date or to_time changed
+                $hoursForClose = (int) Setting::where('key', 'Updating the students’ Attendance after the class.')
+                                              ->value('value');
+
+
+
             $closeAt = Carbon::parse($request->date . ' ' . $request->to_time)
-                ->addHours(2)
+                ->addHours($hoursForClose)
                 ->format('Y-m-d H:i:s');
 
             $schedule->update([

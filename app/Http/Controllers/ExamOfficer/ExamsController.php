@@ -533,4 +533,100 @@ private function validateGradesForExam(array $grades, array $maxGrades): array
     
 
 
+
+/**
+     * Mark a student as absent for an exam
+     */
+    public function markAbsent(Request $request, $examId, $studentId)
+    {
+        $exam = Exam::findOrFail($examId);
+        
+ 
+        try {
+            // البحث عن أو إنشاء سجل exam_student
+            $examStudent = \App\Models\ExamStudent::firstOrCreate([
+                'exam_id'    => $examId,
+                'student_id' => $studentId,
+            ]);
+            
+            // تحديث الحالة إلى غائب
+            $examStudent->update(['status' => 'absent']);
+            
+            // حذف جميع الدرجات المرتبطة بهذا الطالب في هذا الامتحان
+            $examStudent->grades()->delete();
+            
+            // تسجيل العملية في الـ Audit Log
+            AuditLog::create([
+                'user_id'     => auth()->id(),
+                'description' => "Marked student #{$studentId} as absent for exam #{$examId}",
+                'type'        => 'exams',
+                'entity_id'   => $examId,
+                'entity_type' => Exam::class,
+            ]);
+            
+            $studentName = \App\Models\Student::find($studentId)->name ?? "Student #{$studentId}";
+            
+            return back()->with('success', "{$studentName} has been marked as absent and grades have been cleared.");
+            
+        } catch (\Exception $e) {
+            \Log::error('Error marking student as absent: ' . $e->getMessage(), [
+                'exam_id' => $examId,
+                'student_id' => $studentId,
+                'user_id' => auth()->id()
+            ]);
+            
+            return back()->with('error', 'An error occurred while marking the student as absent.');
+        }
+    }
+
+    /**
+     * Mark a student as present for an exam
+     */
+    public function markPresent(Request $request, $examId, $studentId)
+    {
+        $exam = Exam::findOrFail($examId);
+        
+        try {
+            // البحث عن سجل exam_student
+            $examStudent = \App\Models\ExamStudent::where([
+                'exam_id'    => $examId,
+                'student_id' => $studentId,
+            ])->first();
+            
+            if ($examStudent) {
+                // تحديث الحالة إلى حاضر
+                $examStudent->update(['status' => 'present']);
+            } else {
+                // إنشاء سجل جديد بحالة حاضر
+                \App\Models\ExamStudent::create([
+                    'exam_id'    => $examId,
+                    'student_id' => $studentId,
+                    'status'     => 'present'
+                ]);
+            }
+            
+            // تسجيل العملية في الـ Audit Log
+            AuditLog::create([
+                'user_id'     => auth()->id(),
+                'description' => "Marked student #{$studentId} as present for exam #{$examId}",
+                'type'        => 'exams',
+                'entity_id'   => $examId,
+                'entity_type' => Exam::class,
+            ]);
+            
+            $studentName = \App\Models\Student::find($studentId)->name ?? "Student #{$studentId}";
+            
+            return back()->with('success', "{$studentName} has been marked as present.");
+            
+        } catch (\Exception $e) {
+            \Log::error('Error marking student as present: ' . $e->getMessage(), [
+                'exam_id' => $examId,
+                'student_id' => $studentId,
+                'user_id' => auth()->id()
+            ]);
+            
+            return back()->with('error', 'An error occurred while marking the student as present.');
+        }
+    }
+
 }

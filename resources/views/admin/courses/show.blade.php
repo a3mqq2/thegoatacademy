@@ -348,6 +348,14 @@
                           <span class="badge bg-danger">
                             <i class="fa fa-times"></i> Absent
                           </span>
+                      @elseif($sch->status == "absent-S")
+                          <span class="badge bg-secondary">
+                            <i class="fa fa-exclamation-triangle"></i> Absent (S)
+                          </span>
+                      @elseif($sch->status == "absent-T")
+                          <span class="badge bg-secondary">
+                            <i class="fa fa-exclamation-triangle"></i> Absent (T)
+                          </span>
                       @endif
                     </td>
                     <td class="text-center">

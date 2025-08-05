@@ -329,6 +329,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-success">Done</span>
                       @elseif ($sch->status == "absent")
                         <span class="badge bg-danger">Absent</span>
+                      @elseif($sch->status == "absent-T")
+                        <span class="badge bg-secondary">Absent (T)</span>
+                      @elseif($sch->status == "absent-S")
+                        <span class="badge bg-secondary">Absent (S)</span>
                       @endif
                     </td>
                     <td class="text-center">

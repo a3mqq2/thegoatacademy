@@ -199,4 +199,79 @@ class ProgressTestController extends Controller
         );
     }
 
+
+    public function removeStudent($progressTestId, $studentId)
+    {
+        try {
+            // حذف السجل من progress_test_students table
+            $deleted = ProgressTestStudent::where('progress_test_id', $progressTestId)
+                                         ->where('student_id', $studentId)
+                                         ->delete();
+    
+            if ($deleted) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Student removed from progress test successfully'
+                ]);
+            }
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Student not found in this progress test'
+            ], 404);
+    
+        } catch (\Exception $e) {
+            \Log::error('Error removing student from progress test: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error removing student from progress test'
+            ], 500);
+        }
+    }
+
+    public function updateStudentStatus($progressTestId, $studentId, Request $request)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:present,absent'
+            ]);
+    
+            $updated = ProgressTestStudent::where('progress_test_id', $progressTestId)
+                                         ->where('student_id', $studentId)
+                                         ->update(['status' => $request->status]);
+    
+            if ($updated) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Student attendance status updated successfully',
+                    'data' => [
+                        'student_id' => $studentId,
+                        'status' => $request->status
+                    ]
+                ]);
+            }
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Student not found in this progress test'
+            ], 404);
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid status value',
+                'errors' => $e->errors()
+            ], 422);
+    
+        } catch (\Exception $e) {
+            \Log::error('Error updating student status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating student attendance status'
+            ], 500);
+        }
+    }
+
 }
