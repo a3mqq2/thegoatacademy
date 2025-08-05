@@ -124,6 +124,49 @@ th, td {
                 $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
                 return !$examStudent || $examStudent->status !== 'absent';
             });
+
+            // حساب المتوسطات لكل مهارة
+            $skillAverages = [];
+            $totalGradesSum = 0;
+            $totalMaxSum = 0;
+            $totalPercentageSum = 0;
+            $studentCount = $presentStudents->count();
+
+            foreach ($skills as $skillIndex => $skill) {
+                $skillGradeSum = 0;
+                foreach ($presentStudents as $student) {
+                    $es = $exam->examStudents->firstWhere('student_id', $student->id);
+                    $pivotId = $skill->pivot->id;
+                    $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
+                    $grade = $gradeRow?->grade ?: 0;
+                    $skillGradeSum += $grade;
+                }
+                $skillAverages[$skillIndex] = $studentCount > 0 ? $skillGradeSum / $studentCount : 0;
+            }
+
+            // حساب متوسط المجموع والنسبة المئوية
+            foreach ($presentStudents as $student) {
+                $es = $exam->examStudents->firstWhere('student_id', $student->id);
+                $studentTotal = 0;
+                $studentMax = 0;
+                
+                foreach ($skills as $sk) {
+                    $pivotId = $sk->pivot->id;
+                    $gradeRow = $es?->grades->firstWhere('course_type_skill_id', $pivotId);
+                    $g = $gradeRow?->grade ?: 0;
+                    $m = $exam->exam_type == 'mid' ? ($sk->pivot->mid_max ?? 0) : ($sk->pivot->final_max ?? 0);
+                    $studentTotal += $g;
+                    $studentMax += $m;
+                }
+                
+                $totalGradesSum += $studentTotal;
+                $totalMaxSum += $studentMax;
+                $percentage = $studentMax ? round($studentTotal / $studentMax * 100, 1) : 0;
+                $totalPercentageSum += $percentage;
+            }
+
+            $averageTotal = $studentCount > 0 ? $totalGradesSum / $studentCount : 0;
+            $averagePercentage = $studentCount > 0 ? $totalPercentageSum / $studentCount : 0;
         @endphp
 
         <table>
@@ -200,8 +243,19 @@ th, td {
                 @endforeach
             </tbody>
             
-            <!-- إضافة إحصائيات سريعة للطلاب الحاضرين فقط -->
             <tfoot>
+                <!-- إضافة صف المتوسط -->
+                <tr style="background: #555; font-weight: bold; color: #00ff00;">
+                    <td colspan="2">AVERAGE</td>
+                    @foreach($skillAverages as $avg)
+                        <td>{{ number_format($avg, 1) }}</td>
+                    @endforeach
+                    <td>{{ number_format($averageTotal, 1) }}</td>
+                    <td>{{ number_format($averagePercentage, 1) }}%</td>
+                    <td>{{ $averagePercentage >= 50 ? 'PASS' : 'FAIL' }}</td>
+                </tr>
+                
+                <!-- إضافة إحصائيات سريعة للطلاب الحاضرين فقط -->
                 <tr style="background: #444; font-weight: bold;">
                     <td colspan="2">STATISTICS (PRESENT ONLY)</td>
                     @php
