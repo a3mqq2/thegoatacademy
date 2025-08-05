@@ -280,9 +280,27 @@ th, td {
                         $totalEnrolledStudents = $ongoing->count();
                         $absentCount = $totalEnrolledStudents - $presentStudentsCount;
                     @endphp
-                    <td colspan="{{ $skills->count() - 1 }}">
-                        PASS: {{ $passCount }} | FAIL: {{ $failCount }} | ABSENT: {{ $absentCount }}
-                    </td>
+                    
+                    @if($skills->count() >= 4)
+                        <td colspan="{{ $skills->count() - 2 }}">
+                            PASS: {{ $passCount }} | FAIL: {{ $failCount }} | ABSENT: {{ $absentCount }}
+                        </td>
+                        <td style="color: #0f0;">PASS: {{ $passCount }}</td>
+                        <td style="color: #f00;">FAIL: {{ $failCount }}</td>
+                    @else
+                        @for($i = 0; $i < $skills->count(); $i++)
+                            @if($i == 0)
+                                <td style="color: #0f0;">PASS: {{ $passCount }}</td>
+                            @elseif($i == 1)
+                                <td style="color: #f00;">FAIL: {{ $failCount }}</td>
+                            @elseif($i == 2)
+                                <td style="color: #ff0;">ABSENT: {{ $absentCount }}</td>
+                            @else
+                                <td>-</td>
+                            @endif
+                        @endfor
+                    @endif
+                    
                     <td>{{ $presentStudentsCount }}/{{ $totalEnrolledStudents }}</td>
                     <td>{{ $presentStudentsCount ? round($passCount / $presentStudentsCount * 100, 1) : 0 }}%</td>
                     <td>{{ round($passCount / max($presentStudentsCount, 1) * 100, 1) }}%</td>
