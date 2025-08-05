@@ -245,14 +245,17 @@ th, td {
             
             <tfoot>
                 <!-- إضافة صف المتوسط -->
-                <tr style="background: #555; font-weight: bold; color: #00ff00;">
-                    <td colspan="2">AVERAGE</td>
+                <tr style="background: #2a2a2a; font-weight: bold; border-top: 2px solid #666;">
+                    <td style="background: #333; color: #ffd700;">AVG</td>
+                    <td style="text-align: left; font-size: 16px; background: #333; color: #ffd700; font-style: italic;">Class Average</td>
                     @foreach($skillAverages as $avg)
-                        <td>{{ number_format($avg, 1) }}</td>
+                        <td style="color: {{ $avg >= (($exam->exam_type == 'mid' ? ($skills[$loop->index]->pivot->mid_max ?? 0) : ($skills[$loop->index]->pivot->final_max ?? 0)) * 0.5) ? '#0f0' : '#f90' }}; background: #2a2a2a;">
+                            {{ number_format($avg, 1) }}
+                        </td>
                     @endforeach
-                    <td>{{ number_format($averageTotal, 1) }}</td>
-                    <td>{{ number_format($averagePercentage, 1) }}%</td>
-                    <td>{{ $averagePercentage >= 50 ? 'PASS' : 'FAIL' }}</td>
+                    <td style="font-weight: bold; background: #2a2a2a; color: #fff;">{{ number_format($averageTotal, 1) }}</td>
+                    <td style="color: {{ $averagePercentage >= 50 ? '#0f0' : '#f00' }}; font-weight: bold; background: #2a2a2a;">{{ number_format($averagePercentage, 1) }}%</td>
+                    <td style="color: {{ $averagePercentage >= 50 ? '#0f0' : '#f00' }}; font-weight: bold; background: #2a2a2a;">{{ $averagePercentage >= 50 ? 'PASS' : 'FAIL' }}</td>
                 </tr>
                 
                 <!-- إضافة إحصائيات سريعة للطلاب الحاضرين فقط -->
@@ -303,7 +306,7 @@ th, td {
                     
                     <td>{{ $presentStudentsCount }}/{{ $totalEnrolledStudents }}</td>
                     <td>{{ $presentStudentsCount ? round($passCount / $presentStudentsCount * 100, 1) : 0 }}%</td>
-                    <td></td>
+                    <td>{{ round($passCount / max($presentStudentsCount, 1) * 100, 1) }}%</td>
                 </tr>
             </tfoot>
         </table>
