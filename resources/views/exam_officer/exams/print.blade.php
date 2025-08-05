@@ -247,7 +247,7 @@ th, td {
                 <!-- إضافة صف المتوسط -->
                 <tr style="background: #2a2a2a; font-weight: bold; border-top: 2px solid #666;">
                     <td style="background: #333; color: #ffd700;">AVG</td>
-                    <td style="text-align: left; font-size: 16px; background: #333; color: #ffd700; font-style: italic;">Class Average</td>
+                    <td style="text-align: left; font-size: 16px; background: #333; color: #ffd700; font-style: italic;">Average Score</td>
                     @foreach($skillAverages as $avg)
                         <td style="color: {{ $avg >= (($exam->exam_type == 'mid' ? ($skills[$loop->index]->pivot->mid_max ?? 0) : ($skills[$loop->index]->pivot->final_max ?? 0)) * 0.5) ? '#0f0' : '#f90' }}; background: #2a2a2a;">
                             {{ number_format($avg, 1) }}
@@ -305,8 +305,15 @@ th, td {
                     @endif
                     
                     <td>{{ $presentStudentsCount }}/{{ $totalEnrolledStudents }}</td>
-                    <td>{{ $presentStudentsCount ? round($passCount / $presentStudentsCount * 100, 1) : 0 }}%</td>
-                    <td>{{ round($passCount / max($presentStudentsCount, 1) * 100, 1) }}%</td>
+                    <td>
+                        {{ $presentStudentsCount
+                            ? round($passCount / $presentStudentsCount * 100, 1)
+                            : 0
+                       }}%    
+                    </td>
+                    <td>
+                        {{ round($passCount / max($totalEnrolledStudents, 1) * 100, 1) }}%
+                    </td>
                 </tr>
             </tfoot>
         </table>
