@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
   {{-- absences count --}}
   @php
     $absences = $course->schedules->filter(function($s) {
-      return $s->status == 'absent';
+      return $s->status == 'absent-S' || 'absent-T';
     })->count();
   @endphp
 
