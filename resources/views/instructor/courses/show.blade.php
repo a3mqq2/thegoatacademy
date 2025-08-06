@@ -152,8 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   {{-- absences count --}}
   @php
-    $absences = $course->schedules->filter(function($s) {
-      return $s->status == 'absent-S' || 'absent-T';
+    $absences_student = $course->schedules->filter(function($s) {
+      return $s->status == 'absent-S';
+    })->count();
+
+    $absences_instructor = $course->schedules->filter(function($s) {
+      return $s->status == 'absent-T';
     })->count();
   @endphp
 
@@ -161,17 +165,12 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="card mt-3">
     <div class="card-header">
       <h5 class="text-light"><i class="fa fa-calendar"></i> Schedule & Progress Tests</h5>
-      <!-- Add this button for instructors -->
       @php
-    //  get all extra schedules in course
         $extraSchedules = $course->schedules->where('extra_date', true);
         $allowedExtraDays = $course->allowed_abcences_instructor;
-
-
       @endphp
       <div class="ms-auto">
-        {{-- check can add extra scheduke --}}
-        @if($extraSchedules->count() < $allowedExtraDays)
+        @if(($absences_student || $absences_instructor) < $allowedExtraDays)
           <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addExtraDayModal">
             <i class="fa fa-plus"></i> Add Extra Day
           </button>
