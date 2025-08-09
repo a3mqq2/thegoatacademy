@@ -151,9 +151,9 @@
                 <i class="fa fa-print"></i> Print
             </a>
             @if(in_array($course->status, ['ongoing','upcoming']))
-                <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-warning btn-sm">
+                {{-- <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-warning btn-sm">
                     <i class="fa fa-edit"></i> Edit
-                </a>
+                </a> --}}
                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal" data-course-id="{{ $course->id }}">
                     <i class="fa fa-ban"></i> Cancel
                 </button>

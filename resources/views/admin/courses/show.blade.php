@@ -61,9 +61,9 @@
         </h4>
       </div>
       <div class="d-flex align-items-center">
-        <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-light btn-sm me-2">
+        {{-- <a href="{{ route('admin.courses.edit', $course->id) }}" class="btn btn-light btn-sm me-2">
           <i class="fa fa-edit"></i> Edit
-        </a>
+        </a> --}}
 
         <a href="{{ route('admin.courses.index') }}" class="btn btn-outline-dark btn-sm me-2">
           <i class="fa fa-arrow-left"></i> Back
