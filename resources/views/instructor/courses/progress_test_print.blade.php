@@ -40,7 +40,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
 
     <div class="table-container">
         @php
-            $skills   = $progressTest->course->courseType->skills;
+            $skills   = $progressTest->course->courseType->progressSkills;
             $students = $progressTest->progressTestStudents()->with(['student','grades'])->where('status','present')->get();
             
             // حساب المتوسطات
@@ -163,7 +163,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
                 <!-- صف المتوسط -->
                 <tr style="background: #2a2a2a; font-weight: bold; border-top: 2px solid #666;">
                     <td style="background: #333; color: #ffd700;">AVG</td>
-                    <td style="text-align: left; font-size: 16px; background: #333; color: #ffd700; font-style: italic;">Class Average</td>
+                    <td style="text-align: left; font-size: 16px; background: #333; color: #ffd700; font-style: italic;">AVG Score</td>
                     @foreach($skillAverages as $avg)
                         <td style="color: #00bfff; background: #2a2a2a;">
                             {{ number_format($avg, 1) }}
