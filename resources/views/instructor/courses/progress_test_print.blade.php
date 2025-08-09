@@ -114,7 +114,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
                     <th>ST</th>
                 </tr>
                 <tr style="font-size: 12px; background: #333;">
-                    <th colspan="2">MAX GRADES</th>
+                    <th colspan="2">MAX</th>
                     @foreach($skills as $s)
                         @php
                             $maxGrade = $students->first()?->grades->firstWhere('course_type_skill_id', $s->pivot->id)?->max_grade ?? 0;
