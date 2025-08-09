@@ -109,9 +109,9 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
                     @foreach($skills as $s)
                         <th title="{{ $s->name }}">{{ mb_substr($s->name,0,2,'UTF-8') }}</th>
                     @endforeach
-                    <th>TOTAL</th>
+                    <th>TOT</th>
                     <th>PER</th>
-                    <th>STATUS</th>
+                    <th>ST</th>
                 </tr>
                 <tr style="font-size: 14px; background: #333;">
                     <th colspan="2">MAX GRADES</th>
