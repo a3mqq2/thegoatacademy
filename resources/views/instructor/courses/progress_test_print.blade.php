@@ -97,7 +97,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
             $failCount = $studentCount - $passCount;
             
             // حساب العدد الإجمالي للطلاب المسجلين
-            $totalEnrolled = $progressTest->course->students()->wherePivot('status', 'ongoing')->count();
+            $totalEnrolled = $progressTest->course->students()->count();
             $absentCount = $totalEnrolled - $studentCount;
         @endphp
         
