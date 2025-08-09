@@ -267,8 +267,13 @@
        if(!selectedDays.value.length)errs.push('Choose at least one day')
        if(errs.length){errs.forEach(e=>$toastr.error(e));return false}
        return true
-     }
-     function generateSchedule() {
+          }
+          function generateSchedule() {
+  console.log('=== Generate Schedule Called ===')
+  console.log('showPreTest:', showPreTest.value)
+  console.log('showMidExam:', showMidExam.value)
+  console.log('showFinalExam:', showFinalExam.value)
+  
   if (!validateScheduleInputs()) return
   
   const totalLessons = +selectedCourseType.value.duration || 0
@@ -280,20 +285,36 @@
   
   const occupied = new Set(scheduleList.value.map(r => r.date))
 
-  // Handle Pre-test
+  // ========== Handle Pre-test ==========
   if (showPreTest.value) {
-    if (!preTestDate.value || new Date(preTestDate.value) > new Date(startDate.value)) {
-      preTestDate.value = startDate.value
+    console.log('Processing pre-test...')
+    
+    // Always set a pre-test date if showPreTest is true
+    let preDate = new Date(startDate.value)
+    preDate.setDate(preDate.getDate() - 1) // Day before start date
+    
+    // Skip Friday if needed
+    if (preDate.getDay() === 5) { // If Friday, go to Thursday
+      preDate.setDate(preDate.getDate() - 1)
     }
+    
+    // Skip Saturday if needed (go to Thursday)
+    if (preDate.getDay() === 6) { // If Saturday, go to Thursday  
+      preDate.setDate(preDate.getDate() - 2)
+    }
+    
+    preTestDate.value = fmtDate(preDate)
     occupied.add(preTestDate.value)
+    
+    console.log('Pre-test date set to:', preTestDate.value)
   } else {
     preTestDate.value = ''
+    console.log('Pre-test disabled')
   }
 
-  // Generate regular lessons
+  // ========== Generate regular lessons ==========
   let currentDate = new Date(startDate.value)
-  currentDate.setDate(currentDate.getDate() + 1) // Start day after course start
-  skipFriday(currentDate)
+  skipFriday(currentDate) // Start on the actual start date, but skip if Friday
 
   let lessonsGenerated = 0
   let weekNumber = 1
@@ -357,62 +378,79 @@
     skipFriday(currentDate)
   }
 
-  // Handle Mid-exam (place it in the middle of the course)
+  // ========== Handle Mid-exam ==========
   if (showMidExam.value) {
-    const regularLessons = scheduleList.value.filter(r => !r.progress)
-    const midPoint = Math.floor(regularLessons.length / 2)
+    console.log('Processing mid-exam...')
     
-    if (midPoint < regularLessons.length) {
-      const midLessonDate = new Date(regularLessons[midPoint].date)
+    const regularLessons = scheduleList.value.filter(r => !r.progress)
+    
+    if (regularLessons.length > 0) {
+      const midPoint = Math.floor(regularLessons.length / 2)
       
-      // Find next available date for mid exam
-      let midExamCandidate = midExamDate.value ? new Date(midExamDate.value) : new Date(midLessonDate)
-      
-      // Ensure mid exam is after the mid-point lesson and not occupied
-      if (midExamCandidate <= midLessonDate || occupied.has(fmtDate(midExamCandidate))) {
-        midExamCandidate = new Date(midLessonDate)
+      // Always generate a new mid-exam date based on the mid-point
+      if (midPoint < regularLessons.length) {
+        const midLessonDate = new Date(regularLessons[midPoint].date)
+        
+        // Set mid-exam to the day after the mid-point lesson
+        let midExamCandidate = new Date(midLessonDate)
         midExamCandidate.setDate(midExamCandidate.getDate() + 1)
         skipFriday(midExamCandidate)
         
-        // Find next free day
+        // Find next free day that's not occupied
         while (occupied.has(fmtDate(midExamCandidate))) {
           midExamCandidate.setDate(midExamCandidate.getDate() + 1)
           skipFriday(midExamCandidate)
         }
+        
+        midExamDate.value = fmtDate(midExamCandidate)
+        occupied.add(midExamDate.value)
+        
+        console.log('Mid-exam date set to:', midExamDate.value)
       }
-      
-      midExamDate.value = fmtDate(midExamCandidate)
-      occupied.add(midExamDate.value)
     }
   } else {
     midExamDate.value = ''
+    console.log('Mid-exam disabled')
   }
 
-  // Handle Final exam (place it after all lessons)
+  // ========== Handle Final exam ==========
   if (showFinalExam.value) {
+    console.log('Processing final exam...')
+    
     const regularLessons = scheduleList.value.filter(r => !r.progress)
+    
     if (regularLessons.length > 0) {
+      // Always generate final exam after the last lesson
       const lastLessonDate = new Date(regularLessons[regularLessons.length - 1].date)
-      lastLessonDate.setDate(lastLessonDate.getDate() + 1)
-      skipFriday(lastLessonDate)
+      let finalExamCandidate = new Date(lastLessonDate)
+      finalExamCandidate.setDate(finalExamCandidate.getDate() + 1)
+      skipFriday(finalExamCandidate)
       
       // Find next free day for final exam
-      while (occupied.has(fmtDate(lastLessonDate))) {
-        lastLessonDate.setDate(lastLessonDate.getDate() + 1)
-        skipFriday(lastLessonDate)
+      while (occupied.has(fmtDate(finalExamCandidate))) {
+        finalExamCandidate.setDate(finalExamCandidate.getDate() + 1)
+        skipFriday(finalExamCandidate)
       }
       
-      finalExamDate.value = fmtDate(lastLessonDate)
+      finalExamDate.value = fmtDate(finalExamCandidate)
+      
+      console.log('Final exam date set to:', finalExamDate.value)
     }
   } else {
     finalExamDate.value = ''
+    console.log('Final exam disabled')
   }
 
   // Sort schedule by date
   scheduleList.value.sort((a, b) => new Date(a.date) - new Date(b.date))
+  
+  console.log('=== Schedule Generation Complete ===')
+  console.log('Final preTestDate:', preTestDate.value)
+  console.log('Final midExamDate:', midExamDate.value)  
+  console.log('Final finalExamDate:', finalExamDate.value)
+  console.log('Schedule items:', scheduleList.value.length)
 }
-
-       
+            
      const deletePreTest=()=>{showPreTest.value=false;preTestDate.value='';generateSchedule()}
      const deleteMidExam=()=>{showMidExam.value=false;midExamDate.value='';generateSchedule()}
      const deleteFinalExam=()=>{showFinalExam.value=false;finalExamDate.value='';generateSchedule()}
