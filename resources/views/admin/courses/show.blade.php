@@ -1029,7 +1029,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-// Function to update schedule status via AJAX
 function updateScheduleStatus(scheduleId, status) {
   if (confirm(`Are you sure you want to change the schedule status to "${status}"?`)) {
     fetch(`/admin/courses/{{ $course->id }}/schedules/${scheduleId}/status`, {
@@ -1042,7 +1041,7 @@ function updateScheduleStatus(scheduleId, status) {
     })
     .then(response => response.json())
     .then(data => {
-      location.reload(); // Reload to show updated status
+      location.reload();
     });
   }
 }
