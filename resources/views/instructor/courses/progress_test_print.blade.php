@@ -17,7 +17,7 @@
 html,body{width:1024px;height:1024px;font-family:'cairo',sans-serif;color:#fff}
 body{background:url('data:image/png;base64,{{ $bgData }}') no-repeat center center;background-size:cover}
 .container{width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between}
-.title{font-size:30px;font-weight:700;margin-bottom:15px;position:absolute;top:160px;left:200px}
+.title{font-size:30px;font-weight:700;margin-bottom:35px;position:absolute;top:160px;left:200px}
 .sub-details{font-size:18px}
 .table-container{flex:1;display:flex;align-items:center;justify-content:center}
 table{width:90%;margin:auto;border-collapse:collapse;position:absolute;top:300px}
