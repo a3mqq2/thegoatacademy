@@ -113,7 +113,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
                     <th>PER</th>
                     <th>ST</th>
                 </tr>
-                <tr style="font-size: 14px; background: #333;">
+                <tr style="font-size: 12px; background: #333;">
                     <th colspan="2">MAX GRADES</th>
                     @foreach($skills as $s)
                         @php
