@@ -107,7 +107,7 @@ th,td{font-size:15px;padding:10px;background:#000;border:1px solid #333;text-ali
                     <th>NO</th>
                     <th>NAME</th>
                     @foreach($skills as $s)
-                        <th title="{{ $s->name }}">{{ mb_substr($s->name,0,3,'UTF-8') }}</th>
+                        <th title="{{ $s->name }}">{{ mb_substr($s->name,0,2,'UTF-8') }}</th>
                     @endforeach
                     <th>TOTAL</th>
                     <th>PER</th>
