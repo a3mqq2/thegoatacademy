@@ -106,7 +106,7 @@ th, td {
                 Instructor : {{ optional($exam->course->instructor)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}<br>
             </div>
-            <div style="text-align: right; position: absolute; top:260px; left:250px;">
+            <div style="text-align: right; position: absolute; top:260px; left:280px;">
                 Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
                 Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}<br>
             </div>
