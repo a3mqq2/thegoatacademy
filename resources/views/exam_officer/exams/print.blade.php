@@ -71,7 +71,7 @@ table {
     margin: auto;
     border-collapse: collapse;
     position: absolute;
-    top: 300px;
+    top: 350px;
 }
 th, td {
     font-size: 20px;
