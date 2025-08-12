@@ -71,7 +71,7 @@ table {
     margin: auto;
     border-collapse: collapse;
     position: absolute;
-    top: 350px;
+    top: 300px;
 }
 th, td {
     font-size: 20px;
@@ -102,11 +102,11 @@ th, td {
             {{ strtoupper($exam->course->courseType->name) }} - {{ strtoupper($exam->exam_type) }} EXAM RESULTS (#{{ $exam->course_id }})
         </h1>
         <div class="sub-details">
-            <div style="position: absolute; top:210px;">
+            <div style="position: absolute; top:280px;">
                 Instructor : {{ optional($exam->course->instructor)->name ?? 'Unassigned' }}<br>
                 Days: {{ $exam->course->days ?? '-' }}<br>
             </div>
-            <div style="text-align: right; position: absolute; top:210px; left:250px;">
+            <div style="text-align: right; position: absolute; top:280px; left:250px;">
                 Time: {{ $exam->time ? \Carbon\Carbon::parse($exam->time)->format('h:i A') : '-' }}<br>
                 Date: {{ $exam->exam_date ? \Carbon\Carbon::parse($exam->exam_date)->format('Y-m-d') : '-' }}<br>
             </div>
