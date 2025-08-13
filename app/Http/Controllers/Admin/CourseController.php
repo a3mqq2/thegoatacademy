@@ -52,7 +52,7 @@ class CourseController extends Controller
         $instructors = User::role('instructor')->get();
     
         return view('admin.courses.index', compact('courses', 'courseTypes', 'groupTypes','instructors'));
-    } 
+    }
     
 
     public function create()
