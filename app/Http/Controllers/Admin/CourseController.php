@@ -346,9 +346,7 @@ class CourseController extends Controller
     
         $data = $validator->validated();
         foreach (['start_date','pre_test_date','mid_exam_date','final_exam_date'] as $f) {
-            $data[$f] = empty($data[$f])
-                ? null
-                : Carbon::parse($data[$f])->toDateString();
+            $data[$f] = empty($data[$f]) ? null : Carbon::parse($data[$f])->toDateString();
         }
     
         $students          = $data['students']   ?? [];
@@ -404,10 +402,7 @@ class CourseController extends Controller
                 'progress_test_day'    => $request->progress_test_day,
             ]);
     
-            // حذف الجداول القديمة قبل تاريخ البدء الجديد
-            $course->schedules()
-                   ->where('date', '<', $data['start_date'])
-                   ->delete();
+            $course->schedules()->where('date', '<', $data['start_date'])->delete();
     
             foreach ($schedule as $row) {
                 $course->schedules()->updateOrCreate(
@@ -422,7 +417,24 @@ class CourseController extends Controller
                 );
             }
     
-            /* progress tests: update or create */
+            $keepScheduleDates = $schedule->pluck('date')->all();
+            $course->schedules()
+                ->whereDate('date', '>=', $data['start_date'])
+                ->when(count($keepScheduleDates) > 0, fn($q) => $q->whereNotIn('date', $keepScheduleDates))
+                ->delete();
+    
+            $weeksToKeep = collect($progressTestsData)->pluck('week')->filter()->values();
+            $existingTests = $course->progressTests()->pluck('id','week');
+            $idsToDelete = $existingTests->when($weeksToKeep->isNotEmpty(), fn($c) => $c->except($weeksToKeep->all()))->values();
+            if ($idsToDelete->isNotEmpty()) {
+                ProgressTestStudent::whereIn('progress_test_id', $idsToDelete)->delete();
+                ProgressTest::whereIn('id', $idsToDelete)->delete();
+            }
+            if ($weeksToKeep->isEmpty()) {
+                ProgressTestStudent::whereIn('progress_test_id', $existingTests->values())->delete();
+                ProgressTest::whereIn('id', $existingTests->values())->delete();
+            }
+    
             foreach ($progressTestsData as $ptData) {
                 $progressTest = ProgressTest::updateOrCreate(
                     [
@@ -446,16 +458,15 @@ class CourseController extends Controller
                 }
             }
     
-            /* exams: update or create */
             $examMap = ['pre'=>'pre_test_date','mid'=>'mid_exam_date','final'=>'final_exam_date'];
             foreach ($examMap as $type => $field) {
-                if ($data[$field]) {
+                if (!empty($data[$field])) {
                     $course->exams()->updateOrCreate(
                         ['exam_type' => $type],
-                        [
-                            'exam_date' => $data[$field],
-                        ]
+                        ['exam_date' => $data[$field]]
                     );
+                } else {
+                    $course->exams()->where('exam_type', $type)->delete();
                 }
             }
     
@@ -484,6 +495,7 @@ class CourseController extends Controller
             ], 500);
         }
     }
+    
     
     
     
