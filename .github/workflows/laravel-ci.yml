@@ -1,0 +1,132 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: laravel
+          MYSQL_USER: laravel
+          MYSQL_PASSWORD: laravel
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:0000000000000000000000000000000000000000000=
+      APP_URL: http://localhost
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: file
+      BROADCAST_DRIVER: log
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: ${{ secrets.DB_DATABASE || 'laravel' }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME || 'laravel' }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'laravel' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, intl, pdo_mysql, redis
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            composer-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Set app key
+        run: php artisan key:generate
+
+      - name: Ensure storage & cache directories
+        run: |
+          php -r "is_dir('storage/logs') || mkdir('storage/logs', 0777, true);"
+          php -r "is_dir('bootstrap/cache') || mkdir('bootstrap/cache', 0777, true);"
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..60}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              echo "MySQL is up"; break
+            fi
+            echo "Waiting for MySQL ($i/60)"; sleep 2
+          done
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache NPM
+        if: hashFiles('**/package-lock.json') != ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-
+
+      - name: Install Node dependencies
+        if: hashFiles('**/package.json') != ''
+        run: npm ci
+
+      - name: Build assets
+        if: hashFiles('**/package.json') != ''
+        run: npm run build --if-present
+
+      - name: Run tests (PHPUnit)
+        run: php artisan test --testsuite=Unit,Feature --no-interaction --stop-on-failure
+
+      - name: Upload Laravel logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-logs
+          path: storage/logs
