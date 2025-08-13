@@ -1,8 +1,8 @@
-name: Simple Deploy with  Password
+name: Simple Deploy with Password
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ] # غيريها لو تبّي فرع آخر
 
 jobs:
   deploy:
@@ -11,9 +11,9 @@ jobs:
       - name: Deploy via SSH with Password
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASS }}
+          host: thegoatacademy.net.ly
+          username: thegoata
+          password: ';NXv%WzVSp:g'
           port: 6934
           script: |
             cd public_html
