@@ -1,4 +1,4 @@
-name: Simple Deploy with Password
+name: Simple Deploy with  Password
 
 on:
   push:
