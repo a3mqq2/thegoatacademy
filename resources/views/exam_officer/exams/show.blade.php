@@ -10,17 +10,17 @@
     $hasStarted   = $now->gte($examDateTime);
     $hasTime      = !is_null($exam->time);
     $canEnter     = $isExaminer && $hasStarted && ! in_array($exam->status, ['new']) && $hasTime;
-    
+
     // للـ Mid و Final فقط - نحصل على مهارات الامتحان فقط
     $skills = $exam->course->courseType->examSkills;
     $ongoing = $exam->course->students()->wherePivot('status','ongoing')->get();
-    
+
     // فصل الطلاب الحاضرين والغائبين
     $presentStudents = $ongoing->filter(function($student) use ($exam) {
         $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
         return !$examStudent || $examStudent->status !== 'absent';
     });
-    
+
     $absentStudents = $ongoing->filter(function($student) use ($exam) {
         $examStudent = $exam->examStudents->firstWhere('student_id', $student->id);
         return $examStudent && $examStudent->status === 'absent';
@@ -183,7 +183,6 @@
                 </table>
             </div>
 
-            <!-- زر لإظهار/إخفاء الطلاب الغائبين -->
             @if($absentStudents->count() > 0)
                 <div class="mb-3">
                     <button type="button" class="btn btn-outline-warning" id="toggleAbsentStudents">
@@ -193,9 +192,8 @@
                 </div>
             @endif
 
-            <h5 class="mt-4"><i class="fas fa-user-graduate text-primary me-1"></i> Present Students & Grades</h5>
-
-            <form action="{{ route('exam_officer.exams.grades.store', $exam->id) }}" method="POST">
+            {{-- نموذج حفظ الدرجات --}}
+            <form id="gradesForm" action="{{ route('exam_officer.exams.grades.store', $exam->id) }}" method="POST">
                 @csrf
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle">
@@ -222,7 +220,7 @@
                                 @endif
                             </tr>
                         </thead>
-            
+
                         <tbody>
                             @foreach($presentStudents as $student)
                                 @php
@@ -233,22 +231,22 @@
                                 <tr>
                                     <td>{{ $student->id }}</td>
                                     <td>{{ $student->name }}</td>
-            
+
                                     @foreach($skills as $skill)
                                         @php
                                             $pivotId    = $skill->pivot->id;
                                             $gradeValue = optional(
                                                 $es?->grades->firstWhere('course_type_skill_id', $pivotId)
                                             )->grade ?: 0;
-            
+
                                             $maxValue   = $exam->exam_type == 'mid'
                                                 ? $skill->pivot->mid_max
                                                 : $skill->pivot->final_max;
-            
+
                                             $sumGrades += $gradeValue;
                                             $sumMax    += $maxValue;
                                         @endphp
-            
+
                                         <td>
                                             <input
                                                 type="number"
@@ -261,7 +259,7 @@
                                             >
                                         </td>
                                     @endforeach
-            
+
                                     @php
                                         $percentage = $sumMax > 0
                                             ? round($sumGrades / $sumMax * 100, 1)
@@ -270,19 +268,22 @@
                                     <td class="text-center {{ $percentage >= 50 ? 'text-success' : 'text-danger' }}">
                                         {{ $percentage }}%
                                     </td>
-                                    
+
                                     @if($canEnter)
                                         <td class="text-center">
-                                            <form action="{{ route('exam_officer.exams.students.absent', [$exam->id, $student->id]) }}" 
-                                                  method="POST" 
-                                                  style="display: inline;"
-                                                  onsubmit="return confirm('Are you sure you want to mark {{ $student->name }} as absent?')">
-                                                @csrf
-                                                @method('POST')
-                                                <button type="submit" class="btn btn-warning btn-sm" title="Mark as Absent">
-                                                    <i class="fas fa-user-times"></i>
-                                                </button>
-                                            </form>
+                                            {{-- زر تغيير الحالة لغياب باستخدام form/fo​rmaction دون تداخل نماذج --}}
+                                            <button
+                                                type="submit"
+                                                class="btn btn-warning btn-sm"
+                                                title="Mark as Absent"
+                                                form="quickActionForm"
+                                                formaction="{{ route('exam_officer.exams.students.absent', [$exam->id, $student->id]) }}"
+                                                formmethod="POST"
+                                                formnovalidate
+                                                onclick="return confirm('Are you sure you want to mark {{ $student->name }} as absent?')"
+                                            >
+                                                <i class="fas fa-user-times"></i>
+                                            </button>
                                         </td>
                                     @endif
                                 </tr>
@@ -292,7 +293,7 @@
                         <tfoot>
                             <tr>
                                 <th colspan="2" class="text-end">Average</th>
-                        
+
                                 @foreach($skills as $skill)
                                     @php
                                         $pivotId = $skill->pivot->id;
@@ -307,8 +308,7 @@
                                     @endphp
                                     <th class="text-center">{{ number_format($avg, 1) }}</th>
                                 @endforeach
-                        
-                                {{-- متوسط النسبة المئوية عبر جميع الطلاب --}}
+
                                 @php
                                     $overallAvg = collect($presentStudents)->map(function($student) use ($skills, $exam) {
                                         $sum = $maxSum = 0;
@@ -330,16 +330,16 @@
                                     })->avg();
                                 @endphp
                                 <th class="text-center">{{ number_format($overallAvg, 1) }}%</th>
-                        
+
                                 @if($canEnter)
                                     <th></th>
                                 @endif
                             </tr>
                         </tfoot>
-                        
+
                     </table>
                 </div>
-            
+
                 <div class="mt-3">
                     <button
                         type="submit"
@@ -351,11 +351,16 @@
                 </div>
             </form>
 
+            {{-- نموذج خفي للاكشنات السريعة (غياب/حضور) لتفادي تداخل النماذج --}}
+            <form id="quickActionForm" method="POST" style="display:none;">
+                @csrf
+            </form>
+
             <!-- جدول الطلاب الغائبين (مخفي افتراضياً) -->
             @if($absentStudents->count() > 0)
                 <div id="absentStudentsSection" style="display: none;">
                     <h5 class="mt-5 text-danger"><i class="fas fa-user-times me-1"></i> Absent Students</h5>
-                    
+
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle table-striped">
                             <thead class="table-danger">
@@ -380,16 +385,18 @@
                                         </td>
                                         @if($canEnter)
                                             <td class="text-center">
-                                                <form action="{{ route('exam_officer.exams.students.present', [$exam->id, $student->id]) }}" 
-                                                      method="POST" 
-                                                      style="display: inline;"
-                                                      onsubmit="return confirm('Are you sure you want to mark {{ $student->name }} as present?')">
-                                                    @csrf
-                                                    @method('POST')
-                                                    <button type="submit" class="btn btn-success btn-sm" title="Mark as Present">
-                                                        <i class="fas fa-user-check"></i> Mark Present
-                                                    </button>
-                                                </form>
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-success btn-sm"
+                                                    title="Mark as Present"
+                                                    form="quickActionForm"
+                                                    formaction="{{ route('exam_officer.exams.students.present', [$exam->id, $student->id]) }}"
+                                                    formmethod="POST"
+                                                    formnovalidate
+                                                    onclick="return confirm('Are you sure you want to mark {{ $student->name }} as present?')"
+                                                >
+                                                    <i class="fas fa-user-check"></i> Mark Present
+                                                </button>
                                             </td>
                                         @endif
                                     </tr>
@@ -408,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleButton = document.getElementById('toggleAbsentStudents');
     const absentSection = document.getElementById('absentStudentsSection');
     const toggleText = document.getElementById('toggleText');
-    
+
     if (toggleButton && absentSection) {
         toggleButton.addEventListener('click', function() {
             if (absentSection.style.display === 'none') {
