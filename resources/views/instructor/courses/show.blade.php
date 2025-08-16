@@ -170,10 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $allowedExtraDays = $course->allowed_abcences_instructor;
       @endphp
       <div class="ms-auto">
-        @if ($course->id == 105)
-          @dd($absences_student, $absences_instructor, $allowedExtraDays)
-        @endif
-        @if(($absences_student || $absences_instructor) < $allowedExtraDays)
+        @if($absences_student  < $allowedExtraDays || $absences_instructor < $allowedExtraDays)
           <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addExtraDayModal">
             <i class="fa fa-plus"></i> Add Extra Day
           </button>
